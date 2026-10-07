@@ -1,7 +1,10 @@
-import type { UserPolicy } from "../shared/types";
+/// <reference types="vite/client" />
+import type { LlmChunk, UserPolicy } from "../shared/types";
 import { DEFAULT_POLICY } from "./policy";
 
-const API_BASE = "https://api.skipsponsor.example.com/v1";
+const API_BASE = `${
+  import.meta.env.VITE_API_BASE_URL ?? "https://api.skipsponsor.example.com"
+}/v1`;
 const inflight = new Map<string, Promise<unknown>>();
 
 async function getInstallToken(): Promise<string> {
@@ -23,7 +26,7 @@ async function apiGetSegments(videoId: string): Promise<unknown> {
           Authorization: `Bearer ${token}`,
           "x-extension-version": chrome.runtime.getManifest().version,
         },
-      }
+      },
     );
     if (!res.ok) throw new Error(`segments ${res.status}`);
     return res.json() as Promise<unknown>;
@@ -36,10 +39,33 @@ async function apiGetSegments(videoId: string): Promise<unknown> {
   }
 }
 
+async function apiAnalyze(
+  videoId: string,
+  channelId: string | null,
+  transcript: LlmChunk[],
+): Promise<unknown> {
+  const token = await getInstallToken();
+  const res = await fetch(`${API_BASE}/segments:analyze`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "x-extension-version": chrome.runtime.getManifest().version,
+    },
+    body: JSON.stringify({
+      videoId,
+      transcript,
+      ...(channelId ? { channelId: channelId.slice(0, 64) } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`analyze ${res.status}`);
+  return res.json() as Promise<unknown>;
+}
+
 async function postTelemetry(
   videoId: string,
   eventType: string,
-  latencyMs?: number
+  latencyMs?: number,
 ): Promise<void> {
   try {
     const token = await getInstallToken();
@@ -75,11 +101,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch(() => sendResponse({ analysis: null }));
     return true;
   }
+  if (msg?.type === "SEGMENTS_ANALYZE") {
+    apiAnalyze(
+      String(msg.videoId),
+      (msg.channelId as string | null) ?? null,
+      msg.transcript as LlmChunk[],
+    )
+      .then((analysis) => sendResponse({ analysis }))
+      .catch(() => sendResponse({ analysis: null }));
+    return true;
+  }
   if (msg?.type === "TELEMETRY") {
     void postTelemetry(
       String(msg.videoId),
       String(msg.eventType),
-      msg.latencyMs as number | undefined
+      msg.latencyMs as number | undefined,
     );
     sendResponse({ ok: true });
     return false;

@@ -19,7 +19,7 @@ async function init(): Promise<void> {
       mode: mode.value as UserPolicy["mode"],
       confidenceThreshold: Math.min(
         0.95,
-        Math.max(0.5, Number(thr.value) || 0.78)
+        Math.max(0.5, Number(thr.value) || 0.78),
       ),
     };
     await chrome.storage.sync.set({ policy: next });

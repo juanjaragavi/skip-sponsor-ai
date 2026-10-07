@@ -4,7 +4,7 @@ import type { SegmentRepository } from "../repositories/segment-repository";
 
 export function registerTelemetryRoutes(
   app: FastifyInstance,
-  repo: SegmentRepository
+  repo: SegmentRepository,
 ): void {
   app.post("/v1/telemetry", async (req, reply) => {
     const body = telemetryRequestSchema.parse(req.body);

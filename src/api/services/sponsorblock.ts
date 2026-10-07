@@ -9,7 +9,7 @@ interface SBEntry {
 
 /** Read-only SponsorBlock fallback (spec FR-07). No writes in v1. */
 export async function fetchSponsorBlock(
-  videoId: string
+  videoId: string,
 ): Promise<SponsorSegment[]> {
   const url =
     `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}` +
@@ -41,7 +41,7 @@ function mapCategory(c: string): SponsorSegment["category"] {
 }
 
 export function acceptThresholdFilter<T extends { confidence: number }>(
-  items: T[]
+  items: T[],
 ): T[] {
   return items.filter((i) => i.confidence >= MODEL_POLICY.acceptThreshold);
 }

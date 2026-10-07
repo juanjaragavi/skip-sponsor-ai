@@ -14,7 +14,7 @@ const UA = [
 
 export async function fetchTimedText(
   videoId: string,
-  lang = "en"
+  lang = "en",
 ): Promise<unknown> {
   const urls = [
     `https://www.youtube.com/api/timedtext?v=${videoId}&caps=asr&fmt=json3&lang=${lang}`,

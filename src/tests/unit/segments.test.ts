@@ -6,7 +6,12 @@ import {
 } from "../../extension/segments";
 import type { SponsorSegment } from "../../shared/types";
 
-const seg = (s: number, e: number, conf = 0.9, cat: SponsorSegment["category"] = "sponsor"): SponsorSegment => ({
+const seg = (
+  s: number,
+  e: number,
+  conf = 0.9,
+  cat: SponsorSegment["category"] = "sponsor",
+): SponsorSegment => ({
   id: crypto.randomUUID(),
   videoId: "dQw4w9WgXcQ",
   channelId: null,
@@ -37,7 +42,7 @@ describe("mergeSegments", () => {
   it("keeps gaps >=4s separate and different categories separate", () => {
     expect(mergeSegments([seg(10, 20), seg(24, 30)])).toHaveLength(2);
     expect(
-      mergeSegments([seg(10, 20, 0.9, "sponsor"), seg(22, 30, 0.9, "intro")])
+      mergeSegments([seg(10, 20, 0.9, "sponsor"), seg(22, 30, 0.9, "intro")]),
     ).toHaveLength(2);
   });
 });

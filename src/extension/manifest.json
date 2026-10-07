@@ -5,7 +5,10 @@
   "description": "Auto-skip in-video sponsor reads on YouTube using Claude caption analysis.",
   "permissions": ["storage", "alarms"],
   "host_permissions": ["*://*.youtube.com/*"],
-  "background": { "service_worker": "src/extension/service-worker.ts", "type": "module" },
+  "background": {
+    "service_worker": "src/extension/service-worker.ts",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/watch*"],
@@ -13,7 +16,10 @@
       "run_at": "document_idle"
     }
   ],
-  "action": { "default_popup": "src/extension/popup.html", "default_title": "SkipSponsor AI" },
+  "action": {
+    "default_popup": "src/extension/popup.html",
+    "default_title": "SkipSponsor AI"
+  },
   "options_page": "src/extension/options.html",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

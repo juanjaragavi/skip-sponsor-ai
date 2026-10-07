@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { ZodError } from "zod";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { config } from "./config";
@@ -13,7 +14,10 @@ export function buildServer(): ReturnType<typeof Fastify> {
   void app.register(rateLimit, { max: 500, timeWindow: "1 minute" });
   // RFC7807 error envelope
   app.setErrorHandler((err, req, reply) => {
-    const status = (err as { statusCode?: number }).statusCode ?? 500;
+    const status =
+      err instanceof ZodError
+        ? 400
+        : ((err as { statusCode?: number }).statusCode ?? 500);
     void reply.code(status).send({
       type: `https://api.skipsponsor.example.com/problems/${status}`,
       title: err.message,
@@ -32,10 +36,8 @@ export function buildServer(): ReturnType<typeof Fastify> {
 
 if (process.env["VITEST"] !== "true") {
   const app = buildServer();
-  app
-    .listen({ port: config.port, host: "0.0.0.0" })
-    .catch((e: unknown) => {
-      console.error(e);
-      process.exit(1);
-    });
+  app.listen({ port: config.port, host: "0.0.0.0" }).catch((e: unknown) => {
+    console.error(e);
+    process.exit(1);
+  });
 }

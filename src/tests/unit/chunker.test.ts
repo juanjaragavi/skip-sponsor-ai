@@ -9,7 +9,11 @@ describe("parseTimedText", () => {
   it("extracts text with timestamps", () => {
     const chunks = parseTimedText({
       events: [
-        { tStartMs: 1000, dDurationMs: 2000, segs: [{ utf8: "hello " }, { utf8: "sponsor" }] },
+        {
+          tStartMs: 1000,
+          dDurationMs: 2000,
+          segs: [{ utf8: "hello " }, { utf8: "sponsor" }],
+        },
         { tStartMs: 4000, dDurationMs: 1000, segs: [{ utf8: "  " }] },
       ],
     });

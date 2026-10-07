@@ -274,7 +274,7 @@ cat .env | grep ANTHROPIC_API_KEY
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.anthropic.com/v1/messages \
   -X POST -H "Content-Type: application/json" \
-  -d '{"model":"claude-3-5-haiku-latest","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}'
+  -d '{"model":"claude-haiku-4-5-20251001","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}'
 
 # 4. Restart backend
 npm run dev:api

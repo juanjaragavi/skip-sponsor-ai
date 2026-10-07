@@ -1,8 +1,13 @@
-import type { SponsorSegment, VideoAnalysis, UserPolicy } from "../shared/types";
+import type {
+  SponsorSegment,
+  VideoAnalysis,
+  UserPolicy,
+} from "../shared/types";
 import { DomVideoAdapter, getVideoIdFromUrl } from "./video-adapter";
 import { isInSegment } from "./segments";
 import { decideSkip, DEFAULT_POLICY } from "./policy";
 import { showSkipToast } from "./toast";
+import { readTranscriptFromPage } from "./transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 
 const adapter = new DomVideoAdapter();
@@ -28,6 +33,33 @@ async function fetchSegments(videoId: string): Promise<VideoAnalysis | null> {
     return (res?.analysis ?? null) as VideoAnalysis | null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Cached "ready" results are used as-is. Otherwise upload the transcript read
+ * from the page for Claude analysis, keeping the degraded (SponsorBlock)
+ * result when no transcript is available or the upload fails.
+ */
+async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
+  const initial = await fetchSegments(videoId);
+  if (initial?.status === "ready") return initial;
+  const stillCurrent = () => lastVideoId === videoId;
+  const transcript = await readTranscriptFromPage(
+    adapter.getVideo()?.duration || 0,
+    stillCurrent,
+  );
+  if (!transcript || !stillCurrent()) return initial;
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "SEGMENTS_ANALYZE",
+      videoId,
+      channelId,
+      transcript,
+    });
+    return (res?.analysis as VideoAnalysis | null) ?? initial;
+  } catch {
+    return initial;
   }
 }
 
@@ -82,7 +114,7 @@ async function initForVideo(videoId: string): Promise<void> {
   await loadPolicy();
   window.clearTimeout(debounceTimer);
   debounceTimer = window.setTimeout(async () => {
-    const analysis = await fetchSegments(videoId);
+    const analysis = await resolveAnalysis(videoId);
     if (!analysis || lastVideoId !== videoId) return;
     segments = analysis.segments;
     armSkipLoop();

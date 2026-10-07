@@ -1,26 +1,36 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance } from "fastify";
 import {
   getSegmentsParamsSchema,
   analyzeRequestSchema,
   correctionRequestSchema,
   videoIdSchema,
 } from "../../shared/validators";
-import type { VideoAnalysis } from "../../shared/types";
+import type { LlmChunk, VideoAnalysis } from "../../shared/types";
 import type { SegmentRepository } from "../repositories/segment-repository";
 import { fetchTimedText } from "../services/transcript-fetcher";
-import { parseTimedText, chunkTranscript, transcriptHash } from "../services/chunker";
+import {
+  parseTimedText,
+  chunkTranscript,
+  transcriptHash,
+} from "../services/chunker";
 import { classifyChunks } from "../services/llm-client";
 import {
   candidatesToSegments,
   mergeCandidates,
 } from "../services/segment-classifier";
 import { fetchSponsorBlock } from "../services/sponsorblock";
+import {
+  corroborateSegments,
+  findCaptionGaps,
+  segmentsOverlap,
+} from "../services/gap-corroboration";
+import { CORROBORATED_CONFIDENCE } from "../../shared/constants";
 
 const inflight = new Map<string, Promise<VideoAnalysis>>();
 
 export function registerSegmentRoutes(
   app: FastifyInstance,
-  repo: SegmentRepository
+  repo: SegmentRepository,
 ): void {
   app.get("/v1/segments/:videoId", async (req, reply) => {
     const params = getSegmentsParamsSchema.parse(req.params);
@@ -28,10 +38,11 @@ export function registerSegmentRoutes(
     if (cached) return reply.send(toResponse(cached));
     const analysis = await analyzeVideo(
       repo,
+      req.log,
       params.videoId,
       null,
       "en",
-      false
+      false,
     );
     return reply.send(toResponse(analysis));
   });
@@ -40,14 +51,18 @@ export function registerSegmentRoutes(
     const body = analyzeRequestSchema.parse(req.body);
     if (!body.force) {
       const cached = await repo.get(body.videoId);
-      if (cached) return reply.code(200).send(toResponse(cached));
+      // A client transcript supersedes degraded/unanalyzable results only.
+      const usable = body.transcript ? cached?.status === "ready" : cached;
+      if (cached && usable) return reply.code(200).send(toResponse(cached));
     }
     const analysis = await analyzeVideo(
       repo,
+      req.log,
       body.videoId,
       body.channelId ?? null,
       body.languageHint ?? "en",
-      body.force ?? false
+      body.force || Boolean(body.transcript),
+      body.transcript,
     );
     return reply.send(toResponse(analysis));
   });
@@ -56,7 +71,8 @@ export function registerSegmentRoutes(
     const { videoId } = zParams(req.params);
     const body = correctionRequestSchema.parse(req.body);
     const existing = await repo.get(videoId);
-    if (!existing) return reply.code(404).send(problem(404, "Not found", videoId));
+    if (!existing)
+      return reply.code(404).send(problem(404, "Not found", videoId));
     const seg = {
       id: crypto.randomUUID(),
       videoId,
@@ -75,14 +91,17 @@ export function registerSegmentRoutes(
   app.delete("/v1/segments/:videoId", async (req, reply) => {
     const { videoId } = zParams(req.params);
     const existing = await repo.get(videoId);
-    if (!existing) return reply.code(404).send(problem(404, "Not found", videoId));
+    if (!existing)
+      return reply.code(404).send(problem(404, "Not found", videoId));
     await repo.put({ ...existing, segments: [], status: "unanalyzable" });
     return reply.code(204).send();
   });
 }
 
 function zParams(params: unknown): { videoId: string } {
-  return { videoId: videoIdSchema.parse((params as { videoId: string }).videoId) };
+  return {
+    videoId: videoIdSchema.parse((params as { videoId: string }).videoId),
+  };
 }
 
 function toResponse(a: VideoAnalysis): unknown {
@@ -108,17 +127,19 @@ function problem(status: number, title: string, instance: string): unknown {
 
 async function analyzeVideo(
   repo: SegmentRepository,
+  log: FastifyBaseLogger,
   videoId: string,
   channelId: string | null,
   lang: string,
-  force: boolean
+  force: boolean,
+  transcript?: LlmChunk[],
 ): Promise<VideoAnalysis> {
   if (!force) {
     const cached = await repo.get(videoId);
     if (cached) return cached;
   }
   if (inflight.has(videoId)) return inflight.get(videoId)!;
-  const p = runAnalysis(repo, videoId, channelId, lang);
+  const p = runAnalysis(repo, log, videoId, channelId, lang, transcript);
   inflight.set(videoId, p);
   try {
     return await p;
@@ -127,19 +148,51 @@ async function analyzeVideo(
   }
 }
 
+/**
+ * Add SponsorBlock sponsors that fall inside caption gaps (where Claude had
+ * nothing to read) and are not already covered. Never fails the analysis.
+ */
+async function addGapCorroborated(
+  log: FastifyBaseLogger,
+  videoId: string,
+  chunks: LlmChunk[],
+  existing: VideoAnalysis["segments"],
+): Promise<VideoAnalysis["segments"]> {
+  const gaps = findCaptionGaps(chunks);
+  if (gaps.length === 0) return existing;
+  try {
+    const extra = corroborateSegments(
+      await fetchSponsorBlock(videoId),
+      gaps,
+    ).filter(
+      (s) =>
+        s.confidence >= CORROBORATED_CONFIDENCE &&
+        !existing.some((e) => segmentsOverlap(e, s)),
+    );
+    return [...existing, ...extra].sort((a, b) => a.startTime - b.startTime);
+  } catch (err) {
+    log.debug({ err, videoId }, "gap corroboration skipped");
+    return existing;
+  }
+}
+
 async function runAnalysis(
   repo: SegmentRepository,
+  log: FastifyBaseLogger,
   videoId: string,
   channelId: string | null,
-  lang: string
+  lang: string,
+  transcript?: LlmChunk[],
 ): Promise<VideoAnalysis> {
   let status: VideoAnalysis["status"] = "ready";
   let segments: VideoAnalysis["segments"] = [];
   let duration = 0;
   let hash = "nocaptions";
+  let chunks: LlmChunk[] = [];
   try {
-    const raw = await fetchTimedText(videoId, lang);
-    const chunks = parseTimedText(raw as { events?: [] });
+    chunks =
+      transcript ??
+      parseTimedText((await fetchTimedText(videoId, lang)) as { events?: [] });
     if (chunks.length === 0) throw new Error("empty transcript");
     duration = chunks[chunks.length - 1]!.t1;
     hash = transcriptHash(JSON.stringify(chunks).slice(0, 20000));
@@ -150,20 +203,27 @@ async function runAnalysis(
         videoId,
         channelId,
         model === "claude-sonnet" ? "claude-sonnet" : "claude-haiku",
-        candidates
-      )
+        candidates,
+      ),
     );
+    segments = await addGapCorroborated(log, videoId, chunks, segments);
   } catch (err) {
+    log.warn(
+      { err, videoId, clientTranscript: Boolean(transcript) },
+      "analysis failed; falling back to SponsorBlock",
+    );
     // Fallback: SponsorBlock read-only (FR-07)
     try {
-      segments = await fetchSponsorBlock(videoId);
+      segments = corroborateSegments(
+        await fetchSponsorBlock(videoId),
+        findCaptionGaps(chunks),
+      );
       status = "degraded";
       await repo.logTelemetry(videoId, "fallback_used");
     } catch {
       status = "unanalyzable";
       await repo.logTelemetry(videoId, "no_captions");
     }
-    void err;
   }
   const analysis: VideoAnalysis = {
     videoId,

@@ -5,18 +5,19 @@ export function candidatesToSegments(
   videoId: string,
   channelId: string | null,
   source: SponsorSegment["source"],
-  candidates: LlmSegmentCandidate[]
+  candidates: LlmSegmentCandidate[],
 ): SponsorSegment[] {
   const now = new Date().toISOString();
   return candidates
     .filter(
       (c) =>
+        c.category === "sponsor" &&
         Number.isFinite(c.start) &&
         Number.isFinite(c.end) &&
         c.end > c.start &&
         c.end - c.start >= 5 &&
         c.end - c.start <= 600 &&
-        c.confidence >= MODEL_POLICY.acceptThreshold
+        c.confidence >= MODEL_POLICY.acceptThreshold,
     )
     .map((c, i) => ({
       id: crypto.randomUUID(),
@@ -35,9 +36,7 @@ export function candidatesToSegments(
 }
 
 /** Merge gaps <4s same category (shared with client). */
-export function mergeCandidates(
-  segments: SponsorSegment[]
-): SponsorSegment[] {
+export function mergeCandidates(segments: SponsorSegment[]): SponsorSegment[] {
   const sorted = [...segments].sort((a, b) => a.startTime - b.startTime);
   const out: SponsorSegment[] = [];
   for (const s of sorted) {

@@ -17,7 +17,7 @@ button{all:initial;cursor:pointer;font:600 13px Roboto,Arial,sans-serif;padding:
 /** Shadow-DOM toast: isolates from YouTube CSS (spec §6). */
 export function showSkipToast(
   segment: SponsorSegment,
-  cb: ToastCallbacks
+  cb: ToastCallbacks,
 ): () => void {
   const host = document.createElement("div");
   host.id = "skipsponsor-toast-host";
@@ -60,7 +60,7 @@ export function showSkipToast(
 
 export function showNotifyBanner(
   segment: SponsorSegment,
-  onSkip: () => void
+  onSkip: () => void,
 ): () => void {
   return showSkipToast(segment, { onUndo: onSkip });
 }

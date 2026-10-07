@@ -153,7 +153,7 @@ curl -H "Authorization: Bearer sk-ant-your-key" \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3-5-haiku-latest",
+    "model": "claude-haiku-4-5-20251001",
     "max_tokens": 100,
     "messages": [{"role": "user", "content": "Say hello"}]
   }'

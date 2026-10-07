@@ -1,0 +1,80 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "make-api-key",
+      "description": "Make MCP token",
+      "password": true
+    }
+  ],
+  "mcpServers": {
+    "snippetslab": {
+      "command": "/Applications/SnippetsLab.app/Contents/Helpers/lab",
+      "args": ["mcp"]
+    },
+    "AgentMail": {
+      "url": "https://mcp.agentmail.to/mcp",
+      "headers": {
+        "x-api-key": "$AGENTMAIL_API_KEY"
+      }
+    },
+    "resend": {
+      "type": "http",
+      "url": "https://mcp.resend.com/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {}
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"],
+      "env": {}
+    },
+    "devspeak": {
+      "command": "npx",
+      "args": ["-y", "-p", "@devspeak/mcp", "devspeak-mcp"],
+      "env": {
+        "DEVSPEAK_API_KEY": "$DEVSPEAK_API_KEY"
+      }
+    },
+    "microsoft/markitdown": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["markitdown-mcp@0.0.1a4"],
+      "gallery": "https://api.mcp.github.com",
+      "version": "1.0.0"
+    },
+    "io.github.wonderwhy-er/desktop-commander": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "--registry",
+        "https://registry.npmjs.org",
+        "@wonderwhy-er/desktop-commander@0.2.40"
+      ],
+      "gallery": "https://api.mcp.github.com",
+      "version": "0.2.40"
+    },
+    "apify-mcp-server": {
+      "type": "http",
+      "url": "https://mcp.apify.com/"
+    },
+    "browseros": {
+      "type": "http",
+      "url": "http://127.0.0.1:9010/mcp"
+    }
+  }
+}

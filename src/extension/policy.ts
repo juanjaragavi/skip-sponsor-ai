@@ -10,7 +10,7 @@ export function decideSkip(
   policy: UserPolicy,
   segment: SponsorSegment,
   channelId: string | null,
-  opts: { globalKill: boolean; userOverridden: boolean }
+  opts: { globalKill: boolean; userOverridden: boolean },
 ): PolicyDecision {
   if (opts.globalKill) return { shouldSkip: false, reason: "kill-switch" };
   if (!policy.globalEnabled) return { shouldSkip: false, reason: "global-off" };
@@ -19,6 +19,9 @@ export function decideSkip(
     return { shouldSkip: false, reason: "user-override" };
   if (channelId && policy.blockedChannels.includes(channelId))
     return { shouldSkip: false, reason: "channel-blocked" };
+  // Only paid sponsor reads are skipped; intros, outros and self-promo are not.
+  if (segment.category !== "sponsor")
+    return { shouldSkip: false, reason: "category-not-skippable" };
   if (segment.confidence < policy.confidenceThreshold)
     return { shouldSkip: false, reason: "low-confidence" };
   if (policy.mode === "notify")

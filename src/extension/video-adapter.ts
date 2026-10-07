@@ -36,7 +36,7 @@ export class DomVideoAdapter implements VideoAdapter {
   }
   getChannelId(): string | null {
     const link = document.querySelector<HTMLAnchorElement>(
-      "ytd-channel-name a, #channel-name a"
+      "ytd-channel-name a, #channel-name a",
     );
     const href = link?.href ?? "";
     const m = href.match(/\/(@[^/]+|channel\/[^/]+)/);

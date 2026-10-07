@@ -51,11 +51,28 @@ export const userPolicySchema = z.object({
 
 export const getSegmentsParamsSchema = z.object({ videoId: videoIdSchema });
 
+export const MAX_CUE_TEXT = 600;
+export const MAX_TRANSCRIPT_CUES = 5000;
+
+export const transcriptCueSchema = z
+  .object({
+    t0: z.number().finite().min(0),
+    t1: z.number().finite().positive(),
+    text: z.string().min(1).max(MAX_CUE_TEXT),
+  })
+  .refine((c) => c.t1 > c.t0, { message: "t1 must be greater than t0" });
+
 export const analyzeRequestSchema = z.object({
   videoId: videoIdSchema,
   channelId: z.string().min(1).max(64).optional(),
   force: z.boolean().optional().default(false),
   languageHint: z.string().min(2).max(12).optional().default("en"),
+  /** Caption cues read from the YouTube page by the extension. */
+  transcript: z
+    .array(transcriptCueSchema)
+    .min(1)
+    .max(MAX_TRANSCRIPT_CUES)
+    .optional(),
 });
 
 export const telemetryRequestSchema = z.object({

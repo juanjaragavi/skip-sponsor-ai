@@ -51,7 +51,7 @@ MV3 Chrome extension that detects in-video sponsor reads by presenter/narrator o
 | Content/UI       | No framework, vanilla TS + Shadow DOM for toast                                     | —           | Eliminates CSP/YouTube CSS collisions; bundle <250KB; no React runtime overhead on every watch page                            |
 | Background       | MV3 Service Worker (event-driven)                                                   | MV3         | Mandatory for Chrome Web Store; non-persistent forces stateless design + `chrome.storage` persistence                          |
 | Backend API      | Node.js 20 LTS + Fastify 4 + Zod                                                    | Node 20     | Fastify p95 overhead <8ms vs Express ~25ms; Zod enforces contract validation at runtime; single language with client           |
-| LLM              | Anthropic Claude 3.5 Haiku (`claude-3-5-haiku-latest`) primary, Sonnet 3.5 fallback | API 2024-06 | Haiku: ~0.8s median classification at 1/5 cost; Sonnet only when confidence 0.55-0.75. Deterministic `temperature:0` JSON mode |
+| LLM              | Anthropic Claude 3.5 Haiku (`claude-haiku-4-5-20251001`) primary, Sonnet 3.5 fallback | API 2024-06 | Haiku: ~0.8s median classification at 1/5 cost; Sonnet only when confidence 0.55-0.75. Deterministic `temperature:0` JSON mode |
 | Persistence      | PostgreSQL 16                                                                       | 16.3        | Relational integrity for `videoId→segments`; GIN index on metadata; ACID for cache correctness                                 |
 | Cache            | Redis 7 (ElastiCache / Memorystore)                                                 | 7.2         | TTL-based `videoId` cache; reduces LLM calls by 65%+; <5ms lookup p95                                                          |
 | Infra            | Docker 24, Terraform 1.9, AWS ECS Fargate + ALB, RDS Postgres, ElastiCache          | —           | Fargate removes node management; ALB handles scale-to-zero to 4 tasks; Terraform reproducibility                               |
@@ -303,7 +303,7 @@ interface LlmChunk {
   text: string;
 }
 const MODEL_POLICY = {
-  primary: "claude-3-5-haiku-latest",
+  primary: "claude-haiku-4-5-20251001",
   fallback: "claude-3-5-sonnet-latest",
   timeoutMs: 8000,
   maxTokens: 1024,

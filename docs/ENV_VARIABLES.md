@@ -181,7 +181,7 @@ curl -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3-5-haiku-latest",
+    "model": "claude-haiku-4-5-20251001",
     "max_tokens": 100,
     "messages": [{"role": "user", "content": "Say hello"}]
   }'
@@ -416,7 +416,7 @@ Minimum logging level for pino structured logger. Controls verbosity of JSON log
 ```json
 // LOG_LEVEL=debug
 {"level":20,"time":"2026-10-06T...","pid":1234,"msg":"Cache HIT","videoId":"dQw4w9WgXcQ"}
-{"level":30,"time":"2026-10-06T...","pid":1234,"msg":"LLM classification","model":"claude-3-5-haiku","latencyMs":820,"confidence":0.91}
+{"level":30,"time":"2026-10-06T...","pid":1234,"msg":"LLM classification","model":"claude-4-5-haiku","latencyMs":820,"confidence":0.91}
 
 // LOG_LEVEL=warn
 {"level":40,"time":"2026-10-06T...","pid":1234,"msg":"Fallback to SponsorBlock","reason":"no_captions"}

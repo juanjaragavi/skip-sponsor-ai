@@ -7,7 +7,7 @@ export interface SegmentRepository {
   logTelemetry(
     videoId: string,
     eventType: string,
-    latencyMs?: number
+    latencyMs?: number,
   ): Promise<void>;
 }
 

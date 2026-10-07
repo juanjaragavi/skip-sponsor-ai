@@ -1,17 +1,10 @@
 export type SkipMode = "auto" | "notify" | "off";
 
 export type SegmentSource =
-  | "claude-haiku"
-  | "claude-sonnet"
-  | "sponsorblock"
-  | "manual";
+  "claude-haiku" | "claude-sonnet" | "sponsorblock" | "manual";
 
 export type SegmentCategory =
-  | "sponsor"
-  | "intro"
-  | "outro"
-  | "selfpromo"
-  | "interaction_reminder";
+  "sponsor" | "intro" | "outro" | "selfpromo" | "interaction_reminder";
 
 export interface SponsorSegment {
   id: string;
@@ -54,9 +47,18 @@ export interface LlmChunk {
 export interface LlmSegmentCandidate {
   start: number;
   end: number;
+  /** Runtime value is untrusted model output; only "sponsor" is accepted. */
   category: SegmentCategory;
   confidence: number;
-  rationale: string;
+  /** Company paying for the promotion, as named by the model. */
+  advertiser?: string | undefined;
+  /** "third_party_sponsor" | "first_party" | "network_promo" | "other" */
+  relationship?: string | undefined;
+  /** True when the speaker interrupts the video's topic for the promo and later returns. */
+  breaksFromContent?: boolean | undefined;
+  /** Verbatim quote from a cue inside the segment proving it is an ad. */
+  evidence?: string | undefined;
+  rationale?: string | undefined;
 }
 
 export type TelemetryEventType =

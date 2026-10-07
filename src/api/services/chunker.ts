@@ -1,5 +1,8 @@
 import type { LlmChunk } from "../../shared/types";
-import { CHUNK_WINDOW_SECONDS, CHUNK_OVERLAP_SECONDS } from "../../shared/constants";
+import {
+  CHUNK_WINDOW_SECONDS,
+  CHUNK_OVERLAP_SECONDS,
+} from "../../shared/constants";
 
 export interface TimedTextEvent {
   tStartMs: number;
@@ -13,7 +16,10 @@ export function parseTimedText(json: {
 }): LlmChunk[] {
   const out: LlmChunk[] = [];
   for (const e of json.events ?? []) {
-    const text = (e.segs ?? []).map((s) => s.utf8).join("").trim();
+    const text = (e.segs ?? [])
+      .map((s) => s.utf8)
+      .join("")
+      .trim();
     if (!text) continue;
     const t0 = e.tStartMs / 1000;
     const t1 = t0 + (e.dDurationMs ?? 0) / 1000;
@@ -26,7 +32,7 @@ export function parseTimedText(json: {
 export function chunkTranscript(
   chunks: LlmChunk[],
   windowSec = CHUNK_WINDOW_SECONDS,
-  overlapSec = CHUNK_OVERLAP_SECONDS
+  overlapSec = CHUNK_OVERLAP_SECONDS,
 ): LlmChunk[][] {
   if (chunks.length === 0) return [];
   const end = chunks[chunks.length - 1]!.t1;

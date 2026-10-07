@@ -4,15 +4,13 @@ import { MERGE_GAP_SECONDS } from "../shared/constants";
 /** Return segment containing t, or undefined. Pure + unit-testable. */
 export function isInSegment(
   t: number,
-  segments: SponsorSegment[]
+  segments: SponsorSegment[],
 ): SponsorSegment | undefined {
   return segments.find((s) => t >= s.startTime && t < s.endTime);
 }
 
 /** Merge segments with gaps < MERGE_GAP_SECONDS and same category. */
-export function mergeSegments(
-  segments: SponsorSegment[]
-): SponsorSegment[] {
+export function mergeSegments(segments: SponsorSegment[]): SponsorSegment[] {
   if (segments.length <= 1) return [...segments];
   const sorted = [...segments].sort((a, b) => a.startTime - b.startTime);
   const out: SponsorSegment[] = [];
@@ -39,21 +37,21 @@ export function thresholdFilter(
   segments: SponsorSegment[],
   threshold: number,
   minDur = 5,
-  maxDur = 600
+  maxDur = 600,
 ): SponsorSegment[] {
   return segments.filter(
     (s) =>
       s.confidence >= threshold &&
       s.endTime > s.startTime &&
       s.endTime - s.startTime >= minDur &&
-      s.endTime - s.startTime <= maxDur
+      s.endTime - s.startTime <= maxDur,
   );
 }
 
 /** Round timestamps to 3 decimals for stable persistence. */
 export function normalizeSegmentTimes(
   start: number,
-  end: number
+  end: number,
 ): { startTime: number; endTime: number } {
   return {
     startTime: Math.max(0, Math.round(start * 1000) / 1000),
