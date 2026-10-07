@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "SkipSponsor AI",
+  "version": "1.0.0",
+  "description": "Auto-skip in-video sponsor reads on YouTube using Claude caption analysis.",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["*://*.youtube.com/*"],
+  "background": { "service_worker": "src/extension/service-worker.ts", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["src/extension/content-script.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_popup": "src/extension/popup.html", "default_title": "SkipSponsor AI" },
+  "options_page": "src/extension/options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "minimum_chrome_version": "116"
+}
