@@ -32,6 +32,14 @@ export class DomVideoAdapter implements VideoAdapter {
     return this.getVideo()?.currentTime ?? 0;
   }
   seekTo(t: number): void {
+    // Prefer YouTube's player API (via the MAIN-world script): writing
+    // currentTime behind the player's back can make it snap back.
+    if (document.documentElement.hasAttribute("data-skipsponsor-main")) {
+      document.dispatchEvent(
+        new CustomEvent("skipsponsor:seek", { detail: t }),
+      );
+      return;
+    }
     const v = this.getVideo();
     if (v) v.currentTime = t;
   }

@@ -53,3 +53,42 @@ export function mergeCandidates(segments: SponsorSegment[]): SponsorSegment[] {
   }
   return out;
 }
+
+const CATEGORY_PRIORITY: Record<SponsorSegment["category"], number> = {
+  sponsor: 5,
+  selfpromo: 4,
+  interaction_reminder: 3,
+  outro: 2,
+  intro: 1,
+};
+
+/**
+ * Collapse near-duplicates across categories: SponsorBlock often returns the
+ * same stretch as e.g. both "sponsor" and "selfpromo" (seen live: 1246–1289
+ * and 1248–1289), which showed as two rows. Two segments are duplicates when
+ * their overlap covers >= 80% of the shorter one; the higher-priority
+ * category (then higher confidence) wins and keeps its own bounds.
+ */
+export function dedupeOverlapping(
+  segments: SponsorSegment[],
+): SponsorSegment[] {
+  const ranked = [...segments].sort(
+    (a, b) =>
+      CATEGORY_PRIORITY[b.category] - CATEGORY_PRIORITY[a.category] ||
+      b.confidence - a.confidence,
+  );
+  const kept: SponsorSegment[] = [];
+  for (const s of ranked) {
+    const dup = kept.some((k) => {
+      const overlap =
+        Math.min(k.endTime, s.endTime) - Math.max(k.startTime, s.startTime);
+      const shorter = Math.min(
+        k.endTime - k.startTime,
+        s.endTime - s.startTime,
+      );
+      return shorter > 0 && overlap >= 0.8 * shorter;
+    });
+    if (!dup) kept.push(s);
+  }
+  return kept.sort((a, b) => a.startTime - b.startTime);
+}

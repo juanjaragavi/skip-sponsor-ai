@@ -21,6 +21,12 @@
       "matches": ["https://www.youtube.com/*"],
       "js": ["src/extension/content-script.ts"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/extension/main-world.ts"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "action": {

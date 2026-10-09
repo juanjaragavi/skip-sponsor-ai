@@ -53,6 +53,7 @@ Find ONLY segments where the speaker verbally presents a third-party paid sponso
 
 Boundaries:
 - "start" is the SECONDS of the cue where the lead-in or announcement begins, including phrases like "but before we continue" or "speaking of ...".
+- Segues count as part of the ad: when the speaker pivots away from the video's topic to set up the sponsor's problem or product category just before naming the sponsor (e.g. "I learned a new word today, smishing ... SMS scams ... so I'm relieved Surfshark, our sponsor, ..."; "the number one mistake people make when building ... which is why everything we design is made in OnShape"), "start" is the first cue of that pivot. Never extend "start" into cues that are still about the video's own topic.
 - "end" is the SECONDS of the first cue AFTER the promotion that returns to the video's own topic ("anyway, back to", "now, where were we", "ahora sí").
 - Use only SECONDS values that appear in the input.
 

@@ -1,8 +1,52 @@
 import { describe, it, expect } from "vitest";
 import {
   candidatesToSegments,
+  dedupeOverlapping,
   mergeCandidates,
 } from "../../api/services/segment-classifier";
+import type { SponsorSegment } from "../../shared/types";
+
+const sb = (
+  startTime: number,
+  endTime: number,
+  category: SponsorSegment["category"],
+  confidence = 0.85,
+): SponsorSegment => ({
+  id: `${category}-${startTime}`,
+  videoId: "ujkD4SxPKOI",
+  channelId: null,
+  startTime,
+  endTime,
+  confidence,
+  category,
+  source: "sponsorblock",
+  createdAt: "2026-10-09T00:00:00.000Z",
+});
+
+describe("dedupeOverlapping", () => {
+  it("collapses the same stretch labeled twice, keeping the sponsor label (live: ujkD4SxPKOI)", () => {
+    const out = dedupeOverlapping([
+      sb(227, 235, "sponsor"),
+      sb(1246, 1289, "selfpromo"),
+      sb(1248, 1289, "sponsor"),
+      sb(1288, 1304, "outro"),
+    ]);
+    expect(out.map((s) => [s.startTime, s.endTime, s.category])).toEqual([
+      [227, 235, "sponsor"],
+      [1248, 1289, "sponsor"],
+      [1288, 1304, "outro"], // only 1s of overlap: a different segment
+    ]);
+  });
+
+  it("same category: the more confident one wins", () => {
+    const out = dedupeOverlapping([
+      sb(100, 160, "sponsor", 0.8),
+      sb(102, 160, "sponsor", 0.95),
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.confidence).toBe(0.95);
+  });
+});
 
 describe("candidatesToSegments", () => {
   it("filters by threshold and duration", () => {

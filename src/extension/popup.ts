@@ -113,6 +113,8 @@ function rows(): SegmentRow[] {
     currentTime: state.currentTime,
     skipped: new Set(state.skipped),
     overridden: new Set(state.overridden),
+    blocked: new Set(state.blocked ?? []),
+    paused: state.skippingPaused ?? false,
   });
 }
 

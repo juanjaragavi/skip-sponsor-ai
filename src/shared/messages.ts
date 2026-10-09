@@ -18,6 +18,10 @@ export interface PageState {
   skipped: string[];
   /** Segment ids the user chose to keep (Undo or seeking back into them). */
   overridden: string[];
+  /** Segment ids the player refused to skip (it kept snapping back). */
+  blocked: string[];
+  /** Auto-skip stopped for this video after too many seeks in a short time. */
+  skippingPaused: boolean;
   adPlaying: boolean;
 }
 

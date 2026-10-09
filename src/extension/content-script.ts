@@ -10,6 +10,7 @@ import { decideSkip, DEFAULT_POLICY } from "./policy";
 import { showNotifyBanner, showSkipToast, type NotifyHandle } from "./toast";
 import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
+import { SkipGuard } from "./skip-guard";
 
 const adapter = new DomVideoAdapter();
 let segments: SponsorSegment[] = [];
@@ -26,6 +27,21 @@ let fallback = false;
 let detachTimeUpdate: (() => void) | null = null;
 let detachSeeking: (() => void) | null = null;
 let debounceTimer = 0;
+/** Loop protection for automatic seeks (see skip-guard.ts). */
+let guard = new SkipGuard();
+
+/**
+ * A seek counts as the user's choice only right after real input (click on
+ * the progress bar, arrow keys, chapter links). YouTube also seeks on its own
+ * (resume position, after an ad); those must not cancel a skip.
+ */
+const USER_SEEK_WINDOW_MS = 1500;
+let lastUserInputAt = Number.NEGATIVE_INFINITY;
+for (const type of ["pointerdown", "keydown"])
+  document.addEventListener(type, () => (lastUserInputAt = performance.now()), {
+    capture: true,
+    passive: true,
+  });
 
 /**
  * A partial stored policy (older version, partial write) must not drop
@@ -66,6 +82,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     segments: current ? segments : [],
     skipped: [...skipped],
     overridden: [...overridden],
+    blocked: current ? guard.blocked() : [],
+    skippingPaused: current && guard.isTripped(),
     adPlaying: adapter.isAdPlaying(),
   };
   sendResponse(state);
@@ -120,7 +138,11 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
 
 function skip(seg: SponsorSegment): void {
   const t0 = performance.now();
+  guard.recordSeek(seg.id, seg.startTime, seg.endTime);
   adapter.seekTo(seg.endTime + SKIP_FORWARD_OFFSET);
+  // seekTo usually applies synchronously: confirm the landing right away so a
+  // later legitimate re-entry isn't held back as "pending".
+  guard.observe(adapter.getCurrentTime());
   const latency = Math.round(performance.now() - t0);
   skipped.add(seg.id);
   void chrome.runtime.sendMessage({
@@ -169,7 +191,16 @@ function armSkipLoop(): void {
   detachTimeUpdate?.();
   detachTimeUpdate = adapter.onTimeUpdate((t) => {
     // During a YouTube ad, currentTime is the ad's clock, not the video's.
-    if (adapter.isAdPlaying()) return;
+    if (adapter.isAdPlaying()) {
+      guard.noteAd();
+      return;
+    }
+    if (guard.observe(t) === "gave-up")
+      void chrome.runtime.sendMessage({
+        type: "TELEMETRY",
+        eventType: "skip_bounced",
+        videoId: lastVideoId,
+      });
     const seg = isInSegment(t, segments);
     if (banner && banner.segmentId !== seg?.id) closeBanner();
     if (!seg || overridden.has(seg.id)) return;
@@ -182,15 +213,16 @@ function armSkipLoop(): void {
     if (d.reason === "notify-only") {
       notify(seg, t);
       banner?.handle.update(t);
-    } else if (d.shouldSkip) skip(seg);
+    } else if (d.shouldSkip && guard.canSkip(seg.id).ok) skip(seg);
   });
 }
 
-/** Suppress re-skip when user manually seeks back into a segment. */
+/** Suppress re-skip when the user deliberately seeks into a segment. */
 function armSeekOverride(): void {
   detachSeeking?.();
   detachSeeking = adapter.onSeeking((t) => {
     if (adapter.isAdPlaying()) return;
+    if (performance.now() - lastUserInputAt > USER_SEEK_WINDOW_MS) return;
     const seg = isInSegment(t, segments);
     if (seg) overridden.add(seg.id);
   });
@@ -201,6 +233,7 @@ async function initForVideo(videoId: string): Promise<void> {
   overridden = new Set();
   skipped = new Set();
   notified = new Set();
+  guard = new SkipGuard();
   closeBanner();
   segments = [];
   phase = "analyzing";

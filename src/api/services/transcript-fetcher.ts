@@ -12,6 +12,8 @@ const UA = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0 Safari/537.36",
 ];
 
+const TIMEDTEXT_TIMEOUT_MS = 4000;
+
 export async function fetchTimedText(
   videoId: string,
   lang = "en",
@@ -26,6 +28,9 @@ export async function fetchTimedText(
     try {
       const res = await fetch(u, {
         headers: { "User-Agent": UA[Math.floor(Math.random() * UA.length)]! },
+        // Without YouTube's proof-of-origin token this usually fails; never
+        // let it hold the request (it took up to ~30s).
+        signal: AbortSignal.timeout(TIMEDTEXT_TIMEOUT_MS),
       });
       if (res.status === 404) continue;
       if (!res.ok) {

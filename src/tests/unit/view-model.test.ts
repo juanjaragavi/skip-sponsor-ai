@@ -108,6 +108,27 @@ describe("describeSegment", () => {
 });
 
 describe("segmentRows", () => {
+  it("shows skips the player refused, and a paused auto-skip, as kept", () => {
+    expect(
+      describeSegment(seg(), policy(), ctx({ blocked: new Set([seg().id]) })),
+    ).toEqual({
+      tag: "KEEP",
+      status: "YouTube’s player blocked the skip",
+    });
+    expect(describeSegment(seg(), policy(), ctx({ paused: true }))).toEqual({
+      tag: "KEEP",
+      status: "Auto-skip paused for this video",
+    });
+    // Already-skipped rows keep their history even when paused later.
+    expect(
+      describeSegment(
+        seg(),
+        policy(),
+        ctx({ paused: true, skipped: new Set([seg().id]) }),
+      ).status,
+    ).toBe("Skipped · 40s");
+  });
+
   it("sorts by start time, numbers rows and formats confidence", () => {
     const rows = segmentRows(
       [

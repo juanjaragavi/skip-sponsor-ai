@@ -4,6 +4,7 @@ import {
   limitCues,
   parseTimestamp,
   splitLongCues,
+  sanitizeCues,
   toTranscriptCues,
   transcriptFingerprint,
 } from "../../extension/transcript";
@@ -73,7 +74,44 @@ describe("buildCues", () => {
   });
 });
 
+describe("sanitizeCues", () => {
+  it("repairs zero/negative-length cues and drops unusable ones", () => {
+    expect(
+      sanitizeCues([
+        { t0: 10, t1: 10, text: "a" },
+        { t0: 12, t1: 11, text: "b" },
+        { t0: Number.NaN, t1: 5, text: "c" },
+        { t0: 20, t1: 22, text: "   " },
+        { t0: 30, t1: 33, text: "ok" },
+      ]),
+    ).toEqual([
+      { t0: 10, t1: 11, text: "a" },
+      { t0: 12, t1: 13, text: "b" },
+      { t0: 30, t1: 33, text: "ok" },
+    ]);
+  });
+});
+
 describe("splitLongCues", () => {
+  it("never emits a zero-length cue for a fragment at the very end of a row (real 400 on Yak5g7-fiHI)", () => {
+    // A row ending with the first word of the next sentence ("… identical. 3")
+    // put the fragment's start at the row end after rounding: t0 === t1.
+    const row = {
+      t0: 260,
+      t1: 276,
+      text: `${"display brightness and color look the same ".repeat(9).trim()}. 3`,
+    };
+    const out = splitLongCues([row]);
+    for (const c of out) expect(c.t1).toBeGreaterThan(c.t0);
+    expect(out.map((c) => c.text).join(" ")).toBe(row.text);
+    expect(
+      analyzeRequestSchema.safeParse({
+        videoId: "Yak5g7-fiHI",
+        transcript: out,
+      }).success,
+    ).toBe(true);
+  });
+
   // Live example (modern panel): a 9s row where the sponsor starts mid-row.
   const row: LlmChunk = {
     t0: 16,

@@ -16,6 +16,7 @@ import {
 import { classifyChunks } from "../services/llm-client";
 import {
   candidatesToSegments,
+  dedupeOverlapping,
   mergeCandidates,
 } from "../services/segment-classifier";
 import { fetchSponsorBlock } from "../services/sponsorblock";
@@ -185,7 +186,7 @@ async function addGapCorroborated(
         s.confidence >= CORROBORATED_CONFIDENCE &&
         !existing.some((e) => segmentsOverlap(e, s)),
     );
-    return [...existing, ...extra].sort((a, b) => a.startTime - b.startTime);
+    return dedupeOverlapping([...existing, ...extra]);
   } catch (err) {
     log.debug({ err, videoId }, "gap corroboration skipped");
     return existing;
@@ -234,7 +235,9 @@ async function runAnalysis(
     // failure) only labels inside real caption gaps are trusted.
     try {
       const gaps = chunks.length > 0 ? findCaptionGaps(chunks) : [WHOLE_VIDEO];
-      segments = corroborateSegments(await fetchSponsorBlock(videoId), gaps);
+      segments = dedupeOverlapping(
+        corroborateSegments(await fetchSponsorBlock(videoId), gaps),
+      );
       status = "degraded";
       await repo.logTelemetry(videoId, "fallback_used");
     } catch {

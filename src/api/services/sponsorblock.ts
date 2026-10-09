@@ -15,7 +15,7 @@ export async function fetchSponsorBlock(
     `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}` +
     `&categories=["sponsor","intro","outro","selfpromo","interaction_reminder"]`;
   assertFetchAllowed(url);
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
   // SponsorBlock answers 404 when a video has no segments: that is data
   // ("no sponsors"), not a failure.
   if (res.status === 404) return [];

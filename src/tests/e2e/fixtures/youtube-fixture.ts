@@ -113,6 +113,8 @@ export interface FixtureOptions {
    * play. Off by default: with media, scripted `tick()` seeks fire `seeking`.
    */
   media?: boolean;
+  /** The player ignores seekTo() (see PAGE_SCRIPT). */
+  resistSeeks?: boolean;
 }
 
 export const FIXTURE_MEDIA_PATH = "/__fixture/blank-150s.webm";
@@ -199,6 +201,14 @@ const PAGE_SCRIPT = String.raw`
   };
   fx.time = () => video.currentTime;
   fx.setAd = (on) => player.classList.toggle("ad-showing", on);
+  // YouTube's player API (called by the extension's MAIN-world script).
+  // resistSeeks simulates a player that refuses/undoes external seeks — the
+  // condition that used to cause an endless skip loop.
+  fx.seekCalls = [];
+  player.seekTo = (t) => {
+    fx.seekCalls.push(t);
+    if (!fx.resistSeeks) video.currentTime = t;
+  };
   fx.panelState = () => ({ visibility: panel.getAttribute("visibility"), rows: content.children.length });
 
   renderDescription(current);
@@ -221,6 +231,7 @@ export function fixtureHtml(
     variant: opts.variant,
     staleMs: opts.staleMs,
     rowDelayMs: opts.rowDelayMs,
+    resistSeeks: opts.resistSeeks ?? false,
     videos: Object.fromEntries(videos.map((v) => [v.id, v])),
   };
   return `<!doctype html>

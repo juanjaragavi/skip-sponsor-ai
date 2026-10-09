@@ -216,6 +216,7 @@ declare global {
       navigate: (id: string) => void;
       openTranscript: () => void;
       setAd: (on: boolean) => void;
+      seekCalls: number[];
       panelState: () => { visibility: string | null; rows: number };
     };
   }

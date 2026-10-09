@@ -80,6 +80,7 @@ export const telemetryRequestSchema = z.object({
   eventType: z.enum([
     "skip_executed",
     "skip_undone",
+    "skip_bounced",
     "fallback_used",
     "llm_error",
     "no_captions",

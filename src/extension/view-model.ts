@@ -25,6 +25,10 @@ export interface RowContext {
   currentTime: number;
   skipped: ReadonlySet<string>;
   overridden: ReadonlySet<string>;
+  /** The player kept snapping back: the skip was abandoned (no loop). */
+  blocked?: ReadonlySet<string>;
+  /** Auto-skip stopped for this video after too many seeks. */
+  paused?: boolean;
 }
 
 /** 222 -> "03:42", 3723 -> "1:02:03" (editor timecode, no frames). */
@@ -69,8 +73,12 @@ export function describeSegment(
     userOverridden: ctx.overridden.has(seg.id),
   });
   const upcoming = seg.startTime > ctx.currentTime;
+  if (ctx.blocked?.has(seg.id))
+    return { tag: "KEEP", status: "YouTube’s player blocked the skip" };
   switch (d.reason) {
     case "auto-skip":
+      if (ctx.paused && !ctx.skipped.has(seg.id))
+        return { tag: "KEEP", status: "Auto-skip paused for this video" };
       return {
         tag: "CUT",
         status: ctx.skipped.has(seg.id)

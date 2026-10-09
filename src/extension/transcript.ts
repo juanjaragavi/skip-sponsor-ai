@@ -116,7 +116,14 @@ export function splitLongCues(cues: readonly LlmChunk[]): LlmChunk[] {
       const t0 = round1(c.t0 + span * (before / total));
       before += p.length;
       const last = subs[subs.length - 1];
-      if (last && t0 - last.t0 < MIN_SUBCUE_SECONDS) last.text += ` ${p}`;
+      // Too close to the previous sub-cue, or to the row's end (a fragment
+      // like the "3" of "… identical. 3 | weeks later" would get t0 === t1
+      // after rounding, and the API rejects the whole upload).
+      if (
+        last &&
+        (t0 - last.t0 < MIN_SUBCUE_SECONDS || c.t1 - t0 < MIN_SUBCUE_SECONDS)
+      )
+        last.text += ` ${p}`;
       else subs.push({ t0, t1: c.t1, text: p });
     }
     subs.forEach((s, i) => (s.t1 = subs[i + 1]?.t0 ?? c.t1));
@@ -162,12 +169,31 @@ export function limitCues(
   return out;
 }
 
+/**
+ * Last line of defence before upload: the API validates every cue and rejects
+ * the whole transcript for a single bad one, so repair what can be repaired
+ * (non-positive length) and drop what cannot (non-finite times, empty text).
+ */
+export function sanitizeCues(cues: readonly LlmChunk[]): LlmChunk[] {
+  return cues
+    .filter(
+      (c) =>
+        Number.isFinite(c.t0) &&
+        Number.isFinite(c.t1) &&
+        c.t0 >= 0 &&
+        c.text.trim() !== "",
+    )
+    .map((c) =>
+      c.t1 > c.t0 ? c : { ...c, t1: round1(c.t0 + MIN_SUBCUE_SECONDS) },
+    );
+}
+
 /** Panel rows -> cues ready for upload. */
 export function toTranscriptCues(
   rows: readonly TranscriptRow[],
   durationSec: number,
 ): LlmChunk[] {
-  return limitCues(splitLongCues(buildCues(rows, durationSec)));
+  return sanitizeCues(limitCues(splitLongCues(buildCues(rows, durationSec))));
 }
 
 /** Identity of a rendered transcript, used to recognise stale panel content. */

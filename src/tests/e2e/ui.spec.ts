@@ -127,14 +127,23 @@ test("popup offers a reload when the YouTube tab predates the extension", async 
   await h.context().route(url, (route) => route.abort());
   const page = await h.context().newPage();
   await page.goto(url).catch(() => undefined);
-  const tabId = await h
-    .context()
-    .serviceWorkers()[0]!
-    .evaluate(
-      async (u) => (await chrome.tabs.query({})).find((t) => t.url === u)?.id,
-      url,
-    );
-  expect(tabId).toBeTruthy();
+  // Chrome may still report an aborted navigation as pendingUrl: poll.
+  let tabId: number | undefined;
+  await expect
+    .poll(async () => {
+      tabId = await h
+        .context()
+        .serviceWorkers()[0]!
+        .evaluate(
+          async (u) =>
+            (await chrome.tabs.query({})).find(
+              (t) => t.url === u || t.pendingUrl === u,
+            )?.id,
+          url,
+        );
+      return tabId;
+    })
+    .toBeTruthy();
   const popup = await h.context().newPage();
   await popup.setViewportSize({ width: 340, height: 600 });
   await popup.goto(

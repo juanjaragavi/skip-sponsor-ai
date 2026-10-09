@@ -69,7 +69,29 @@ const breaker = new CircuitBreaker(callClaude, {
   timeout: MODEL_POLICY.timeoutMs + 1000,
   errorThresholdPercentage: 50,
   resetTimeout: 30_000,
+  // Don't trip on a handful of failures from one long video: require enough
+  // calls in the rolling window before judging the error rate.
+  volumeThreshold: 10,
 });
+
+/**
+ * Max Claude calls in flight across all requests. Firing every batch at once
+ * hit rate limits on long videos, which tripped the breaker for everyone.
+ */
+const MAX_CONCURRENT_CALLS = 3;
+let active = 0;
+const waiting: (() => void)[] = [];
+async function limited<T>(fn: () => Promise<T>): Promise<T> {
+  if (active >= MAX_CONCURRENT_CALLS)
+    await new Promise<void>((resolve) => waiting.push(resolve));
+  active++;
+  try {
+    return await fn();
+  } finally {
+    active--;
+    waiting.shift()?.();
+  }
+}
 
 export interface ClassifyResult {
   candidates: LlmSegmentCandidate[];
@@ -105,7 +127,8 @@ async function runBatches(
  */
 export async function classifyChunks(
   chunks: LlmChunk[][],
-  call: CallFn = (m, c) => breaker.fire(m, c) as Promise<LlmSegmentCandidate[]>,
+  call: CallFn = (m, c) =>
+    limited(() => breaker.fire(m, c) as Promise<LlmSegmentCandidate[]>),
 ): Promise<ClassifyResult> {
   const cues = dedupeCues(chunks);
   const batches = batchCues(cues, LLM_BATCH_CUES, LLM_BATCH_OVERLAP_CUES);
