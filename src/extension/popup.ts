@@ -2,6 +2,7 @@ import "@fontsource-variable/roboto";
 import "./ui/tokens.css";
 import "./popup.css";
 import type { UserPolicy } from "../shared/types";
+import { sameChannel } from "./policy";
 import type { PageState } from "../shared/messages";
 import { brandMark } from "./ui/brand";
 import { icon, type IconName } from "./ui/icons";
@@ -286,7 +287,9 @@ function renderMonitor(): void {
 
   els.channel.hidden = !s.channelId;
   if (s.channelId) {
-    const allowed = policy.blockedChannels.includes(s.channelId);
+    const allowed = policy.blockedChannels.some((c) =>
+      sameChannel(c, s.channelId!),
+    );
     const name = s.channelName ?? s.channelId;
     els.channelName.textContent = allowed ? `${name} · skipping off` : name;
     els.channelToggle.textContent = allowed
@@ -333,7 +336,9 @@ function bind(): void {
   });
   els.channelToggle.addEventListener("click", () => {
     if (!state?.channelId) return;
-    const allowed = policy.blockedChannels.includes(state.channelId);
+    const allowed = policy.blockedChannels.some((c) =>
+      sameChannel(c, state!.channelId!),
+    );
     void setChannelAllowed(state.channelId, !allowed, state.channelName);
   });
   els.settings.addEventListener(

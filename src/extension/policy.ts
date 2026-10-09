@@ -17,7 +17,10 @@ export function decideSkip(
   if (policy.mode === "off") return { shouldSkip: false, reason: "mode-off" };
   if (opts.userOverridden)
     return { shouldSkip: false, reason: "user-override" };
-  if (channelId && policy.blockedChannels.includes(channelId))
+  if (
+    channelId &&
+    policy.blockedChannels.some((c) => sameChannel(c, channelId))
+  )
     return { shouldSkip: false, reason: "channel-blocked" };
   // Only paid sponsor reads are skipped; intros, outros and self-promo are not.
   if (segment.category !== "sponsor")
@@ -27,6 +30,16 @@ export function decideSkip(
   if (policy.mode === "notify")
     return { shouldSkip: false, reason: "notify-only" };
   return { shouldSkip: true, reason: "auto-skip" };
+}
+
+/**
+ * Channel ids are "@handle" (case-insensitive on YouTube) or "channel/UC…"
+ * (case-sensitive). A handle typed in Settings must match the page's link.
+ */
+export function sameChannel(a: string, b: string): boolean {
+  return a.startsWith("@") && b.startsWith("@")
+    ? a.toLowerCase() === b.toLowerCase()
+    : a === b;
 }
 
 export const DEFAULT_POLICY: UserPolicy = {

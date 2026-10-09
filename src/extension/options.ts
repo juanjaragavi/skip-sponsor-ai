@@ -4,12 +4,20 @@ import "./options.css";
 import type { UserPolicy } from "../shared/types";
 import { brandMark } from "./ui/brand";
 import { icon, type IconName } from "./ui/icons";
-import { gatePosition } from "./view-model";
+import { sameChannel } from "./policy";
+import {
+  displayChannelId,
+  gatePosition,
+  parseChannelInput,
+} from "./view-model";
 import {
   loadChannelLabels,
   loadPolicy,
+  loadTelemetryEnabled,
   onPolicyChange,
+  resetAll,
   setChannelAllowed,
+  setTelemetryEnabled,
   updatePolicy,
   type ChannelLabels,
 } from "./settings";
@@ -24,12 +32,25 @@ const els = {
   threshold: $<HTMLInputElement>("#threshold"),
   thrValue: $("#thr-value"),
   thrHint: $("#thr-hint"),
+  channelForm: $<HTMLFormElement>("#channel-form"),
+  channelInput: $<HTMLInputElement>("#channel-input"),
+  channelHint: $("#channel-hint"),
   channelList: $("#channel-list"),
   channelEmpty: $("#channel-empty"),
+  telemetry: $<HTMLButtonElement>("#telemetry"),
+  reset: $<HTMLButtonElement>("#reset"),
+  serviceStatus: $("#service-status"),
+  serviceHost: $("#service-host"),
+  serviceRetry: $<HTMLButtonElement>("#service-retry"),
 };
+
+const TABS = ["general", "channels", "privacy", "about"] as const;
+type Tab = (typeof TABS)[number];
+const CHANNEL_HINT = "Paste a channel link, or type its @handle.";
 
 let policy: UserPolicy;
 let labels: ChannelLabels = {};
+let telemetryOn = true;
 
 /** Avatar tints from the design's channel rows (blue, mint, amber, violet). */
 const TINTS = [
@@ -41,7 +62,7 @@ const TINTS = [
 
 function hydrateIcons(): void {
   $("#mark").append(brandMark(28));
-  $("#about-mark").append(brandMark(32));
+  $("#about-mark").append(brandMark(36));
   document.querySelectorAll<HTMLElement>("[data-icon]").forEach((node) => {
     node.prepend(
       icon(
@@ -52,6 +73,26 @@ function hydrateIcons(): void {
   });
   $("#version").textContent = `Version ${chrome.runtime.getManifest().version}`;
 }
+
+/* ---------- Tabs: one section at a time, deep-linkable (#channels) ---------- */
+
+function currentTab(): Tab {
+  const h = location.hash.slice(1);
+  return (TABS as readonly string[]).includes(h) ? (h as Tab) : "general";
+}
+
+function showTab(tab: Tab): void {
+  for (const id of TABS) $(`#${id}`).hidden = id !== tab;
+  document.querySelectorAll<HTMLAnchorElement>(".nav__item").forEach((a) => {
+    if (a.hash === `#${tab}`) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+  document.title = `SkipSponsor AI — ${tab[0]!.toUpperCase()}${tab.slice(1)}`;
+  window.scrollTo(0, 0);
+  if (tab === "about") void checkService();
+}
+
+/* ---------- Channels ---------- */
 
 function initials(name: string): string {
   const words = name
@@ -77,9 +118,14 @@ function renderChannels(): void {
   els.channelEmpty.hidden = ids.length > 0;
   els.channelList.replaceChildren(
     ...ids.map((id) => {
-      const handle = id.startsWith("@") ? id : id.replace(/^channel\//, "");
+      const handle = displayChannelId(id);
       const name = labels[id] ?? handle;
-      const [bg, fg] = TINTS[hash(id) % TINTS.length]!;
+      // No display name known (added by hand): show the channel link instead
+      // of repeating the handle.
+      const sub = labels[id]
+        ? handle
+        : `youtube.com/${id.startsWith("@") ? handle : `channel/${handle}`}`;
+      const [bg, fg] = TINTS[hash(id.toLowerCase()) % TINTS.length]!;
       const row = document.createElement("div");
       row.className = "channel";
       row.setAttribute("role", "listitem");
@@ -95,7 +141,7 @@ function renderChannels(): void {
       n.textContent = name;
       const h = document.createElement("span");
       h.className = "channel__handle";
-      h.textContent = handle;
+      h.textContent = sub;
       text.append(n, h);
       const remove = document.createElement("button");
       remove.type = "button";
@@ -112,6 +158,36 @@ function renderChannels(): void {
   );
 }
 
+function channelHint(text: string, kind: "error" | "ok" | "" = ""): void {
+  els.channelHint.textContent = text;
+  els.channelHint.className = `hint${kind ? ` is-${kind}` : ""}`;
+  els.channelInput.setAttribute("aria-invalid", String(kind === "error"));
+}
+
+async function addChannel(): Promise<void> {
+  const raw = els.channelInput.value;
+  if (!raw.trim()) return channelHint(CHANNEL_HINT);
+  const id = parseChannelInput(raw);
+  if (!id)
+    return channelHint(
+      "That doesn’t look like a YouTube channel. Try @creator or a link like youtube.com/@creator.",
+      "error",
+    );
+  if (policy.blockedChannels.some((c) => sameChannel(c, id)))
+    return channelHint(
+      `${displayChannelId(id)} is already in the list.`,
+      "error",
+    );
+  await setChannelAllowed(id, true);
+  els.channelInput.value = "";
+  channelHint(
+    `Added ${displayChannelId(id)}. Its sponsor reads will play normally.`,
+    "ok",
+  );
+}
+
+/* ---------- General ---------- */
+
 function renderThreshold(value: number): void {
   const pct = Math.round(value * 100);
   els.threshold.value = String(pct);
@@ -120,6 +196,54 @@ function renderThreshold(value: number): void {
   els.thrValue.textContent = `${pct}%`;
   els.thrHint.textContent = `Skip only when the AI is at least ${pct}% sure the segment is a sponsor read.`;
 }
+
+/* ---------- Privacy ---------- */
+
+let resetTimer = 0;
+async function onReset(): Promise<void> {
+  if (!els.reset.classList.contains("is-armed")) {
+    // Two-step confirm: no modal, no accidental wipe.
+    els.reset.classList.add("is-armed");
+    els.reset.lastChild!.textContent = "Click again to reset";
+    resetTimer = window.setTimeout(disarmReset, 4000);
+    return;
+  }
+  disarmReset();
+  await resetAll();
+  [policy, labels, telemetryOn] = await Promise.all([
+    loadPolicy(),
+    loadChannelLabels(),
+    loadTelemetryEnabled(),
+  ]);
+  render();
+  els.reset.lastChild!.textContent = "Done — reset";
+  window.setTimeout(() => (els.reset.lastChild!.textContent = "Reset"), 2500);
+}
+
+function disarmReset(): void {
+  window.clearTimeout(resetTimer);
+  els.reset.classList.remove("is-armed");
+  els.reset.lastChild!.textContent = "Reset";
+}
+
+/* ---------- About ---------- */
+
+async function checkService(): Promise<void> {
+  els.serviceStatus.dataset["state"] = "checking";
+  els.serviceStatus.textContent = "Checking…";
+  const res = (await chrome.runtime
+    .sendMessage({ type: "HEALTH_GET" })
+    .catch(() => null)) as { ok: boolean; host: string } | null;
+  els.serviceStatus.dataset["state"] = res?.ok ? "online" : "offline";
+  els.serviceStatus.textContent = res?.ok ? "Online" : "Unreachable";
+  els.serviceHost.textContent = res?.host
+    ? res.ok
+      ? `Connected to ${res.host}`
+      : `Can’t reach ${res.host}. Videos will play normally until it’s back.`
+    : "Status unavailable";
+}
+
+/* ---------- Render + bind ---------- */
 
 function render(): void {
   els.root.classList.toggle("is-off", !policy.globalEnabled);
@@ -131,31 +255,12 @@ function render(): void {
   }
   renderThreshold(policy.confidenceThreshold);
   renderChannels();
-}
-
-/** Highlight the nav item for the section in view. */
-function trackSections(): void {
-  const items = [...document.querySelectorAll<HTMLAnchorElement>(".nav__item")];
-  const mark = (id: string): void =>
-    items.forEach((a) =>
-      a.setAttribute("aria-current", String(a.hash === `#${id}`)),
-    );
-  mark(location.hash.slice(1) || "general");
-  const observer = new IntersectionObserver(
-    (entries) => {
-      const visible = entries.filter((e) => e.isIntersecting);
-      if (visible[0]) mark(visible[0].target.id);
-    },
-    { rootMargin: "-20% 0px -70% 0px" },
-  );
-  document.querySelectorAll("section[id]").forEach((s) => observer.observe(s));
-  items.forEach((a) =>
-    a.addEventListener("click", () => mark(a.hash.slice(1))),
-  );
+  els.telemetry.setAttribute("aria-checked", String(telemetryOn));
 }
 
 let saveTimer = 0;
 function bind(): void {
+  window.addEventListener("hashchange", () => showTab(currentTab()));
   els.enabled.addEventListener(
     "click",
     () => void updatePolicy({ globalEnabled: !policy.globalEnabled }),
@@ -186,6 +291,21 @@ function bind(): void {
       150,
     );
   });
+  els.channelForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    void addChannel();
+  });
+  els.channelInput.addEventListener("input", () => {
+    if (els.channelInput.getAttribute("aria-invalid") === "true")
+      channelHint(CHANNEL_HINT);
+  });
+  els.telemetry.addEventListener("click", () => {
+    telemetryOn = !telemetryOn;
+    els.telemetry.setAttribute("aria-checked", String(telemetryOn));
+    void setTelemetryEnabled(telemetryOn);
+  });
+  els.reset.addEventListener("click", () => void onReset());
+  els.serviceRetry.addEventListener("click", () => void checkService());
   onPolicyChange((p) => {
     policy = p;
     void loadChannelLabels().then((l) => {
@@ -197,10 +317,14 @@ function bind(): void {
 
 async function init(): Promise<void> {
   hydrateIcons();
-  [policy, labels] = await Promise.all([loadPolicy(), loadChannelLabels()]);
+  [policy, labels, telemetryOn] = await Promise.all([
+    loadPolicy(),
+    loadChannelLabels(),
+    loadTelemetryEnabled(),
+  ]);
   bind();
   render();
-  trackSections();
+  showTab(currentTab());
 }
 
 void init();

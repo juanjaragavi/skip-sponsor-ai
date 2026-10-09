@@ -68,9 +68,14 @@ included in the extension.
 
 - Turn skipping off with the switch in the extension popup, or choose **Off**
   mode. Both stop skipping right away.
-- Turn skipping off for a single channel ("Don't skip this channel").
-- **Uninstalling** the extension deletes your settings and install token from
-  your browser.
+- Turn skipping off for a single channel ("Don't skip this channel" in the
+  popup, or Settings › Channels).
+- Stop sending skip statistics: Settings › Privacy › **Share skip
+  statistics**. Skipping keeps working; no skip or undo events are sent.
+- Erase everything this browser holds (settings, channel list, anonymous
+  install token): Settings › Privacy › **Reset SkipSponsor AI**.
+- **Uninstalling** the extension also deletes your settings and install token
+  from your browser.
 - To request deletion of the cached result for a specific video, open an issue
   with the video ID (see Contact). Results are deleted automatically after 30
   days in any case.

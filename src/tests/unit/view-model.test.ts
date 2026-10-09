@@ -1,12 +1,14 @@
 import { describe, it, expect } from "vitest";
 import type { SponsorSegment, UserPolicy } from "../../shared/types";
-import { DEFAULT_POLICY } from "../../extension/policy";
+import { DEFAULT_POLICY, sameChannel } from "../../extension/policy";
 import {
   activeRowId,
   describeSegment,
+  displayChannelId,
   formatRange,
   formatTimecode,
   gatePosition,
+  parseChannelInput,
   segmentRows,
   thresholdSummary,
   type RowContext,
@@ -166,6 +168,67 @@ describe("thresholdSummary", () => {
     expect(thresholdSummary([], policy())).toBe(
       "Dots show this video’s detected segments — none so far.",
     );
+  });
+});
+
+describe("parseChannelInput", () => {
+  it("accepts handles and normalizes them like a page link", () => {
+    expect(parseChannelInput("@JayzTwoCents")).toBe("@JayzTwoCents");
+    expect(parseChannelInput("  @alpha-channel ")).toBe("@alpha-channel");
+    expect(parseChannelInput("@ハンドル名")).toBe(
+      `@${encodeURIComponent("ハンドル名")}`,
+    );
+  });
+  it("accepts channel links with or without a scheme", () => {
+    expect(parseChannelInput("https://www.youtube.com/@creator/videos")).toBe(
+      "@creator",
+    );
+    expect(parseChannelInput("youtube.com/@creator")).toBe("@creator");
+    expect(parseChannelInput("https://m.youtube.com/@creator")).toBe(
+      "@creator",
+    );
+    const uc = "UC_x5XG1OV2P6uZZ5FSM9Ttw";
+    expect(parseChannelInput(`https://www.youtube.com/channel/${uc}`)).toBe(
+      `channel/${uc}`,
+    );
+    expect(parseChannelInput(uc)).toBe(`channel/${uc}`);
+  });
+  it("rejects anything that is not a YouTube channel", () => {
+    for (const bad of [
+      "",
+      "creator",
+      "@ab",
+      "https://evil.example.com/@creator",
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://www.youtube.com/channel/notAnId",
+      "javascript:alert(1)",
+    ])
+      expect(parseChannelInput(bad), bad).toBeNull();
+  });
+  it("displays ids readably", () => {
+    expect(displayChannelId(`@${encodeURIComponent("ハンドル名")}`)).toBe(
+      "@ハンドル名",
+    );
+    expect(displayChannelId("channel/UC_x5XG1OV2P6uZZ5FSM9Ttw")).toBe(
+      "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+    );
+  });
+});
+
+describe("sameChannel", () => {
+  it("compares handles case-insensitively and UC ids exactly", () => {
+    expect(sameChannel("@JayzTwoCents", "@jayztwocents")).toBe(true);
+    expect(sameChannel("channel/UCabc", "channel/ucabc")).toBe(false);
+    expect(sameChannel("@abc", "channel/abc")).toBe(false);
+  });
+  it("a handle typed in lower case still blocks the channel", () => {
+    expect(
+      describeSegment(
+        seg(),
+        policy({ blockedChannels: ["@chan"] }),
+        ctx({ channelId: "@CHAN" }),
+      ).status,
+    ).toBe("Channel allowed");
   });
 });
 

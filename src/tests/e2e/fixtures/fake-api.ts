@@ -61,6 +61,8 @@ export class FakeApi {
   ): Promise<{ status: number; body?: unknown }> {
     if (req.method === "OPTIONS") return { status: 204 };
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method === "GET" && url.pathname === "/healthz")
+      return { status: 200, body: { ok: true, version: "e2e" } };
     const raw = await readBody(req);
     const get = /^\/v1\/segments\/([A-Za-z0-9_-]{11})$/.exec(url.pathname);
     if (req.method === "GET" && get) {

@@ -171,3 +171,47 @@ export const gatePosition = (confidence: number): number =>
     1,
     Math.max(0, (confidence - THRESHOLD_MIN) / (THRESHOLD_MAX - THRESHOLD_MIN)),
   );
+
+const HANDLE = /^@[\p{L}\p{N}._-]{3,30}$/u;
+const CHANNEL_ID = /^UC[\w-]{22}$/;
+
+/**
+ * Options › Channels › "Add a channel": accepts "@creator", a channel link
+ * (youtube.com/@creator, youtube.com/channel/UC…) or a bare UC… id. Returns
+ * the id in the same form the content script reads from the page link
+ * ("@handle" percent-encoded like an href, or "channel/UC…"), or null.
+ */
+export function parseChannelInput(input: string): string | null {
+  const raw = input.trim();
+  if (HANDLE.test(raw)) return "@" + encodeURIComponent(raw.slice(1));
+  if (CHANNEL_ID.test(raw)) return `channel/${raw}`;
+  let url: URL;
+  try {
+    url = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return null;
+  }
+  if (!/(^|\.)youtube\.com$/i.test(url.hostname)) return null;
+  const [first, second] = url.pathname.split("/").filter(Boolean);
+  if (first?.startsWith("@")) {
+    const handle = safeDecode(first);
+    return HANDLE.test(handle)
+      ? "@" + encodeURIComponent(handle.slice(1))
+      : null;
+  }
+  if (first === "channel" && second && CHANNEL_ID.test(second))
+    return `channel/${second}`;
+  return null;
+}
+
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+/** "@%E3%83%8F…" -> "@ハ…", "channel/UC…" -> "UC…" for display. */
+export const displayChannelId = (id: string): string =>
+  safeDecode(id.replace(/^channel\//, ""));

@@ -2,9 +2,9 @@
 import type { LlmChunk, UserPolicy } from "../shared/types";
 import { DEFAULT_POLICY } from "./policy";
 
-const API_BASE = `${
-  import.meta.env.VITE_API_BASE_URL ?? "https://api.skipsponsor.example.com"
-}/v1`;
+const API_ORIGIN =
+  import.meta.env.VITE_API_BASE_URL ?? "https://api.skipsponsor.example.com";
+const API_BASE = `${API_ORIGIN}/v1`;
 const inflight = new Map<string, Promise<unknown>>();
 
 async function getInstallToken(): Promise<string> {
@@ -68,6 +68,9 @@ async function postTelemetry(
   latencyMs?: number,
 ): Promise<void> {
   try {
+    // Privacy › "Share skip statistics" off: send nothing.
+    const s = await chrome.storage.sync.get(["telemetryEnabled"]);
+    if (s["telemetryEnabled"] === false) return;
     const token = await getInstallToken();
     await fetch(`${API_BASE}/telemetry`, {
       method: "POST",
@@ -150,6 +153,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === "POLICY_GET") {
     ensurePolicy().then((p) => sendResponse({ policy: p }));
+    return true;
+  }
+  if (msg?.type === "HEALTH_GET") {
+    // About › Service status.
+    const host = new URL(API_ORIGIN).host;
+    fetch(`${API_ORIGIN}/healthz`, { signal: AbortSignal.timeout(5000) })
+      .then((r) => sendResponse({ ok: r.ok, host }))
+      .catch(() => sendResponse({ ok: false, host }));
     return true;
   }
   return false;

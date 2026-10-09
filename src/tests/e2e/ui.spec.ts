@@ -254,6 +254,15 @@ test("popup monitor, live settings, toolbar icon state, channel allow-list and o
 
   // …shows up in the options page, where it can be removed.
   const options = await openOptions(h);
+  await expect(
+    options.locator('.mode-card[data-mode="notify"]'),
+  ).toHaveAttribute("aria-checked", "true");
+  await expect(options.locator("#thr-value")).toHaveText("60%");
+  await options.screenshot({ path: `${SHOTS}/options-general.png` });
+
+  await options.locator(".nav__item", { hasText: "Channels" }).click();
+  await expect(options.locator("#channels")).toBeVisible();
+  await expect(options.locator("#general")).toBeHidden();
   const channel = options.locator(".channel");
   await expect(channel).toHaveCount(1);
   await expect(channel.locator(".channel__name")).toHaveText("Alpha Channel");
@@ -261,12 +270,7 @@ test("popup monitor, live settings, toolbar icon state, channel allow-list and o
     "@alpha-channel",
   );
   await expect(channel.locator(".avatar")).toHaveText("AC");
-  await expect(
-    options.locator('.mode-card[data-mode="notify"]'),
-  ).toHaveAttribute("aria-checked", "true");
-  await expect(options.locator("#thr-value")).toHaveText("60%");
-  await options.setViewportSize({ width: 1280, height: 1400 });
-  await options.screenshot({ path: `${SHOTS}/options.png`, fullPage: true });
+  await options.screenshot({ path: `${SHOTS}/options-channels.png` });
 
   await channel.locator("button.remove").click();
   await expect
@@ -275,6 +279,7 @@ test("popup monitor, live settings, toolbar icon state, channel allow-list and o
   await expect(options.locator("#channel-empty")).toBeVisible();
 
   // Options -> popup sync is live too.
+  await options.locator(".nav__item", { hasText: "General" }).click();
   await options.locator('.mode-card[data-mode="off"]').click();
   await expect(popup.locator('.tool[data-mode="off"]')).toHaveAttribute(
     "aria-checked",
@@ -283,4 +288,164 @@ test("popup monitor, live settings, toolbar icon state, channel allow-list and o
   await expect
     .poll(() => actionTitle(h))
     .toBe("SkipSponsor AI — skipping is off");
+});
+
+test("options: sidebar items switch tabs and deep links open the right tab", async ({
+  h,
+}) => {
+  await h.openPath("/");
+  const options = await openOptions(h);
+  const visible = () =>
+    options.evaluate(() =>
+      [...document.querySelectorAll("main > section")]
+        .filter((s) => !(s as HTMLElement).hidden)
+        .map((s) => s.id),
+    );
+  expect(await visible()).toEqual(["general"]);
+  for (const [label, id] of [
+    ["Channels", "channels"],
+    ["Privacy", "privacy"],
+    ["About", "about"],
+    ["General", "general"],
+  ] as const) {
+    await options.locator(".nav__item", { hasText: label }).click();
+    await expect.poll(visible).toEqual([id]);
+    await expect(
+      options.locator(".nav__item", { hasText: label }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(new URL(options.url()).hash).toBe(`#${id}`);
+  }
+  await options.goto(options.url().replace(/#.*$/, "#privacy"));
+  await options.reload();
+  await expect.poll(visible).toEqual(["privacy"]);
+});
+
+test("options › Channels: add by @handle or link, validate, and the channel stops skipping", async ({
+  h,
+}) => {
+  const page = await h.open(VIDEO_A.id);
+  const options = await openOptions(h);
+  await options.locator(".nav__item", { hasText: "Channels" }).click();
+  const input = options.locator("#channel-input");
+  const hint = options.locator("#channel-hint");
+
+  await input.fill("not a channel");
+  await input.press("Enter");
+  await expect(hint).toContainText("doesn’t look like a YouTube channel");
+  await expect(input).toHaveAttribute("aria-invalid", "true");
+
+  // Typed in a different case than the page link: still matches.
+  await input.fill("https://www.youtube.com/@ALPHA-channel/videos");
+  await options.locator("#channel-form button[type=submit]").click();
+  await expect(hint).toHaveText(
+    "Added @ALPHA-channel. Its sponsor reads will play normally.",
+  );
+  await expect(options.locator(".channel")).toHaveCount(1);
+  await expect(input).toHaveValue("");
+
+  await input.fill("@alpha-channel");
+  await input.press("Enter");
+  await expect(hint).toContainText("already in the list");
+  await options.screenshot({ path: `${SHOTS}/options-channels-added.png` });
+
+  await waitForAnalysis(h.api, VIDEO_A.id);
+  await page.bringToFront();
+  await page.waitForTimeout(1000);
+  expect(await tick(page, 31)).toBeCloseTo(31, 3); // no skip on this channel
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__fx.time())).toBeCloseTo(31, 3);
+});
+
+test("options › Privacy: statistics switch stops telemetry; Reset clears everything", async ({
+  h,
+}) => {
+  const page = await h.open(VIDEO_A.id);
+  await expectSkip(page, 31, 60.25);
+  await expect
+    .poll(
+      () =>
+        h.api.telemetry.filter((t) => t.eventType === "skip_executed").length,
+    )
+    .toBe(1);
+
+  const options = await openOptions(h);
+  await options.locator(".nav__item", { hasText: "Privacy" }).click();
+  const sw = h.context().serviceWorkers()[0]!;
+  const token = () =>
+    sw.evaluate(
+      async () =>
+        (await chrome.storage.local.get(["installToken"]))["installToken"],
+    );
+  const firstToken = await token();
+  expect(firstToken).toBeTruthy();
+
+  await options.locator("#telemetry").click();
+  await expect(options.locator("#telemetry")).toHaveAttribute(
+    "aria-checked",
+    "false",
+  );
+  await expect
+    .poll(() =>
+      sw.evaluate(
+        async () =>
+          (await chrome.storage.sync.get(["telemetryEnabled"]))[
+            "telemetryEnabled"
+          ],
+      ),
+    )
+    .toBe(false);
+  await options.waitForTimeout(300); // let the switch transition finish
+  await options.screenshot({ path: `${SHOTS}/options-privacy.png` });
+
+  await page.bringToFront();
+  await page.evaluate(() => window.__fx.tick(5));
+  await page.waitForTimeout(200);
+  await expectSkip(page, 31, 60.25);
+  await page.waitForTimeout(1000);
+  expect(
+    h.api.telemetry.filter((t) => t.eventType === "skip_executed").length,
+  ).toBe(1);
+
+  // Reset: two-step confirm, then settings, channel list and token are gone.
+  await setPolicy(h, { mode: "notify", blockedChannels: ["@someone"] });
+  await options.bringToFront();
+  const reset = options.locator("#reset");
+  await reset.click();
+  await expect(reset).toHaveText("Click again to reset");
+  await reset.click();
+  await expect(reset).toHaveText("Done — reset");
+  const policy = await getPolicy(h);
+  expect(policy["mode"]).toBe("auto");
+  expect(policy["blockedChannels"]).toEqual([]);
+  await expect(options.locator("#telemetry")).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
+  expect(await token()).toBeUndefined();
+});
+
+test("options › About: version, links and live service status", async ({
+  h,
+}) => {
+  await h.openPath("/");
+  const options = await openOptions(h);
+  await options.locator(".nav__item", { hasText: "About" }).click();
+  await expect(options.locator("#version")).toHaveText("Version 1.0.0");
+  await expect(options.locator("#service-status")).toHaveText("Online");
+  await expect(options.locator("#service-host")).toHaveText(
+    "Connected to 127.0.0.1:39517",
+  );
+  for (const name of ["Support", "Privacy policy", "Source code"])
+    await expect(
+      options.locator("#about a.link", { hasText: name }),
+    ).toHaveAttribute("href", /^https:\/\/github\.com\/juanjaragavi\//);
+  await options.screenshot({ path: `${SHOTS}/options-about.png` });
+
+  await h.api.stop();
+  await options.locator("#service-retry").click();
+  await expect(options.locator("#service-status")).toHaveText("Unreachable");
+  await expect(options.locator("#service-host")).toContainText(
+    "Videos will play normally",
+  );
+  await h.api.start(39517);
 });
