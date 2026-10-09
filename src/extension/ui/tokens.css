@@ -1,0 +1,108 @@
+/*
+ * SkipSponsor AI design tokens — variables from design/SkipSponsorAI.pen.
+ * UI type is Roboto (bundled, no remote fonts: MV3 CSP).
+ */
+:root {
+  --ink: #0e1116;
+  --surface: #171a21;
+  --surface-2: #1f232c;
+  --line: #2a2f3a;
+  --violet: #7b61ff;
+  --violet-soft: #7b61ff2e;
+  --violet-strong: #9b87ff;
+  --violet-ui: #6a4ff5;
+  --mint: #3ddc97;
+  --amber: #ffb547;
+  --text: #f5f7fa;
+  --muted: #9aa3b2;
+  --font-ui:
+    "Roboto Variable", Roboto, system-ui, -apple-system, "Segoe UI", Arial,
+    sans-serif;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--violet-strong);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Switch — "Toggle" (44x24, knob 18) inside a 52x44 hit area. */
+.switch {
+  width: 52px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.switch__track {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  padding: 3px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: var(--line);
+  transition: background 0.15s ease;
+}
+.switch__knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+.switch[aria-checked="true"] .switch__track {
+  background: var(--violet-ui);
+}
+.switch[aria-checked="true"] .switch__knob {
+  transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -21,6 +21,8 @@ export class FakeApi {
   readonly telemetry: { videoId: string; eventType: string }[] = [];
   /** Segments the GET (SponsorBlock fallback) path returns per video. */
   readonly fallbackSegments = new Map<string, unknown[]>();
+  /** Extra segments appended to the analyze result per video (e.g. low confidence). */
+  readonly extraSegments = new Map<string, unknown[]>();
   private server: Server | null = null;
 
   async start(port: number): Promise<void> {
@@ -90,11 +92,10 @@ export class FakeApi {
       });
       return {
         status: 200,
-        body: analysis(
-          parsed.data.videoId,
-          "ready",
-          classify(parsed.data.videoId, transcript),
-        ),
+        body: analysis(parsed.data.videoId, "ready", [
+          ...classify(parsed.data.videoId, transcript),
+          ...(this.extraSegments.get(parsed.data.videoId) ?? []),
+        ]),
       };
     }
     if (req.method === "POST" && url.pathname === "/v1/telemetry") {

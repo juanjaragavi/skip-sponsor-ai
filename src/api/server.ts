@@ -18,11 +18,12 @@ export function buildServer(): ReturnType<typeof Fastify> {
       err instanceof ZodError
         ? 400
         : ((err as { statusCode?: number }).statusCode ?? 500);
+    const message = err instanceof Error ? err.message : "Unexpected error";
     void reply.code(status).send({
       type: `https://api.skipsponsor.example.com/problems/${status}`,
-      title: err.message,
+      title: message,
       status,
-      detail: err.message,
+      detail: message,
       instance: req.url,
     });
   });

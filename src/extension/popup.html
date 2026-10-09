@@ -1,35 +1,124 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <style>
-      body {
-        width: 280px;
-        font: 14px system-ui;
-        padding: 12px;
-      }
-      label {
-        display: block;
-        margin: 8px 0;
-      }
-    </style>
+    <meta name="viewport" content="width=340" />
+    <title>SkipSponsor AI</title>
   </head>
   <body>
-    <h3>SkipSponsor AI</h3>
-    <label><input type="checkbox" id="enabled" /> Enabled</label>
-    <label
-      >Mode
-      <select id="mode">
-        <option value="auto">auto</option>
-        <option value="notify">notify</option>
-        <option value="off">off</option>
-      </select></label
-    >
-    <label
-      >Confidence
-      <input type="number" id="thr" min="0.5" max="0.95" step="0.01"
-    /></label>
-    <button id="save">Save</button>
+    <main class="popup" id="popup">
+      <header class="header">
+        <div class="brand">
+          <span id="mark" class="mark"></span>
+          <span class="app">SkipSponsor AI</span>
+        </div>
+        <button
+          id="enabled"
+          class="switch"
+          type="button"
+          role="switch"
+          aria-checked="true"
+          aria-label="Skip sponsor reads"
+        >
+          <span class="switch__track"><span class="switch__knob"></span></span>
+        </button>
+      </header>
+
+      <section class="monitor" aria-labelledby="monitor-label">
+        <div class="row-between">
+          <span id="monitor-label" class="label">This video</span>
+          <span id="tc" class="tc tabular"></span>
+        </div>
+        <div id="timeline" class="timeline" aria-hidden="true"></div>
+        <div
+          id="edits"
+          class="edits"
+          role="list"
+          aria-label="Detected segments"
+        ></div>
+        <div id="channel" class="channel" hidden>
+          <span id="channel-name" class="channel__name"></span>
+          <button
+            id="channel-toggle"
+            class="link link--small"
+            type="button"
+          ></button>
+        </div>
+      </section>
+
+      <div class="body" id="controls">
+        <section class="mode">
+          <span id="mode-label" class="label">Mode</span>
+          <div class="tools" role="radiogroup" aria-labelledby="mode-label">
+            <button
+              class="tool"
+              type="button"
+              role="radio"
+              data-mode="auto"
+              data-icon="scissors"
+            >
+              <span>Auto-skip</span>
+            </button>
+            <button
+              class="tool"
+              type="button"
+              role="radio"
+              data-mode="notify"
+              data-icon="hand"
+            >
+              <span>Notify</span>
+            </button>
+            <button
+              class="tool"
+              type="button"
+              role="radio"
+              data-mode="off"
+              data-icon="circle-off"
+            >
+              <span>Off</span>
+            </button>
+          </div>
+          <p id="mode-help" class="helper"></p>
+        </section>
+
+        <section class="threshold">
+          <div class="row-between">
+            <span id="thr-label" class="label">Cut threshold</span>
+            <span id="thr-value" class="badge tabular">78%</span>
+          </div>
+          <div id="gate" class="gate">
+            <div class="zone zone--keep"></div>
+            <div class="zone zone--cut"></div>
+            <div id="ticks"></div>
+            <div id="dots"></div>
+            <div class="gate__line"></div>
+            <div class="gate__handle"></div>
+            <input
+              id="threshold"
+              type="range"
+              min="50"
+              max="95"
+              step="1"
+              aria-labelledby="thr-label"
+            />
+          </div>
+          <div class="row-between zone-labels">
+            <span>← keep · 50%</span><span>95% · cut →</span>
+          </div>
+          <p id="thr-help" class="helper"></p>
+        </section>
+      </div>
+
+      <footer class="footer">
+        <span class="privacy"
+          ><span data-icon="lock" data-size="12"></span>Captions only · applies
+          instantly</span
+        >
+        <button id="settings" class="link" type="button">
+          Settings <span data-icon="arrow-up-right" data-size="14"></span>
+        </button>
+      </footer>
+    </main>
     <script type="module" src="./popup.ts"></script>
   </body>
 </html>

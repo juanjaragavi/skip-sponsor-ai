@@ -3,10 +3,11 @@ import type {
   VideoAnalysis,
   UserPolicy,
 } from "../shared/types";
+import type { AnalysisPhase, PageState } from "../shared/messages";
 import { DomVideoAdapter, getVideoIdFromUrl } from "./video-adapter";
 import { isInSegment } from "./segments";
 import { decideSkip, DEFAULT_POLICY } from "./policy";
-import { showNotifyBanner, showSkipToast } from "./toast";
+import { showNotifyBanner, showSkipToast, type NotifyHandle } from "./toast";
 import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 
@@ -14,10 +15,14 @@ const adapter = new DomVideoAdapter();
 let segments: SponsorSegment[] = [];
 let policy: UserPolicy = { ...DEFAULT_POLICY };
 let overridden = new Set<string>();
+/** Segments skipped during this playback (shown as "Skipped" in the popup). */
+let skipped = new Set<string>();
 /** Segments already announced in notify mode (once per entry). */
 let notified = new Set<string>();
-let banner: { segmentId: string; dismiss: () => void } | null = null;
+let banner: { segmentId: string; handle: NotifyHandle } | null = null;
 let lastVideoId: string | null = null;
+let phase: AnalysisPhase = "idle";
+let fallback = false;
 let detachTimeUpdate: (() => void) | null = null;
 let detachSeeking: (() => void) | null = null;
 let debounceTimer = 0;
@@ -43,6 +48,28 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "sync" || !changes["policy"]) return;
   applyPolicy(changes["policy"].newValue);
   if (policy.mode !== "notify" || !policy.globalEnabled) closeBanner();
+});
+
+/** The popup's "This video" monitor reads the tab's state from here. */
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== "PAGE_STATE_GET") return false;
+  const videoId = getVideoIdFromUrl(location.href);
+  const current = videoId !== null && videoId === lastVideoId;
+  const state: PageState = {
+    videoId,
+    channelId: adapter.getChannelId(),
+    channelName: adapter.getChannelName(),
+    currentTime: adapter.isAdPlaying() ? 0 : adapter.getCurrentTime(),
+    duration: contentDuration(),
+    phase: current ? phase : "idle",
+    fallback: current && fallback,
+    segments: current ? segments : [],
+    skipped: [...skipped],
+    overridden: [...overridden],
+    adPlaying: adapter.isAdPlaying(),
+  };
+  sendResponse(state);
+  return false;
 });
 
 async function fetchSegments(videoId: string): Promise<VideoAnalysis | null> {
@@ -95,6 +122,7 @@ function skip(seg: SponsorSegment): void {
   const t0 = performance.now();
   adapter.seekTo(seg.endTime + SKIP_FORWARD_OFFSET);
   const latency = Math.round(performance.now() - t0);
+  skipped.add(seg.id);
   void chrome.runtime.sendMessage({
     type: "TELEMETRY",
     eventType: "skip_executed",
@@ -105,6 +133,7 @@ function skip(seg: SponsorSegment): void {
     onUndo: () => {
       adapter.seekTo(Math.max(0, seg.startTime - UNDO_REWIND_OFFSET));
       overridden.add(seg.id);
+      skipped.delete(seg.id);
       void chrome.runtime.sendMessage({
         type: "TELEMETRY",
         eventType: "skip_undone",
@@ -115,7 +144,7 @@ function skip(seg: SponsorSegment): void {
 }
 
 function closeBanner(): void {
-  banner?.dismiss();
+  banner?.handle.dismiss();
   banner = null;
 }
 
@@ -124,17 +153,16 @@ function notify(seg: SponsorSegment, t: number): void {
   if (notified.has(seg.id)) return;
   notified.add(seg.id);
   const remainingMs = Math.max(1000, (seg.endTime - t) * 1000);
-  banner = {
-    segmentId: seg.id,
-    dismiss: showNotifyBanner(
-      seg,
-      () => {
-        banner = null;
-        skip(seg);
-      },
-      remainingMs,
-    ),
-  };
+  const handle = showNotifyBanner(
+    seg,
+    () => {
+      banner = null;
+      skip(seg);
+    },
+    remainingMs,
+  );
+  handle.update(t);
+  banner = { segmentId: seg.id, handle };
 }
 
 function armSkipLoop(): void {
@@ -151,8 +179,10 @@ function armSkipLoop(): void {
       globalKill: false,
       userOverridden: false,
     });
-    if (d.reason === "notify-only") notify(seg, t);
-    else if (d.shouldSkip) skip(seg);
+    if (d.reason === "notify-only") {
+      notify(seg, t);
+      banner?.handle.update(t);
+    } else if (d.shouldSkip) skip(seg);
   });
 }
 
@@ -169,9 +199,12 @@ function armSeekOverride(): void {
 async function initForVideo(videoId: string): Promise<void> {
   lastVideoId = videoId;
   overridden = new Set();
+  skipped = new Set();
   notified = new Set();
   closeBanner();
   segments = [];
+  phase = "analyzing";
+  fallback = false;
   detachTimeUpdate?.();
   detachSeeking?.();
   detachTimeUpdate = detachSeeking = null;
@@ -179,7 +212,13 @@ async function initForVideo(videoId: string): Promise<void> {
   window.clearTimeout(debounceTimer);
   debounceTimer = window.setTimeout(async () => {
     const analysis = await resolveAnalysis(videoId);
-    if (!analysis || lastVideoId !== videoId) return;
+    if (lastVideoId !== videoId) return;
+    if (!analysis) {
+      phase = "unavailable";
+      return;
+    }
+    phase = "ready";
+    fallback = analysis.status !== "ready";
     segments = analysis.segments;
     armSkipLoop();
     armSeekOverride();

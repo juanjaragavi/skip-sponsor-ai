@@ -1,28 +1,40 @@
 {
   "manifest_version": 3,
   "name": "SkipSponsor AI",
+  "short_name": "SkipSponsor",
   "version": "1.0.0",
-  "description": "Auto-skip in-video sponsor reads on YouTube using Claude caption analysis.",
-  "permissions": ["storage", "alarms"],
-  "host_permissions": ["*://*.youtube.com/*"],
+  "description": "Skip sponsor reads inside YouTube videos. Reads the captions, marks the sponsor segment, and jumps past it, with one-click Undo.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.youtube.com/*"],
   "background": {
     "service_worker": "src/extension/service-worker.ts",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/watch*"],
+      "matches": ["https://www.youtube.com/*"],
       "js": ["src/extension/content-script.ts"],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "src/extension/popup.html",
-    "default_title": "SkipSponsor AI"
+    "default_title": "SkipSponsor AI",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
   "options_page": "src/extension/options.html",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
+  "homepage_url": "https://github.com/juanjaragavi/skip-sponsor-ai",
   "minimum_chrome_version": "116"
 }

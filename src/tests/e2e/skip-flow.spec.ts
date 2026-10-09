@@ -1,118 +1,20 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
-  test as base,
+  test,
   expect,
-  chromium,
-  type BrowserContext,
-  type Page,
-} from "@playwright/test";
-import { FakeApi } from "./fixtures/fake-api";
+  tick,
+  expectSkip,
+  expectNoSkip,
+  waitForAnalysis,
+  uploadedText,
+  expectPanelRestored,
+  setPolicy,
+} from "./harness";
 import {
-  ALL_VIDEOS,
   VIDEO_A,
   VIDEO_B,
   VIDEO_LONG,
   VIDEO_NO_CAPTIONS,
-  fixtureHtml,
-  type FixtureOptions,
 } from "./fixtures/youtube-fixture";
-import { E2E_API_PORT, E2E_EXTENSION_DIR } from "./global-setup";
-
-interface Harness {
-  api: FakeApi;
-  open: (videoId: string, opts?: Partial<FixtureOptions>) => Promise<Page>;
-  context: () => BrowserContext;
-}
-
-const DEFAULTS: FixtureOptions = {
-  variant: "modern",
-  staleMs: 1500,
-  rowDelayMs: 150,
-};
-
-const test = base.extend<{ h: Harness }>({
-  h: async ({}, use) => {
-    const api = new FakeApi();
-    await api.start(E2E_API_PORT);
-    const userDataDir = mkdtempSync(join(tmpdir(), "skipsponsor-e2e-"));
-    let ctx: BrowserContext | null = null;
-    let opts = DEFAULTS;
-    const harness: Harness = {
-      api,
-      context: () => ctx!,
-      open: async (videoId, o = {}) => {
-        opts = { ...DEFAULTS, ...o };
-        if (!ctx) {
-          ctx = await chromium.launchPersistentContext(userDataDir, {
-            channel: "chromium",
-            headless: true,
-            args: [
-              `--disable-extensions-except=${E2E_EXTENSION_DIR}`,
-              `--load-extension=${E2E_EXTENSION_DIR}`,
-            ],
-          });
-          await ctx.route("https://www.youtube.com/**", (route) => {
-            const v = new URL(route.request().url()).searchParams.get("v");
-            return route.fulfill({
-              contentType: "text/html",
-              body: fixtureHtml(v ?? VIDEO_A.id, ALL_VIDEOS, opts),
-            });
-          });
-          if (ctx.serviceWorkers().length === 0)
-            await ctx.waitForEvent("serviceworker");
-        }
-        const page = await ctx.newPage();
-        await page.goto(`https://www.youtube.com/watch?v=${videoId}`);
-        return page;
-      },
-    };
-    await use(harness);
-    await (ctx as BrowserContext | null)?.close();
-    await api.stop();
-    rmSync(userDataDir, { recursive: true, force: true });
-  },
-});
-
-const tick = (page: Page, t: number): Promise<number> =>
-  page.evaluate((x) => window.__fx.tick(x), t);
-
-/** Re-enter `t` until the extension seeks; resolves to the landing time. */
-async function expectSkip(
-  page: Page,
-  t: number,
-  landing: number,
-): Promise<void> {
-  await expect
-    .poll(() => tick(page, t), { timeout: 20_000, intervals: [200] })
-    .toBeCloseTo(landing, 1);
-}
-
-async function expectNoSkip(page: Page, t: number): Promise<void> {
-  expect(await tick(page, t)).toBeCloseTo(t, 3);
-  await page.waitForTimeout(300);
-  expect(await page.evaluate(() => window.__fx.time())).toBeCloseTo(t, 3);
-}
-
-async function waitForAnalysis(api: FakeApi, videoId: string): Promise<void> {
-  await expect
-    .poll(() => api.analyzeCalls.filter((c) => c.videoId === videoId).length)
-    .toBeGreaterThan(0);
-}
-
-const uploadedText = (api: FakeApi, videoId: string): string =>
-  api.analyzeCalls
-    .filter((c) => c.videoId === videoId)
-    .flatMap((c) => c.transcript.map((x) => x.text))
-    .join(" ");
-
-async function expectPanelRestored(page: Page): Promise<void> {
-  await expect
-    .poll(() => page.evaluate(() => window.__fx.panelState().visibility))
-    .toBe("ENGAGEMENT_PANEL_VISIBILITY_HIDDEN");
-  expect(await page.locator("#skipsponsor-hide-transcript").count()).toBe(0);
-}
 
 for (const variant of ["legacy", "modern", "inThisVideo"] as const) {
   test(`skips the sponsor read with the ${variant} transcript panel`, async ({
@@ -176,9 +78,7 @@ test("toast stays isolated, undo rewinds and suppresses the re-skip", async ({
 
   // Toast nodes and its stylesheet must live inside the shadow root only.
   const leaked = await page.evaluate(
-    () =>
-      document.querySelectorAll("html > style, html > .wrap, body > .wrap")
-        .length,
+    () => document.querySelectorAll("html > style, .toast, .wrap").length,
   );
   expect(leaked).toBe(0);
   const undo = page
@@ -194,7 +94,9 @@ test("toast stays isolated, undo rewinds and suppresses the re-skip", async ({
   await page.waitForTimeout(4500);
   expect(await page.locator("#skipsponsor-toast-host").count()).toBe(0);
   expect(
-    await page.evaluate(() => document.querySelectorAll(".wrap").length),
+    await page.evaluate(
+      () => document.querySelectorAll(".toast, .wrap").length,
+    ),
   ).toBe(0);
 });
 
@@ -268,24 +170,6 @@ test("videos without captions skip the SponsorBlock fallback sponsor", async ({
   expect(h.api.analyzeCalls).toHaveLength(0);
 });
 
-async function setPolicy(
-  h: Harness,
-  patch: Record<string, unknown>,
-): Promise<void> {
-  const sw = h.context().serviceWorkers()[0]!;
-  await expect
-    .poll(() =>
-      sw.evaluate(async () =>
-        Boolean((await chrome.storage.sync.get(["policy"]))["policy"]),
-      ),
-    )
-    .toBe(true);
-  await sw.evaluate(async (p) => {
-    const s = await chrome.storage.sync.get(["policy"]);
-    await chrome.storage.sync.set({ policy: { ...s["policy"], ...p } });
-  }, patch);
-}
-
 test("notify mode offers a Skip banner instead of seeking", async ({ h }) => {
   const page = await h.open(VIDEO_A.id);
   await setPolicy(h, { mode: "notify" });
@@ -341,16 +225,3 @@ test("settings changes apply to the playing video without a reload", async ({
   await page.waitForTimeout(500);
   expect(await tick(page, 31)).toBeCloseTo(60.25, 2);
 });
-
-declare global {
-  interface Window {
-    __fx: {
-      tick: (t: number) => number;
-      time: () => number;
-      navigate: (id: string) => void;
-      openTranscript: () => void;
-      setAd: (on: boolean) => void;
-      panelState: () => { visibility: string | null; rows: number };
-    };
-  }
-}

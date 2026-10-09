@@ -1,10 +1,277 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkipSponsor AI — Settings</title>
   </head>
   <body>
-    <h3>SkipSponsor options</h3>
-    <p>Managed via popup. Global kill-switch fetched from API.</p>
+    <div class="options">
+      <aside class="sidebar">
+        <div class="sidebar__inner">
+          <div class="brand">
+            <span id="mark" class="mark"></span
+            ><span class="app">SkipSponsor AI</span>
+          </div>
+          <nav class="nav" aria-label="Settings sections">
+            <a
+              class="nav__item"
+              href="#general"
+              data-icon="sliders-horizontal"
+              data-size="18"
+              >General</a
+            >
+            <a class="nav__item" href="#channels" data-icon="tv" data-size="18"
+              >Channels</a
+            >
+            <a
+              class="nav__item"
+              href="#privacy"
+              data-icon="shield-check"
+              data-size="18"
+              >Privacy</a
+            >
+            <a class="nav__item" href="#about" data-icon="info" data-size="18"
+              >About</a
+            >
+          </nav>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section id="general" class="section" aria-labelledby="general-title">
+          <header class="head">
+            <h1 id="general-title" class="title">General</h1>
+            <p class="desc">
+              Changes save automatically and apply to the video that’s playing.
+            </p>
+          </header>
+          <div class="card">
+            <div class="card__row card__row--split">
+              <div class="stack">
+                <span id="enable-label" class="row-label"
+                  >Skip sponsor reads</span
+                >
+                <span class="hint"
+                  >Turn SkipSponsor AI on or off everywhere.</span
+                >
+              </div>
+              <button
+                id="enabled"
+                class="switch"
+                type="button"
+                role="switch"
+                aria-checked="true"
+                aria-labelledby="enable-label"
+              >
+                <span class="switch__track"
+                  ><span class="switch__knob"></span
+                ></span>
+              </button>
+            </div>
+            <div class="card__row">
+              <span id="mode-label" class="row-label">Mode</span>
+              <div class="modes" role="radiogroup" aria-labelledby="mode-label">
+                <button
+                  class="mode-card"
+                  type="button"
+                  role="radio"
+                  data-mode="auto"
+                >
+                  <span
+                    class="mode-card__top"
+                    data-icon="fast-forward"
+                    data-size="18"
+                    ><span class="mode-card__title">Auto-skip</span></span
+                  >
+                  <span class="mode-card__desc"
+                    >Jumps past sponsor reads automatically.</span
+                  >
+                </button>
+                <button
+                  class="mode-card"
+                  type="button"
+                  role="radio"
+                  data-mode="notify"
+                >
+                  <span class="mode-card__top" data-icon="bell" data-size="18"
+                    ><span class="mode-card__title">Notify</span></span
+                  >
+                  <span class="mode-card__desc"
+                    >Shows a Skip button — you decide.</span
+                  >
+                </button>
+                <button
+                  class="mode-card"
+                  type="button"
+                  role="radio"
+                  data-mode="off"
+                >
+                  <span
+                    class="mode-card__top"
+                    data-icon="circle-off"
+                    data-size="18"
+                    ><span class="mode-card__title">Off</span></span
+                  >
+                  <span class="mode-card__desc"
+                    >Sponsor reads play normally.</span
+                  >
+                </button>
+              </div>
+            </div>
+            <div class="card__row card__row--last">
+              <div class="row-between">
+                <label for="threshold" class="row-label"
+                  >Confidence threshold</label
+                >
+                <span id="thr-value" class="badge tabular">78%</span>
+              </div>
+              <input
+                id="threshold"
+                class="slider"
+                type="range"
+                min="50"
+                max="95"
+                step="1"
+              />
+              <div class="row-between scale">
+                <span>50% · more skips, occasional false cuts</span
+                ><span>95% · fewest, safest skips</span>
+              </div>
+              <p id="thr-hint" class="hint"></p>
+            </div>
+          </div>
+        </section>
+
+        <section id="channels" class="section" aria-labelledby="channels-title">
+          <header class="head">
+            <h2 id="channels-title" class="title">Channels</h2>
+            <p class="desc">
+              Skipping is turned off on these channels — support creators whose
+              reads you want to hear.
+            </p>
+          </header>
+          <div id="channel-list" class="card" role="list" hidden></div>
+          <div id="channel-empty" class="empty">
+            <span class="empty__icon" data-icon="check" data-size="20"></span>
+            <span class="empty__title">Skipping works on every channel</span>
+            <span class="hint"
+              >Use “Don’t skip this channel” in the popup to add one here.</span
+            >
+          </div>
+        </section>
+
+        <section id="privacy" class="section" aria-labelledby="privacy-title">
+          <header class="head">
+            <h2 id="privacy-title" class="title">Privacy</h2>
+            <p class="desc">
+              Plain-language summary of what SkipSponsor AI reads and keeps.
+            </p>
+          </header>
+          <div class="grid">
+            <article class="info-card">
+              <span
+                class="info-card__icon"
+                data-icon="captions"
+                data-size="18"
+              ></span>
+              <h3 class="info-card__title">
+                Only caption text is analyzed, never audio
+              </h3>
+              <p class="hint">
+                The video’s captions are read to find where a sponsor read
+                begins and ends.
+              </p>
+            </article>
+            <article class="info-card">
+              <span
+                class="info-card__icon"
+                data-icon="user-x"
+                data-size="18"
+              ></span>
+              <h3 class="info-card__title">No account, no personal data</h3>
+              <p class="hint">
+                Works without sign-in. An anonymous install token protects the
+                service from abuse.
+              </p>
+            </article>
+            <article class="info-card">
+              <span
+                class="info-card__icon"
+                data-icon="timer-reset"
+                data-size="18"
+              ></span>
+              <h3 class="info-card__title">
+                Results are cached for 30 days, then deleted
+              </h3>
+              <p class="hint">
+                Segment results are shared per video so repeat views are
+                instant.
+              </p>
+            </article>
+            <article class="info-card">
+              <span
+                class="info-card__icon"
+                data-icon="users"
+                data-size="18"
+              ></span>
+              <h3 class="info-card__title">
+                Videos without captions use community-labelled segments
+              </h3>
+              <p class="hint">
+                When there are no captions, SponsorBlock community data is used
+                instead.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="about" class="section" aria-labelledby="about-title">
+          <header class="head">
+            <h2 id="about-title" class="title">About</h2>
+            <p class="desc">
+              SkipSponsor AI skips sponsor segments inside videos. It doesn’t
+              block YouTube’s own ads.
+            </p>
+          </header>
+          <div class="card about">
+            <div class="about__version">
+              <span id="about-mark"></span
+              ><span id="version">Version 1.0.0</span>
+            </div>
+            <div class="links">
+              <a
+                class="link"
+                href="https://github.com/juanjaragavi/skip-sponsor-ai/issues"
+                target="_blank"
+                rel="noopener"
+                data-icon="life-buoy"
+                data-size="15"
+                >Support</a
+              >
+              <a
+                class="link"
+                href="https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md"
+                target="_blank"
+                rel="noopener"
+                data-icon="file-text"
+                data-size="15"
+                >Privacy policy</a
+              >
+              <a
+                class="link"
+                href="https://github.com/juanjaragavi/skip-sponsor-ai"
+                target="_blank"
+                rel="noopener"
+                data-icon="code-xml"
+                data-size="15"
+                >Source code</a
+              >
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./options.ts"></script>
   </body>
 </html>

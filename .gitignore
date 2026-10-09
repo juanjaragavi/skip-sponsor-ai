@@ -86,6 +86,8 @@ dist-crx/
 *.crx
 *.pem
 extension-key.pem
+release/
+artifacts/
 
 # ============================================================================
 # OS Files
@@ -106,3 +108,5 @@ infra/terraform/.terraform.lock.hcl
 infra/terraform/override.tf
 *.tfvars
 *.tfvars.json
+
+.mcp.json

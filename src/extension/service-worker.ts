@@ -90,8 +90,35 @@ async function ensurePolicy(): Promise<UserPolicy> {
   return { ...DEFAULT_POLICY };
 }
 
+/** Toolbar icon mirrors the master switch: grey "disabled" mark when skipping is off. */
+async function syncActionIcon(p?: UserPolicy): Promise<void> {
+  const policy = p ?? (await ensurePolicy());
+  const off = !policy.globalEnabled || policy.mode === "off";
+  const suffix = off ? "-disabled" : "";
+  await chrome.action.setIcon({
+    path: {
+      16: `icons/icon-16${suffix}.png`,
+      32: `icons/icon-32${suffix}.png`,
+    },
+  });
+  await chrome.action.setTitle({
+    title: off ? "SkipSponsor AI — skipping is off" : "SkipSponsor AI",
+  });
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && changes["policy"]) {
+    void syncActionIcon({
+      ...DEFAULT_POLICY,
+      ...((changes["policy"].newValue as Partial<UserPolicy> | undefined) ??
+        {}),
+    });
+  }
+});
+chrome.runtime.onStartup.addListener(() => void syncActionIcon());
+
 chrome.runtime.onInstalled.addListener(() => {
-  void ensurePolicy();
+  void ensurePolicy().then(syncActionIcon);
   void getInstallToken();
 });
 

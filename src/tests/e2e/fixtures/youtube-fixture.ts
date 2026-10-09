@@ -108,7 +108,14 @@ export interface FixtureOptions {
   staleMs: number;
   /** Latency between opening the panel and the rows rendering. */
   rowDelayMs: number;
+  /**
+   * Give the <video> a real (blank) media file so it has a duration and can
+   * play. Off by default: with media, scripted `tick()` seeks fire `seeking`.
+   */
+  media?: boolean;
 }
+
+export const FIXTURE_MEDIA_PATH = "/__fixture/blank-150s.webm";
 
 const PAGE_SCRIPT = String.raw`
 (() => {
@@ -150,7 +157,9 @@ const PAGE_SCRIPT = String.raw`
       : "";
     const btn = desc.querySelector("button");
     if (btn) btn.addEventListener("click", openPanel);
-    document.querySelector("ytd-channel-name a").href = "https://www.youtube.com/" + v.channel;
+    const channelLink = document.querySelector("ytd-channel-name a");
+    channelLink.href = "https://www.youtube.com/" + v.channel;
+    channelLink.textContent = v.title.replace(/ video$/, "") + " Channel";
     document.getElementById("title").textContent = v.title;
   }
 
@@ -219,7 +228,9 @@ export function fixtureHtml(
 <body>
   <div id="nav-marker"></div>
   <h1 id="title"></h1>
-  <div id="movie_player" class="html5-video-player"><video class="html5-main-video"></video></div>
+  <div id="movie_player" class="html5-video-player" style="position:relative;width:854px;height:480px;background:#000"><video class="html5-main-video"${
+    opts.media ? ` src="${FIXTURE_MEDIA_PATH}" preload="auto" muted` : ""
+  } style="width:100%;height:100%"></video></div>
   <ytd-channel-name><a href="#">channel</a></ytd-channel-name>
   <div id="description"></div>
   <ytd-engagement-panel-section-list-renderer${targetId} visibility="ENGAGEMENT_PANEL_VISIBILITY_HIDDEN">

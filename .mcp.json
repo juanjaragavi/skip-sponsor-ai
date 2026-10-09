@@ -1,13 +1,11 @@
 {
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "make-api-key",
-      "description": "Make MCP token",
-      "password": true
-    }
-  ],
   "mcpServers": {
+    "pencil": {
+      "type": "stdio",
+      "command": "/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+      "args": ["--app", "desktop"],
+      "env": {}
+    },
     "snippetslab": {
       "command": "/Applications/SnippetsLab.app/Contents/Helpers/lab",
       "args": ["mcp"]
@@ -74,7 +72,13 @@
     },
     "browseros": {
       "type": "http",
-      "url": "http://127.0.0.1:9010/mcp"
+      "url": "http://127.0.0.1:9000/mcp",
+      "transport": "streamable-http"
+    },
+    "browseros-neo": {
+      "type": "http",
+      "url": "http://127.0.0.1:9010/mcp",
+      "transport": "streamable-http"
     }
   }
 }

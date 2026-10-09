@@ -5,6 +5,7 @@ export interface VideoAdapter {
   seekTo(t: number): void;
   getVideoId(): string | null;
   getChannelId(): string | null;
+  getChannelName(): string | null;
   /** YouTube plays its own ads in the same <video>; their clock is not the video's. */
   isAdPlaying(): boolean;
   onTimeUpdate(cb: (t: number) => void): () => void;
@@ -44,6 +45,12 @@ export class DomVideoAdapter implements VideoAdapter {
     const href = link?.href ?? "";
     const m = href.match(/\/(@[^/]+|channel\/[^/]+)/);
     return m ? m[1]! : null;
+  }
+  getChannelName(): string | null {
+    const name = document
+      .querySelector("ytd-channel-name a, #channel-name a")
+      ?.textContent?.trim();
+    return name ? name : null;
   }
   isAdPlaying(): boolean {
     const player = document.querySelector(".html5-video-player");
