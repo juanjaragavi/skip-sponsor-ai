@@ -7,7 +7,10 @@ const thr = document.querySelector<HTMLInputElement>("#thr")!;
 
 async function init(): Promise<void> {
   const stored = await chrome.storage.sync.get(["policy"]);
-  const p = (stored["policy"] ?? DEFAULT_POLICY) as UserPolicy;
+  const p: UserPolicy = {
+    ...DEFAULT_POLICY,
+    ...((stored["policy"] as Partial<UserPolicy> | undefined) ?? {}),
+  };
   enabled.checked = p.globalEnabled;
   mode.value = p.mode;
   thr.value = String(p.confidenceThreshold);

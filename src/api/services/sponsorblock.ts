@@ -16,6 +16,9 @@ export async function fetchSponsorBlock(
     `&categories=["sponsor","intro","outro","selfpromo","interaction_reminder"]`;
   assertFetchAllowed(url);
   const res = await fetch(url);
+  // SponsorBlock answers 404 when a video has no segments: that is data
+  // ("no sponsors"), not a failure.
+  if (res.status === 404) return [];
   if (!res.ok) throw new Error(`sponsorblock ${res.status}`);
   const data = (await res.json()) as SBEntry[];
   const now = new Date().toISOString();

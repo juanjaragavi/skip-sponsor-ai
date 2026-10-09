@@ -6,11 +6,16 @@ import {
   MAX_SPONSOR_VIDEO_FRACTION,
   MIN_VIDEO_FOR_FRACTION_CAP,
 } from "../../shared/constants";
+import { maxSpeechSeconds } from "../../shared/speech";
 
 const SNAP_TOLERANCE_SEC = 1.5;
 const EVIDENCE_WINDOW_SEC = 5;
 const MIN_EVIDENCE_TOKENS = 3;
 const MIN_TOKEN_MATCH = 0.75;
+/** Slack after the last promo cue's estimated speech end. */
+const END_SPEECH_PAD_SEC = 1;
+/** Only trim when it gives back at least this much content. */
+const MIN_END_TRIM_SEC = 2;
 
 /** Lowercase, strip diacritics and punctuation; keeps letters/digits of any script. */
 export function normalizeText(s: string): string {
@@ -94,6 +99,31 @@ function snap(
 }
 
 /**
+ * The model ends a segment at the first cue AFTER the promotion. When the
+ * last promo cue is a long, sparse row (a few words, then gameplay or B-roll
+ * until the next row starts), that end lands a whole row into real content.
+ * Pull it back to where the last promo cue's speech can at most stop.
+ * Segments that run to the final cue are left alone.
+ */
+export function trimEndToSpeech(
+  range: { start: number; end: number },
+  cues: readonly LlmChunk[],
+): number {
+  if (!cues.some((c) => c.t0 === range.end)) return range.end;
+  const last = cues
+    .filter((c) => c.t0 >= range.start && c.t0 < range.end)
+    .at(-1);
+  if (!last) return range.end;
+  const spoken =
+    Math.round(
+      (last.t0 + maxSpeechSeconds(last.text) + END_SPEECH_PAD_SEC) * 10,
+    ) / 10;
+  return range.end - spoken >= MIN_END_TRIM_SEC
+    ? Math.max(spoken, last.t0 + 1)
+    : range.end;
+}
+
+/**
  * Accept only well-formed, evidence-backed sponsor segments and align them to
  * real cue boundaries. Guards against invented or oversized detections.
  */
@@ -123,7 +153,11 @@ export function validateCandidates(
       c.end <= c.start
     )
       continue;
-    const range = snap(c.start, c.end, sorted);
+    const snapped = snap(c.start, c.end, sorted);
+    const range = snapped && {
+      start: snapped.start,
+      end: trimEndToSpeech(snapped, sorted),
+    };
     if (!range || range.end - range.start > maxLength) continue;
     if (
       relationship === "first_party" &&

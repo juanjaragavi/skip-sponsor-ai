@@ -230,3 +230,82 @@ describe("caption-gap corroboration of SponsorBlock", () => {
     await app.close();
   });
 });
+
+describe("no-captions fallback (GET without any transcript)", () => {
+  beforeEach(() => {
+    vi.mocked(fetchSponsorBlock).mockReset();
+    vi.useRealTimers();
+  });
+
+  it("trusts SponsorBlock sponsors enough to skip when captions are absent", async () => {
+    vi.mocked(fetchSponsorBlock).mockResolvedValue([
+      sbSegment(30, 90),
+      { ...sbSegment(0, 10), category: "intro" },
+    ]);
+    const app = buildServer();
+    const body = (
+      await app.inject({ method: "GET", url: "/v1/segments/hhhhhhhhhhh" })
+    ).json();
+    expect(body.status).toBe("degraded");
+    const sponsor = body.segments.find(
+      (s: { category: string }) => s.category === "sponsor",
+    );
+    expect(sponsor.confidence).toBe(0.85); // above the 0.78 default threshold
+    const intro = body.segments.find(
+      (s: { category: string }) => s.category === "intro",
+    );
+    expect(intro.confidence).toBe(0.7); // only sponsors are boosted
+    await app.close();
+  });
+
+  it("reports 'no sponsors' (degraded, empty) when SponsorBlock has no entry", async () => {
+    vi.mocked(fetchSponsorBlock).mockResolvedValue([]);
+    const app = buildServer();
+    const body = (
+      await app.inject({ method: "GET", url: "/v1/segments/iiiiiiiiiii" })
+    ).json();
+    expect(body.status).toBe("degraded");
+    expect(body.segments).toEqual([]);
+    await app.close();
+  });
+
+  it("refreshes a fallback result once it is old enough", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
+    vi.mocked(fetchSponsorBlock).mockResolvedValue([]);
+    const app = buildServer();
+    const url = "/v1/segments/jjjjjjjjjjj";
+    await app.inject({ method: "GET", url });
+
+    vi.setSystemTime(new Date("2026-10-01T01:00:00Z"));
+    vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(30, 90)]);
+    expect((await app.inject({ method: "GET", url })).json().segments).toEqual(
+      [],
+    );
+
+    vi.setSystemTime(new Date("2026-10-01T13:00:00Z"));
+    const fresh = (await app.inject({ method: "GET", url })).json();
+    expect(fresh.segments).toHaveLength(1);
+    expect(fetchSponsorBlock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+    await app.close();
+  });
+
+  it("does not resurrect a deleted analysis", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
+    vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(30, 90)]);
+    const app = buildServer();
+    const url = "/v1/segments/kkkkkkkkkkk";
+    await app.inject({ method: "GET", url });
+    expect((await app.inject({ method: "DELETE", url })).statusCode).toBe(204);
+
+    vi.setSystemTime(new Date("2026-10-03T00:00:00Z"));
+    const after = (await app.inject({ method: "GET", url })).json();
+    expect(after.status).toBe("unanalyzable");
+    expect(after.segments).toEqual([]);
+    expect(fetchSponsorBlock).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+    await app.close();
+  });
+});

@@ -5,7 +5,10 @@ export interface VideoAdapter {
   seekTo(t: number): void;
   getVideoId(): string | null;
   getChannelId(): string | null;
+  /** YouTube plays its own ads in the same <video>; their clock is not the video's. */
+  isAdPlaying(): boolean;
   onTimeUpdate(cb: (t: number) => void): () => void;
+  onSeeking(cb: (t: number) => void): () => void;
 }
 
 export function getVideoIdFromUrl(url: string): string | null {
@@ -42,11 +45,24 @@ export class DomVideoAdapter implements VideoAdapter {
     const m = href.match(/\/(@[^/]+|channel\/[^/]+)/);
     return m ? m[1]! : null;
   }
+  isAdPlaying(): boolean {
+    const player = document.querySelector(".html5-video-player");
+    return (
+      player?.classList.contains("ad-showing") === true ||
+      player?.classList.contains("ad-interrupting") === true
+    );
+  }
   onTimeUpdate(cb: (t: number) => void): () => void {
+    return this.listen("timeupdate", cb);
+  }
+  onSeeking(cb: (t: number) => void): () => void {
+    return this.listen("seeking", cb);
+  }
+  private listen(type: string, cb: (t: number) => void): () => void {
     const v = this.getVideo();
     if (!v) return () => {};
-    const h = () => cb(v.currentTime);
-    v.addEventListener("timeupdate", h);
-    return () => v.removeEventListener("timeupdate", h);
+    const h = (): void => cb(v.currentTime);
+    v.addEventListener(type, h);
+    return () => v.removeEventListener(type, h);
   }
 }

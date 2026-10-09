@@ -24,9 +24,24 @@ import {
   findCaptionGaps,
   segmentsOverlap,
 } from "../services/gap-corroboration";
-import { CORROBORATED_CONFIDENCE } from "../../shared/constants";
+import {
+  CORROBORATED_CONFIDENCE,
+  FALLBACK_REFRESH_SECONDS,
+} from "../../shared/constants";
 
 const inflight = new Map<string, Promise<VideoAnalysis>>();
+const WHOLE_VIDEO = { start: 0, end: Number.POSITIVE_INFINITY };
+
+/**
+ * A SponsorBlock-only result old enough that new community labels may exist.
+ * "unanalyzable" is not refreshed: DELETE /v1/segments/:id leaves that status
+ * as a tombstone.
+ */
+function isStaleFallback(a: VideoAnalysis): boolean {
+  if (a.status !== "degraded") return false;
+  const age = Date.now() - Date.parse(a.analyzedAt);
+  return !(age < FALLBACK_REFRESH_SECONDS * 1000);
+}
 
 export function registerSegmentRoutes(
   app: FastifyInstance,
@@ -35,14 +50,15 @@ export function registerSegmentRoutes(
   app.get("/v1/segments/:videoId", async (req, reply) => {
     const params = getSegmentsParamsSchema.parse(req.params);
     const cached = await repo.get(params.videoId);
-    if (cached) return reply.send(toResponse(cached));
+    if (cached && !isStaleFallback(cached))
+      return reply.send(toResponse(cached));
     const analysis = await analyzeVideo(
       repo,
       req.log,
       params.videoId,
       null,
       "en",
-      false,
+      Boolean(cached),
     );
     return reply.send(toResponse(analysis));
   });
@@ -212,12 +228,13 @@ async function runAnalysis(
       { err, videoId, clientTranscript: Boolean(transcript) },
       "analysis failed; falling back to SponsorBlock",
     );
-    // Fallback: SponsorBlock read-only (FR-07)
+    // Fallback: SponsorBlock read-only (FR-07). Without any transcript the
+    // captions cover nothing, so the whole video is one caption gap and the
+    // community labels are the only evidence. With a transcript (LLM
+    // failure) only labels inside real caption gaps are trusted.
     try {
-      segments = corroborateSegments(
-        await fetchSponsorBlock(videoId),
-        findCaptionGaps(chunks),
-      );
+      const gaps = chunks.length > 0 ? findCaptionGaps(chunks) : [WHOLE_VIDEO];
+      segments = corroborateSegments(await fetchSponsorBlock(videoId), gaps);
       status = "degraded";
       await repo.logTelemetry(videoId, "fallback_used");
     } catch {

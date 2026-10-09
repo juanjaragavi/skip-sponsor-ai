@@ -84,7 +84,8 @@ async function postTelemetry(
 
 async function ensurePolicy(): Promise<UserPolicy> {
   const s = await chrome.storage.sync.get(["policy"]);
-  if (s["policy"]) return s["policy"] as UserPolicy;
+  if (s["policy"])
+    return { ...DEFAULT_POLICY, ...(s["policy"] as Partial<UserPolicy>) };
   await chrome.storage.sync.set({ policy: DEFAULT_POLICY });
   return { ...DEFAULT_POLICY };
 }

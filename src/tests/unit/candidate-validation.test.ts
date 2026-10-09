@@ -4,6 +4,7 @@ import {
   dedupeCues,
   evidenceSupported,
   normalizeText,
+  trimEndToSpeech,
   validateCandidates,
 } from "../../api/services/candidate-validation";
 import type { LlmChunk, LlmSegmentCandidate } from "../../shared/types";
@@ -227,6 +228,55 @@ describe("validateCandidates", () => {
   });
   it("returns [] for an empty transcript", () => {
     expect(validateCandidates([cand({})], [])).toHaveLength(0);
+  });
+});
+
+describe("end trimming on sparse rows", () => {
+  // Live shape (modern panel, AdkShdDaivc): the last promo row starts at 41
+  // with a few words, then gameplay until the next row at 56.
+  const sparse: LlmChunk[] = [
+    { t0: 0, t1: 16, text: "Today we play the new season." },
+    {
+      t0: 16,
+      t1: 41,
+      text: "This video is sponsored by Acme. Use my promo code ACME for thirty percent off.",
+    },
+    { t0: 41, t1: 56, text: "link in the description" },
+    { t0: 56, t1: 70, text: "Okay, back to the match." },
+  ];
+
+  it("pulls the end back to where the last promo cue's speech can stop", () => {
+    const [v] = validateCandidates(
+      [
+        cand({
+          start: 16,
+          end: 56,
+          evidence: "This video is sponsored by Acme",
+        }),
+      ],
+      sparse,
+    );
+    // "link in the description" (23 chars) takes at most ~2.9s to say.
+    expect(v!.end).toBeGreaterThan(42);
+    expect(v!.end).toBeLessThan(46);
+    expect(v!.start).toBe(16);
+  });
+
+  it("leaves dense rows alone (end stays on the next cue)", () => {
+    expect(trimEndToSpeech({ start: 5, end: 20 }, cues)).toBe(20);
+  });
+
+  it("leaves segments that run to the final cue alone", () => {
+    expect(trimEndToSpeech({ start: 30, end: 40 }, cues)).toBe(40);
+  });
+
+  it("never ends before one second into the last promo cue", () => {
+    const end = trimEndToSpeech({ start: 0, end: 30 }, [
+      { t0: 0, t1: 29, text: "ok" },
+      { t0: 30, t1: 31, text: "next" },
+    ]);
+    expect(end).toBeGreaterThanOrEqual(1);
+    expect(end).toBeLessThan(30);
   });
 });
 

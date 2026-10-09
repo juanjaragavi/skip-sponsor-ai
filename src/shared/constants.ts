@@ -13,6 +13,9 @@ export const MIN_CONTENT_AFTER_FIRST_PARTY_SECONDS = 60;
 /** Cues sent to the model per request, and the overlap between consecutive requests. */
 export const LLM_BATCH_CUES = 350;
 export const LLM_BATCH_OVERLAP_CUES = 25;
+/** Request limits for client-supplied transcripts (enforced by the API's Zod schema). */
+export const MAX_CUE_TEXT = 600;
+export const MAX_TRANSCRIPT_CUES = 5000;
 export const MERGE_GAP_SECONDS = 4;
 export const SKIP_FORWARD_OFFSET = 0.25;
 export const UNDO_REWIND_OFFSET = 1.0;
@@ -29,6 +32,18 @@ export const MIN_CAPTION_GAP_SECONDS = 30;
 export const GAP_OVERLAP_RATIO = 0.6;
 /** Confidence given to SponsorBlock sponsors corroborated by a caption gap; above the default skip threshold. */
 export const CORROBORATED_CONFIDENCE = 0.85;
+/**
+ * Fallback (SponsorBlock-only) results are re-fetched after this long:
+ * community labels for new videos usually appear hours after upload.
+ */
+export const FALLBACK_REFRESH_SECONDS = 12 * 3600;
+/**
+ * Slower than any real speech: the longest a caption's text can plausibly
+ * take to say. Used to bound how far a row's text stretches in time.
+ */
+export const SLOWEST_SPEECH_CHARS_PER_SECOND = 8;
+/** CJK / Hangul characters carry roughly this many Latin characters of speech each. */
+export const DENSE_SCRIPT_CHAR_WEIGHT = 2;
 
 export const SYSTEM_PROMPT = `You detect paid sponsor reads in YouTube video transcripts. The transcript can be in ANY language.
 

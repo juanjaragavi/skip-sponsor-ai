@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_CUE_TEXT, MAX_TRANSCRIPT_CUES } from "./constants";
 
 export const videoIdSchema = z
   .string()
@@ -51,8 +52,7 @@ export const userPolicySchema = z.object({
 
 export const getSegmentsParamsSchema = z.object({ videoId: videoIdSchema });
 
-export const MAX_CUE_TEXT = 600;
-export const MAX_TRANSCRIPT_CUES = 5000;
+export { MAX_CUE_TEXT, MAX_TRANSCRIPT_CUES };
 
 export const transcriptCueSchema = z
   .object({

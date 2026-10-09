@@ -6,23 +6,44 @@ import type {
 import { DomVideoAdapter, getVideoIdFromUrl } from "./video-adapter";
 import { isInSegment } from "./segments";
 import { decideSkip, DEFAULT_POLICY } from "./policy";
-import { showSkipToast } from "./toast";
-import { readTranscriptFromPage } from "./transcript";
+import { showNotifyBanner, showSkipToast } from "./toast";
+import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 
 const adapter = new DomVideoAdapter();
 let segments: SponsorSegment[] = [];
 let policy: UserPolicy = { ...DEFAULT_POLICY };
-let channelId: string | null = null;
 let overridden = new Set<string>();
+/** Segments already announced in notify mode (once per entry). */
+let notified = new Set<string>();
+let banner: { segmentId: string; dismiss: () => void } | null = null;
 let lastVideoId: string | null = null;
 let detachTimeUpdate: (() => void) | null = null;
+let detachSeeking: (() => void) | null = null;
 let debounceTimer = 0;
+
+/**
+ * A partial stored policy (older version, partial write) must not drop
+ * required fields: a missing `globalEnabled` would disable every skip.
+ */
+function applyPolicy(stored: unknown): void {
+  policy = {
+    ...DEFAULT_POLICY,
+    ...((stored as Partial<UserPolicy> | undefined) ?? {}),
+  };
+}
 
 async function loadPolicy(): Promise<void> {
   const stored = await chrome.storage.sync.get(["policy"]);
-  if (stored["policy"]) policy = stored["policy"] as UserPolicy;
+  applyPolicy(stored["policy"]);
 }
+
+/** Settings saved in the popup apply to the playing video immediately. */
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "sync" || !changes["policy"]) return;
+  applyPolicy(changes["policy"].newValue);
+  if (policy.mode !== "notify" || !policy.globalEnabled) closeBanner();
+});
 
 async function fetchSegments(videoId: string): Promise<VideoAnalysis | null> {
   try {
@@ -36,6 +57,11 @@ async function fetchSegments(videoId: string): Promise<VideoAnalysis | null> {
   }
 }
 
+/** Duration of the video itself; unknown (0) while a YouTube ad occupies the player. */
+function contentDuration(): number {
+  return adapter.isAdPlaying() ? 0 : adapter.getVideo()?.duration || 0;
+}
+
 /**
  * Cached "ready" results are used as-is. Otherwise upload the transcript read
  * from the page for Claude analysis, keeping the degraded (SponsorBlock)
@@ -46,7 +72,8 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
   if (initial?.status === "ready") return initial;
   const stillCurrent = () => lastVideoId === videoId;
   const transcript = await readTranscriptFromPage(
-    adapter.getVideo()?.duration || 0,
+    videoId,
+    contentDuration,
     stillCurrent,
   );
   if (!transcript || !stillCurrent()) return initial;
@@ -54,7 +81,8 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
     const res = await chrome.runtime.sendMessage({
       type: "SEGMENTS_ANALYZE",
       videoId,
-      channelId,
+      // Read after the transcript: by then the page shows the new video's channel.
+      channelId: adapter.getChannelId(),
       transcript,
     });
     return (res?.analysis as VideoAnalysis | null) ?? initial;
@@ -63,45 +91,77 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
   }
 }
 
+function skip(seg: SponsorSegment): void {
+  const t0 = performance.now();
+  adapter.seekTo(seg.endTime + SKIP_FORWARD_OFFSET);
+  const latency = Math.round(performance.now() - t0);
+  void chrome.runtime.sendMessage({
+    type: "TELEMETRY",
+    eventType: "skip_executed",
+    videoId: lastVideoId,
+    latencyMs: latency,
+  });
+  showSkipToast(seg, {
+    onUndo: () => {
+      adapter.seekTo(Math.max(0, seg.startTime - UNDO_REWIND_OFFSET));
+      overridden.add(seg.id);
+      void chrome.runtime.sendMessage({
+        type: "TELEMETRY",
+        eventType: "skip_undone",
+        videoId: lastVideoId,
+      });
+    },
+  });
+}
+
+function closeBanner(): void {
+  banner?.dismiss();
+  banner = null;
+}
+
+/** Notify mode: offer a one-click skip once per segment entry. */
+function notify(seg: SponsorSegment, t: number): void {
+  if (notified.has(seg.id)) return;
+  notified.add(seg.id);
+  const remainingMs = Math.max(1000, (seg.endTime - t) * 1000);
+  banner = {
+    segmentId: seg.id,
+    dismiss: showNotifyBanner(
+      seg,
+      () => {
+        banner = null;
+        skip(seg);
+      },
+      remainingMs,
+    ),
+  };
+}
+
 function armSkipLoop(): void {
   detachTimeUpdate?.();
   detachTimeUpdate = adapter.onTimeUpdate((t) => {
+    // During a YouTube ad, currentTime is the ad's clock, not the video's.
+    if (adapter.isAdPlaying()) return;
     const seg = isInSegment(t, segments);
+    if (banner && banner.segmentId !== seg?.id) closeBanner();
     if (!seg || overridden.has(seg.id)) return;
-    const d = decideSkip(policy, seg, channelId, {
+    // Channel is read at decision time: right after an SPA navigation the DOM
+    // still shows the previous video's channel for a while.
+    const d = decideSkip(policy, seg, adapter.getChannelId(), {
       globalKill: false,
       userOverridden: false,
     });
-    if (!d.shouldSkip) return;
-    const t0 = performance.now();
-    adapter.seekTo(seg.endTime + SKIP_FORWARD_OFFSET);
-    const latency = Math.round(performance.now() - t0);
-    void chrome.runtime.sendMessage({
-      type: "TELEMETRY",
-      eventType: "skip_executed",
-      videoId: lastVideoId,
-      latencyMs: latency,
-    });
-    showSkipToast(seg, {
-      onUndo: () => {
-        adapter.seekTo(Math.max(0, seg.startTime - UNDO_REWIND_OFFSET));
-        overridden.add(seg.id);
-        void chrome.runtime.sendMessage({
-          type: "TELEMETRY",
-          eventType: "skip_undone",
-          videoId: lastVideoId,
-        });
-      },
-    });
+    if (d.reason === "notify-only") notify(seg, t);
+    else if (d.shouldSkip) skip(seg);
   });
 }
 
 /** Suppress re-skip when user manually seeks back into a segment. */
 function armSeekOverride(): void {
-  const video = adapter.getVideo();
-  if (!video) return;
-  video.addEventListener("seeking", () => {
-    const seg = isInSegment(video.currentTime, segments);
+  detachSeeking?.();
+  detachSeeking = adapter.onSeeking((t) => {
+    if (adapter.isAdPlaying()) return;
+    const seg = isInSegment(t, segments);
     if (seg) overridden.add(seg.id);
   });
 }
@@ -109,8 +169,12 @@ function armSeekOverride(): void {
 async function initForVideo(videoId: string): Promise<void> {
   lastVideoId = videoId;
   overridden = new Set();
+  notified = new Set();
+  closeBanner();
   segments = [];
-  channelId = adapter.getChannelId();
+  detachTimeUpdate?.();
+  detachSeeking?.();
+  detachTimeUpdate = detachSeeking = null;
   await loadPolicy();
   window.clearTimeout(debounceTimer);
   debounceTimer = window.setTimeout(async () => {
@@ -131,6 +195,8 @@ function observeNavigation(): void {
   const boot = () => {
     const v = currentVideoId();
     if (v && v !== last) {
+      // Transcript rows still in the DOM belong to the video we just left.
+      if (last) markTranscriptStale(last);
       last = v;
       void initForVideo(v);
     }
