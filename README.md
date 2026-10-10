@@ -1,44 +1,89 @@
-# SkipSponsor AI
+<div align="center">
+  <img src="brand/png/mark-512.png" alt="SkipSponsor AI logo" width="96" />
+  <h1>SkipSponsor AI</h1>
+  <p><strong>Skip sponsor reads inside YouTube videos. AI reads the captions, marks the sponsor segment, and jumps past it — with one-click Undo.</strong></p>
+  <p>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+    <a href="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci.yml"><img src="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+    <img src="https://img.shields.io/badge/Chrome-116%2B-blue?logo=googlechrome&logoColor=white" alt="Chrome 116+" />
+    <img src="https://img.shields.io/badge/Manifest-V3-green" alt="Manifest V3" />
+    <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome" /></a>
+  </p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/png/lockup-horizontal-on-dark.png" />
+    <img src="brand/png/lockup-horizontal-on-light.png" alt="SkipSponsor AI lockup" width="480" />
+  </picture>
+</div>
 
-**SkipSponsor AI** is an MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it offers precision sponsor detection with 93%+ accuracy while respecting user preferences and privacy.
+---
 
-## Features
+**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it offers precision sponsor detection with 93%+ accuracy while respecting user preferences and privacy.
 
-- **AI-Powered Detection:** Uses Claude 3.5 Haiku to analyze video captions and identify sponsor segments
-- **Auto-Skip:** Automatically seeks past detected sponsor reads with a 4-second undo window
-- **Per-Channel Control:** Enable/disable detection on specific channels via allowlist/blocklist
-- **Smart Fallback:** Falls back to SponsorBlock API when captions unavailable or LLM fails
-- **Privacy-First:** Zero audio upload; transcript text only with 30-day retention
-- **High Performance:** p95 analysis latency <4.0s, skip trigger <300ms
-- **Low Cost:** ~$0.004 per video with 65%+ cache hit rate
+- 🧠 **AI-powered** — Claude 3.5 Haiku analyzes captions; Sonnet fallback for ambiguous cases
+- ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back
+- 🎛️ **You're in control** — Auto / Notify / Off per video, confidence threshold (50–95%), per-channel opt-out
+- 🌍 **Any language** — works with auto or uploaded captions; SponsorBlock fallback when captions are missing
+- 🔒 **Private by design** — caption text only (never audio), no account, 30-day result retention
+- ⚡ **Fast & cheap** — p95 analysis <4.0s, skip trigger <300ms, ~$0.004/video with 65%+ cache hits
+
+## Screenshots
+
+![SkipSponsor AI in action](store/showcase/showcase-1280x720.png)
+
+| Skip automatically | Changed your mind? Undo | Auto, Notify, or Off |
+| --- | --- | --- |
+| ![Skip sponsor reads automatically](store/screenshots/01-skip-sponsor-reads.png) | ![Undo a skip](store/screenshots/02-undo.png) | ![Three modes](store/screenshots/03-auto-notify-off.png) |
+
+| Works in any language | Private by design |
+| --- | --- |
+| ![Works in any language](store/screenshots/04-any-language.png) | ![Private by design](store/screenshots/05-private-by-design.png) |
+
+> All screenshots are 1280×800 Chrome Web Store assets in [`store/screenshots/`](store/screenshots/). Brand marks and lockups live in [`brand/`](brand/).
+
+## Contents
+
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Development](#development)
+- [Testing & Quality](#testing--quality)
+- [Deployment](#deployment)
+- [Architecture](#architecture)
+- [Security & Privacy](#security--privacy)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
+- [Security](#security)
+- [License](#license)
+- [Attribution](#attribution)
+- [Support](#support)
+- [Acknowledgments](#acknowledgments)
 
 ## Quick Start
 
 ### Prerequisites
 
 - **Node.js:** 20 LTS
-- **npm:** 8.x+ or pnpm
+- **npm:** 8.x+
 - **Chrome:** 116+
-- **Docker:** For local PostgreSQL + Redis (optional, for full backend setup)
-- **Anthropic API Key:** Sign up at [console.anthropic.com](https://console.anthropic.com)
+- **Docker:** for local PostgreSQL + Redis (optional, full backend setup)
+- **Anthropic API Key:** sign up at [console.anthropic.com](https://console.anthropic.com)
 
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/skip-sponsor-ai.git
+git clone https://github.com/juanjaragavi/skip-sponsor-ai.git
 cd skip-sponsor-ai
 npm ci
 ```
 
 ### 2. Environment Setup
 
-Copy the example env file and populate with your credentials:
-
 ```bash
 cp .env.example .env.local
 ```
 
 See [Environment Variables](#environment-variables) below for required keys.
+Never commit `.env*` files — they are git-ignored.
 
 ### 3. Development Build
 
@@ -46,7 +91,7 @@ See [Environment Variables](#environment-variables) below for required keys.
 npm run build:extension
 ```
 
-This generates `dist/extension/` with the bundled `.crx` or `.zip` for local testing.
+This generates `dist/extension/` for local testing.
 
 ### 4. Load Extension in Chrome
 
@@ -54,20 +99,15 @@ This generates `dist/extension/` with the bundled `.crx` or `.zip` for local tes
 2. Enable **Developer Mode** (toggle in top-right)
 3. Click **Load unpacked**
 4. Select `/path/to/skip-sponsor-ai/dist/extension`
-5. Extension appears in toolbar; test on YouTube videos
+5. Test on YouTube videos
 
 ### 5. Backend Setup (Optional)
 
 For full local development with LLM inference:
 
 ```bash
-# Start PostgreSQL + Redis
 docker-compose up -d
-
-# Run migrations
 npm run db:migrate
-
-# Start backend server
 npm run dev:api
 ```
 
@@ -77,17 +117,17 @@ Backend listens on `http://localhost:3000` by default.
 
 ### Extension (Client-Side)
 
-Located in `.env.local` and loaded at build time:
+In `.env.local`, loaded at build time:
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `VITE_API_BASE_URL` | Yes | `http://localhost:3000` | Backend API endpoint (dev) or production domain |
 | `VITE_ENVIRONMENT` | No | `development` | `development`, `staging`, or `production` |
-| `VITE_DEBUG_MODE` | No | `false` | Enable verbose console logging in content script |
+| `VITE_DEBUG_MODE` | No | `false` | Verbose console logging in content script |
 
 ### Backend API (Server-Side)
 
-Located in `.env` and loaded at server startup:
+In `.env`, loaded at server startup:
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
@@ -106,50 +146,35 @@ Located in `.env` and loaded at server startup:
 | `SENTRY_DSN` | No | — | Sentry error tracking DSN (optional) |
 | `PORT` | No | `3000` | Server listen port |
 
-### Getting Anthropic API Key
+### Getting an Anthropic API Key
 
 1. Visit [console.anthropic.com](https://console.anthropic.com)
-2. Sign in or create account
-3. Navigate to **API Keys** section
-4. Create new API key
-5. Copy and paste into `.env` file as `ANTHROPIC_API_KEY=sk-ant-...`
-6. **Never commit `.env` to git** — add to `.gitignore`
+2. Sign in or create an account
+3. Navigate to **API Keys**
+4. Create a new key and set `ANTHROPIC_API_KEY=sk-ant-...` in `.env`
+5. **Never commit `.env` to git**
 
 ## Development
 
-### Common Commands
-
 ```bash
-# Type checking
-npm run typecheck
+npm run typecheck          # tsc --noEmit (strict)
+npm run lint               # ESLint
+npm run lint -- --fix      # auto-fix
+npm run format             # Prettier
 
-# Linting
-npm run lint
-npm run lint --fix
+npm run test               # Vitest, all tests
+npm run test:watch         # watch mode
+npm run test:coverage      # coverage report (80% gate)
+npm run test:e2e           # Playwright E2E
 
-# Formatting
-npm run format
+npm run build:extension    # bundle MV3 extension
+npm run build:api          # build backend
+npm run dev:extension      # Vite HMR + CRXJS
+npm run dev:api            # Fastify dev server
+npm run verify             # lint + typecheck + test
 
-# Testing
-npm run test                    # Run all tests
-npm run test:watch             # Watch mode
-npm run test:coverage          # Coverage report (80% gate)
-npm run test:e2e               # E2E with Playwright
-
-# Building
-npm run build:extension        # Bundle MV3 extension
-npm run build:api              # Build backend
-
-# Local development
-npm run dev:extension          # Vite HMR + CRXJS
-npm run dev:api                # Fastify dev server
-
-# Code quality verification
-npm run verify                 # lint + typecheck + test
-
-# Database (if using PostgreSQL)
-npm run db:migrate            # Run migrations
-npm run db:seed               # Seed test data
+npm run db:migrate         # run migrations
+npm run db:seed            # seed test data
 ```
 
 ### Project Structure
@@ -157,173 +182,153 @@ npm run db:seed               # Seed test data
 ```
 src/
 ├── extension/              # Chrome MV3 extension
-│   ├── content-script.ts  # Detector + skipper
-│   ├── service-worker.ts  # Policy engine + cache
+│   ├── content-script.ts  # detector + skipper
+│   ├── service-worker.ts  # policy engine + cache
 │   ├── toast.ts           # Shadow DOM UI
 │   └── manifest.json
-├── api/                   # Fastify backend
+├── api/                    # Fastify backend
 │   ├── routes/            # API endpoints
-│   ├── services/          # Business logic
-│   ├── repositories/      # Data access
-│   ├── config.ts          # Config loader
-│   └── types.ts           # Domain types
-├── shared/                # Shared TypeScript types
-├── tests/                 # Unit, integration, E2E tests
-└── styles/                # Tailwind + component styles
+│   ├── services/          # business logic
+│   ├── repositories/      # data access
+│   ├── config.ts          # config loader
+│   └── types.ts           # domain types
+├── shared/                 # shared TypeScript types
+├── tests/                  # unit, integration, E2E tests
+└── styles/                 # Tailwind + component styles
 ```
 
 ## Testing & Quality
 
-### Unit Tests
-
 ```bash
-npm run test -- --run
+npm run test -- --run   # unit: mergeSegments(), thresholdFilter(), policyEngine(), route validation
+npm run test:e2e        # loads extension, plays fixture videos, asserts skip + undo
 ```
 
-Covers: `mergeSegments()`, `thresholdFilter()`, `policyEngine()`, API route validation.
-
-### E2E Tests
-
-```bash
-npm run test:e2e
-```
-
-Loads extension, plays fixture YouTube videos, asserts skip execution + undo.
-
-### Coverage Gate
-
-Minimum **80% coverage** enforced in CI:
-
-- Lines: ≥80%
-- Branches: ≥80%
-- Functions: ≥80%
+Minimum **80% coverage** enforced in CI (lines, branches, functions).
 
 ## Deployment
 
 ### Chrome Web Store
 
-1. **Build for production:**
+```bash
+npm run build:extension -- --mode production
+cd dist/extension && zip -r ../skipsponsor.zip . && cd ../..
+```
 
-   ```bash
-   npm run build:extension -- --mode production
-   ```
+Upload the `.zip` at [chromewebstore.google.com/devconsole](https://chromewebstore.google.com/devconsole).
+Full listing copy, assets, and privacy answers live in [`store/listing.md`](store/listing.md).
 
-2. **Create `.zip`:**
-
-   ```bash
-   cd dist/extension && zip -r ../skipsponsor.zip . && cd ../..
-   ```
-
-3. **Upload to Web Store:**
-   - Visit [chromewebstore.google.com/devconsole](https://chromewebstore.google.com/devconsole)
-   - Create new item or update existing
-   - Upload `.zip` file
-   - Fill store details, privacy policy, screenshots
-   - Submit for review
-
-### Backend Deployment (AWS ECS)
+### Backend (AWS ECS)
 
 ```bash
-# Plan infrastructure
 npm run tf:plan
-
-# Apply Terraform configuration
 npm run tf:apply
-
-# Deploy updated service
 npm run deploy:api
 ```
 
-Deploys to AWS ECS Fargate with ALB, RDS PostgreSQL, ElastiCache Redis.
+Deploys to ECS Fargate with ALB, RDS PostgreSQL, ElastiCache Redis.
 
-## Local Testing Guide
+### Local Testing Guide
 
-See [LOCAL_TESTING.md](./docs/LOCAL_TESTING.md) for step-by-step instructions on:
-
-- Setting up local PostgreSQL + Redis
-- Running backend server
-- Loading extension in Chrome
-- Testing sponsor skip functionality
-- Debugging with Chrome DevTools
-- Monitoring backend logs and metrics
+See [`docs/LOCAL_TESTING.md`](docs/LOCAL_TESTING.md) for PostgreSQL + Redis setup,
+backend logs, loading the extension, and DevTools debugging.
 
 ## Architecture
 
-For complete architecture details, see [skip-sponsor-ai-technical-spec.md](./skip-sponsor-ai-technical-spec.md).
+Full details: [`skip-sponsor-ai-technical-spec.md`](skip-sponsor-ai-technical-spec.md).
 
-**High-level flow:**
-
-1. Content script captures captions from YouTube video
-2. Sends `videoId` to service worker
-3. Service worker queries backend API
-4. Backend checks cache; if miss, classifies with Claude
+1. Content script captures captions from the YouTube video
+2. Sends `videoId` to the service worker
+3. Service worker queries the backend API
+4. Backend checks cache; on miss, classifies with Claude
 5. Segments returned; content script seeks past sponsor reads
-6. Toast shows undo option within 4 seconds
+6. Toast shows an Undo option within 4 seconds
 
 ## Security & Privacy
 
-- **Zero audio upload:** Transcript text only
-- **30-day retention:** Automatic hard delete after TTL
-- **No tracking:** No cross-site tracking or profiling
-- **Install tokens:** Opaque 256-bit auth per browser profile
-- **GDPR/CCPA compliant:** Data subject delete via API
-- **DPA:** Zero-retention inference flag with Anthropic
+- **Zero audio upload:** transcript text only
+- **30-day retention:** automatic hard delete after TTL
+- **No tracking:** no cross-site tracking or profiling
+- **Install tokens:** opaque 256-bit auth per browser profile
+- **GDPR/CCPA compliant:** data-subject delete via API
+- **DPA:** zero-retention inference flag with Anthropic
 
-See [skip-sponsor-ai-technical-spec.md § 6](./skip-sponsor-ai-technical-spec.md#6-security--compliance-rules) for complete security controls.
-
-## Monitoring & Observability
-
-- **Metrics:** Prometheus + Grafana dashboard
-- **Tracing:** OpenTelemetry with 10% sampling
-- **Logging:** Pino structured JSON → CloudWatch
-- **Error tracking:** Sentry for exceptions
-- **Performance:** Lighthouse audits, Web Vitals monitoring
+See [`PRIVACY.md`](PRIVACY.md) and the technical spec §6 for complete controls.
+To report a vulnerability, see [Security](#security) below — do not open public issues.
 
 ## Troubleshooting
 
 ### Extension doesn't detect sponsors
 
-1. Check YouTube video has captions (auto or manual)
-2. Verify `VITE_API_BASE_URL` points to running backend
-3. Check `chrome://extensions/` → Details → Errors for exceptions
+1. Check the video has captions (auto or manual)
+2. Verify `VITE_API_BASE_URL` points to a running backend
+3. Check `chrome://extensions/` → Details → Errors
 4. Enable `VITE_DEBUG_MODE=true` for verbose logging
 
 ### Backend API errors
 
 1. Verify `ANTHROPIC_API_KEY` is set and valid
-2. Check PostgreSQL + Redis running: `docker-compose ps`
-3. Review backend logs: `npm run dev:api`
+2. Check PostgreSQL + Redis: `docker-compose ps`
+3. Review logs: `npm run dev:api`
 4. Check rate limiting: default 60 req/min/install
 
 ### LLM timeouts
 
-- Increase `LLM_TIMEOUT_MS` in `.env` (default 8000ms)
-- Check Anthropic API status: [status.anthropic.com](https://status.anthropic.com)
+- Increase `LLM_TIMEOUT_MS` (default 8000ms)
+- Check [status.anthropic.com](https://status.anthropic.com)
 - Review backend logs for `llm_timeout` events
 
 ## Contributing
 
-1. Create feature branch: `git checkout -b feature/my-feature`
-2. Implement with tests: `npm run test -- --watch`
-3. Verify quality: `npm run verify`
-4. Create PR with test plan
-5. Await review and merge
+Contributions are welcome under the [MIT License](LICENSE) (inbound = outbound).
 
-See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for contribution guidelines.
+1. Fork and branch: `git checkout -b feature/my-feature`
+2. Implement with tests; run `npm run verify`
+3. Sign off commits (`git commit -s`) per the Developer Certificate of Origin
+4. Open a PR with a test plan using the template
+
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, Conventional Commits,
+quality gates, and review process, and follow the **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+Report bugs with the [bug template](.github/ISSUE_TEMPLATE/bug_report.md) and propose
+features with the [feature template](.github/ISSUE_TEMPLATE/feature_request.md).
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md).
+Be kind, be respectful, assume good faith. Report violations via a
+[private security advisory](https://github.com/juanjaragavi/skip-sponsor-ai/security/advisories/new).
+
+## Security
+
+Only the latest `1.x` release is supported. **Do not report vulnerabilities in
+public issues** — see [SECURITY.md](SECURITY.md) for private reporting,
+scope, safe harbor, and response timelines.
 
 ## License
 
-MIT — See [LICENSE](./LICENSE) for details.
+MIT © 2026 Juan Jaramillo — see [LICENSE](LICENSE) for the full text.
+
+SPDX: `MIT`. The SkipSponsor AI name and logos are project trademarks;
+the MIT License covers code, not trademark rights (see [Attribution](#attribution)).
+
+## Attribution
+
+Third-party packages, fonts, services, and data sources are credited in
+**[ATTRIBUTION.md](ATTRIBUTION.md)** — including Anthropic Claude, SponsorBlock
+(CC BY-NC-SA 4.0 data), YouTube (independent project, no affiliation),
+Roboto (OFL-1.1), and Lucide (ISC). If you vendor new third-party code,
+document it there.
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/skip-sponsor-ai/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/skip-sponsor-ai/discussions)
-- **Security:** See [SECURITY.md](./SECURITY.md) for vulnerability reporting
+- **Issues:** [GitHub Issues](https://github.com/juanjaragavi/skip-sponsor-ai/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/juanjaragavi/skip-sponsor-ai/discussions)
+- **Security:** [SECURITY.md](SECURITY.md) for private vulnerability reporting
+- **Privacy:** [PRIVACY.md](PRIVACY.md)
 
 ## Acknowledgments
 
 - Built with [Anthropic Claude](https://www.anthropic.com)
-- [SponsorBlock](https://www.sponsorblock.org) fallback integration
+- [SponsorBlock](https://sponsorblock.org) fallback integration
 - YouTube caption API
 - Chrome Web Store review team

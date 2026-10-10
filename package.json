@@ -2,7 +2,17 @@
   "name": "skipsponsor-ai",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Claude-powered YouTube sponsor skip Chrome extension + detection API",
+  "author": "Juan Jaramillo",
+  "homepage": "https://github.com/juanjaragavi/skip-sponsor-ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juanjaragavi/skip-sponsor-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/juanjaragavi/skip-sponsor-ai/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
