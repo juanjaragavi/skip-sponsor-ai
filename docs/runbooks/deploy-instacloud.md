@@ -11,7 +11,7 @@ run every command as `insta --agent …`. Humans can omit `--agent`.
 | Org | DevSpeak Labs Backend Service (`5457af74-5b2c-4731-84f0-4bc29bf7f6ef`), Free tier |
 | Project | `skip-sponsor-ai` (`34a72ea1-7f91-439f-be91-44c2f56a86ad`), branch `main`, region `us-east` |
 | `compute/api` | Port 3000, scale-to-zero, ceiling 1 vCPU / 512 MB. URL: `https://prod-main-api-0081d6-00y4hcqxyhb.compute.instacloud-edge.com` |
-| `postgres/db` | Postgres 16, ceiling 2 vCPU / 2 GiB (the minimum), suspends when idle |
+| `postgres/db` | Postgres 16, ceiling 2 vCPU / 2 GiB (the minimum), scale-to-zero (`postgres always-on off`) |
 | Redis | Not provisioned (optional in code, see [Adding Redis](#adding-redis)) |
 | State | **Stopped** since 2026-10-11, after verification. The URL answers `503 {"error":"service is stopped"}` |
 
@@ -50,7 +50,13 @@ insta --agent compute stop api                  # offline until `start` (never `
 `{"ok":true,"persistence":"postgres","redis":"disabled","ai":"not_configured"}`.
 It answers 200 when Postgres answers. Redis and AI are reported but never gate it.
 
-Postgres has no stop. It suspends when idle (`postgres always-on` is off).
+Postgres has no stop. It suspends when idle, but only while always-on is off.
+Check it with `insta --agent postgres always-on --json`, which should show
+`"scaleToZero": true`. On 2026-10-11 the new database turned out to be warm
+(`scaleToZero: false`) with no always-on command issued, possibly after the
+`postgres limits` change. It was switched back with
+`insta --agent postgres always-on off db` (InstaCloud ticket
+`f43ffcb9-771b-4516-8ad4-708c05aa5ffa`).
 
 ## Redeploy (a new release)
 
@@ -139,6 +145,8 @@ curl -s <url>/readyz                          # "redis":"ok"
 - The org's credit is shared. When it runs out, **every** project pauses,
   including the paying Utilities backends. Check `insta --agent billing --json`
   before starting the API, and stop it when idle periods are long.
+- A warm Postgres bills RAM around the clock. After any `postgres limits`
+  change, re-check that `postgres always-on` is off.
 - `LLM_DAILY_BUDGET_USD=0` turns all Claude calls off immediately.
   `insta --agent compute stop api` takes the whole API offline.
 
