@@ -17,7 +17,7 @@
 
 ---
 
-**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it offers precision sponsor detection with 93%+ accuracy while respecting user preferences and privacy.
+**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it targets ≥93% precision and ≥90% recall on a labeled evaluation set (a design target from the technical spec, not yet measured) while respecting user preferences and privacy.
 
 - 🧠 **AI-powered** — Claude Haiku 4.5 analyzes captions; Claude Sonnet 5.5 fallback for ambiguous cases
 - ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back
@@ -132,7 +132,7 @@ In `.env.local`, loaded at build time:
 
 | Variable            | Required | Default                                                                     | Description                                     |
 | ------------------- | -------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
-| `VITE_API_BASE_URL` | Yes      | `https://api.skipsponsor.example.com` (set `http://localhost:3040` for dev) | Backend API endpoint (dev) or production domain |
+| `VITE_API_BASE_URL` | Yes      | none for production builds (they fail without an https URL); dev: `http://localhost:3040` | Backend API endpoint (dev) or production domain |
 | `VITE_ENVIRONMENT`  | No       | `development`                                                               | `development`, `staging`, or `production`       |
 | `VITE_DEBUG_MODE`   | No       | `false`                                                                     | Verbose console logging in content script       |
 
@@ -142,24 +142,21 @@ Only `VITE_API_BASE_URL` is read by the extension code today; the other two are 
 
 In `.env`, loaded at server startup:
 
-| Variable                  | Required | Default                                                   | Description                                                         |
-| ------------------------- | -------- | --------------------------------------------------------- | ------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`       | Yes      | —                                                         | API key from [console.anthropic.com](https://console.anthropic.com) |
-| `DATABASE_URL`            | Yes      | `postgresql://localhost:5434/skipsponsor`                 | PostgreSQL connection string                                        |
-| `REDIS_URL`               | Yes      | `redis://localhost:6380`                                  | Redis connection string                                             |
-| `NODE_ENV`                | No       | `development`                                             | `development`, `staging`, or `production`                           |
-| `LOG_LEVEL`               | No       | `info`                                                    | `trace`, `debug`, `info`, `warn`, `error`, `fatal`                  |
-| `CORS_ORIGIN`             | No       | `*`                                                       | CORS allowed origin (restrict in production)                        |
-| `RATE_LIMIT_WINDOW_MS`    | No       | `60000`                                                   | Rate limit window (ms)                                              |
-| `RATE_LIMIT_MAX_REQUESTS` | No       | `60`                                                      | Max requests per window                                             |
-| `LLM_TIMEOUT_MS`          | No       | `8000`                                                    | LLM inference timeout (ms)                                          |
-| `LLM_MAX_RETRIES`         | No       | `1`                                                       | LLM retry attempts on timeout                                       |
-| `CONFIDENCE_THRESHOLD`    | No       | `0.78`                                                    | Default confidence threshold (0.5–0.95)                             |
-| `CACHE_TTL_DAYS`          | No       | `30`                                                      | Cache retention in days                                             |
-| `SENTRY_DSN`              | No       | —                                                         | Sentry error tracking DSN (optional)                                |
-| `PORT`                    | No       | `3040` local (`npm run dev:api`), `3000` in the container | Server listen port                                                  |
+| Variable                     | Required        | Default                                                   | Description                                                                      |
+| ---------------------------- | --------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`          | Yes             | —                                                         | API key from [console.anthropic.com](https://console.anthropic.com)              |
+| `DATABASE_URL`               | Production      | — (in-memory store when unset)                            | PostgreSQL connection string; the shared analysis cache                          |
+| `REDIS_URL`                  | No              | —                                                         | Optional hot cache in front of Postgres                                          |
+| `INSTALL_TOKEN_SECRET`       | Production      | — (any opaque token accepted in dev)                      | HMAC key for anonymous install tokens (≥32 chars)                                |
+| `DAILY_ANALYSES_PER_INSTALL` | No              | `25`                                                      | Fresh LLM analyses per install per UTC day; cached videos never count            |
+| `LLM_DAILY_BUDGET_USD`       | No              | `2`                                                       | Global daily LLM spend cap; `0` switches the LLM off                             |
+| `CORS_ORIGIN`                | No              | dev: any; production: any `chrome-extension://` origin    | Comma-separated origins, e.g. `chrome-extension://<item id>`                     |
+| `TRUST_PROXY`                | Behind a proxy  | `0`                                                       | `1` = use `X-Forwarded-For` for client IPs (rate limits)                         |
+| `NODE_ENV`                   | No              | `development`                                             | `production` enables the startup config checks                                   |
+| `CACHE_TTL_DAYS`             | No              | `30`                                                      | Analysis retention; expired rows are hard-deleted hourly                         |
+| `PORT`                       | No              | `3040` local (`npm run dev:api`), `3000` in the container | Server listen port                                                               |
 
-The server reads only `ANTHROPIC_API_KEY`, `PORT`, `NODE_ENV`, and `GLOBAL_KILL` (kill switch served by `GET /v1/config`). `DATABASE_URL` and `REDIS_URL` are parsed in `src/api/config.ts` but unused while segments live in memory; the remaining rows are `.env.example` placeholders no code reads.
+Full list (pool size, migrations on start, install-token rate limit, kill switch) in [`.env.example`](.env.example) and [`docs/DEPLOY.md`](docs/DEPLOY.md). `LOG_LEVEL`, `RATE_LIMIT_*`, `LLM_TIMEOUT_MS`, `LLM_MAX_RETRIES`, `CONFIDENCE_THRESHOLD` and `SENTRY_DSN` in `.env.example` are spec placeholders that no code reads yet.
 
 ### Getting an Anthropic API Key
 
@@ -206,7 +203,7 @@ src/
 ├── api/                    # Fastify backend
 │   ├── routes/            # API endpoints
 │   ├── services/          # business logic (LLM, chunking, SponsorBlock)
-│   ├── repositories/      # data access (in-memory today)
+│   ├── repositories/      # Postgres + optional Redis; in-memory for dev/tests
 │   ├── config.ts          # config loader
 │   └── server.ts          # Fastify setup
 ├── shared/                 # shared types, Zod validators, constants
@@ -228,22 +225,26 @@ Minimum **80% coverage** enforced in CI (lines, branches, functions).
 ### Chrome Web Store
 
 ```bash
-npm run build:extension -- --mode production
-cd dist/extension && zip -r ../skipsponsor.zip . && cd ../..
+echo "VITE_API_BASE_URL=https://api.<your-domain>" > .env.production   # gitignored
+npm run package:extension   # → release/skipsponsor-ai-<version>.zip, after store checks
 ```
 
 Upload the `.zip` at [chromewebstore.google.com/devconsole](https://chromewebstore.google.com/devconsole).
 Full listing copy, assets, and privacy answers live in [`store/listing.md`](store/listing.md).
 
-### Backend (AWS ECS)
+### Backend
+
+One container (`infra/Dockerfile.api`) plus PostgreSQL. [`docs/DEPLOY.md`](docs/DEPLOY.md)
+covers the launch hosts: InstaCloud (preferred) and an Oracle Cloud Always Free
+VM (`infra/oracle/`). The Terraform in `infra/terraform` targets AWS ECS
+Fargate + RDS + ElastiCache; it is kept for later scale and is not the launch
+path.
 
 ```bash
-terraform -chdir=infra/terraform plan
-terraform -chdir=infra/terraform apply
-# API image: infra/Dockerfile.api (no deploy:api script yet)
+npm run build:api      # → dist/api/server.mjs + dist/api/migrate.mjs
+npm run db:migrate     # apply infra/db/migrations to DATABASE_URL
+npm run stage:api      # → dist/deploy-api/, a build context with the Dockerfile at its root
 ```
-
-Deploys to ECS Fargate with ALB, RDS PostgreSQL, ElastiCache Redis.
 
 ### Local Testing Guide
 

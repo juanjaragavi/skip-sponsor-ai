@@ -2,7 +2,7 @@
 
 Complete documentation of all environment variables used by SkipSponsor AI across the extension client, backend server, and infrastructure.
 
-> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+> **Code status (verified 2026-10-11):** the API reads `ANTHROPIC_API_KEY`, `PORT`, `NODE_ENV`, `GLOBAL_KILL`, `DATABASE_URL` (Postgres persistence; in memory when unset), `REDIS_URL` (optional cache), `PERSISTENCE`, `PG_POOL_MAX`, `CACHE_TTL_DAYS`, `CORS_ORIGIN`, `TRUST_PROXY`, `INSTALL_TOKEN_SECRET`, `DAILY_ANALYSES_PER_INSTALL`, `LLM_DAILY_BUDGET_USD`, `INSTALLS_PER_IP_PER_HOUR`, and (container) `DB_MIGRATE_ON_START`. The extension reads only `VITE_API_BASE_URL`, at build time; production builds fail without an https value. `.env.example` marks the rest as not read by code yet. Production values: [DEPLOY.md](DEPLOY.md). Health checks: `GET /healthz`, `GET /readyz`. Migrations: `npm run db:migrate`.
 
 ## Table of Contents
 
@@ -21,8 +21,8 @@ These variables are loaded at **build time** by Vite and baked into the extensio
 ### VITE_API_BASE_URL
 
 **Type:** `string` (URL)  
-**Required:** Yes  
-**Default:** `http://localhost:3040`  
+**Required:** Yes for production builds (`npm run build:extension` fails without an https URL)  
+**Default:** `http://localhost:3040` in development builds only  
 **Example:**
 
 ```
@@ -497,33 +497,22 @@ netstat -ano | findstr :3040  # Windows
 
 ### CORS_ORIGIN
 
-**Type:** `string` (origin URL or wildcard)  
+**Type:** `string` (comma-separated origins, or `*`)  
 **Required:** No  
-**Default:** `*`  
+**Default:** unset = any origin in development; any `chrome-extension://` origin in production  
 **Examples:**
 
 ```
 CORS_ORIGIN=*
-CORS_ORIGIN=http://localhost:3040
-CORS_ORIGIN=https://skipsponsor.ai
-CORS_ORIGIN=https://skipsponsor.ai,https://staging.skipsponsor.ai
+CORS_ORIGIN=chrome-extension://abcdefghijklmnopabcdefghijklmnop
+CORS_ORIGIN=chrome-extension://<store item id>,chrome-extension://<unpacked dev id>
 ```
 
 **Description:**  
-Comma-separated list of allowed CORS origins for API requests. Controls which domains can call the backend API.
-
-**Setting Up:**
-
-```bash
-# Local development (allow all)
-CORS_ORIGIN=*
-
-# Production (restrict to specific domain)
-CORS_ORIGIN=https://skipsponsor.ai
-
-# Multiple domains
-CORS_ORIGIN=https://skipsponsor.ai,https://staging.skipsponsor.ai
-```
+Origins allowed to call the API from a browser. The extension's service worker
+calls from `chrome-extension://<item id>`; the store assigns the ID on the first
+upload, so pin it then. CORS only limits browsers: install tokens, the daily
+quota and rate limits protect the API from scripts.
 
 ---
 
@@ -608,7 +597,7 @@ CONFIDENCE_THRESHOLD=0.85
 **Description:**  
 Minimum confidence score required to accept a sponsor segment. Segments below this threshold are discarded.
 
-**Impact on Accuracy:**
+**Impact on Accuracy (illustrative targets, not measured; no labeled evaluation has been run yet):**
 
 | Threshold | Precision | Recall   | Use Case                            |
 | --------- | --------- | -------- | ----------------------------------- |

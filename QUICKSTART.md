@@ -2,7 +2,7 @@
 
 Get up and running with SkipSponsor AI in 15 minutes. This guide covers the essential steps to develop, test, and deploy the Chrome extension locally.
 
-> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+> **Code status (verified 2026-10-11):** the API persists analyses in PostgreSQL when `DATABASE_URL` is set (in memory otherwise), with an optional Redis cache (`REDIS_URL`); `npm run db:migrate` applies `infra/db/migrations`. A cost guard meters fresh LLM analyses per install (`INSTALL_TOKEN_SECRET`, `DAILY_ANALYSES_PER_INSTALL`) and caps daily LLM spend (`LLM_DAILY_BUDGET_USD`). The extension's API URL comes from `VITE_API_BASE_URL` at build time: dev builds default to `http://localhost:3040`, production builds fail without an https URL. Health checks: `GET /healthz` (liveness) and `GET /readyz` (Postgres). `.env.example` marks the variables no code reads yet. Deployment: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## TL;DR (5-Minute Setup)
 
@@ -484,7 +484,7 @@ A: Not in v1. Spec is YouTube-only. SPA navigation on youtube.com only.
 A: Not in v1. Spec covers youtube.com/watch only. Shorts out-of-scope.
 
 **Q: How accurate is the sponsor detection?**  
-A: ~93% precision, ~90% recall on the 500-video test set using Claude Haiku.
+A: The design target is ≥93% precision and ≥90% recall on a 500-video labeled set (spec FR-03). That evaluation has not been run yet, so treat these numbers as goals, not measurements.
 
 **Q: What if there are no captions?**  
 A: Falls back to SponsorBlock read-only API (no write). If neither works, manual marking only.

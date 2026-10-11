@@ -4,8 +4,9 @@ Everything the Developer Dashboard asks for, in dashboard order. Paste the
 fenced blocks as-is. Assets live next to this file in `store/`.
 
 > **Before you submit:** work through the checklist in
-> [Release blockers](#release-blockers). The package script refuses to build
-> a store ZIP that still points at a local or placeholder API.
+> [Release blockers](#release-blockers). Production builds fail without an
+> https `VITE_API_BASE_URL`, and the package script refuses a store ZIP that
+> points at a local or placeholder API.
 
 ---
 
@@ -61,6 +62,9 @@ PRIVATE BY DESIGN
 • No account, no sign-in, no personal data.
 • Results are cached per video for 30 days, then deleted.
 • Runs only on www.youtube.com, with a single extra permission (storage).
+
+FREE TO USE
+SkipSponsor AI is free, with no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed load instantly and don't count. If the allowance runs out, already-analyzed videos and community-labelled sponsor segments keep skipping until it resets.
 
 WHAT IT DOESN'T DO
 SkipSponsor AI skips sponsor segments inside videos. It doesn't block YouTube's own ads, and it doesn't skip intros, outros, or reminders to subscribe.
@@ -120,7 +124,7 @@ SkipSponsor AI has a single purpose: skipping sponsor reads inside YouTube video
 **`storage`**
 
 ```text
-Saves the user's settings (on/off, Auto-skip/Notify/Off mode, confidence threshold, and the channels where skipping is turned off) and an anonymous install token used for rate limiting. Nothing else is stored.
+Saves the user's settings (on/off, Auto-skip/Notify/Off mode, confidence threshold, and the channels where skipping is turned off), an anonymous install token used for rate limiting and the free daily analysis allowance, and a note of the last daily-limit notice shown so it appears only once. Nothing else is stored.
 ```
 
 **Host permission `https://www.youtube.com/*`**
@@ -174,7 +178,7 @@ https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md
 | Visibility | Public (or Unlisted for a closed beta first) |
 | Regions | All regions |
 | Pricing | Free |
-| Staged rollout | Start at 5%, then 50% and 100% (see the release plan in `CLAUDE.md`) |
+| Staged rollout | Start at 5%, then 50% and 100% (see "Release & Rollback" in `AGENTS.md`) |
 
 ## 5. Test instructions for the reviewer
 
@@ -194,21 +198,42 @@ The extension analyzes caption text only. Videos without captions use SponsorBlo
 
 ## Release blockers
 
-Fix these before uploading. None of them can be done from this repository alone.
+Status as of 2026-10-11 (branch `feat/launch-readiness`). Items marked
+**Owner** cannot be done from this repository.
 
-1. **Production API.** Deploy the backend over HTTPS and build with the real
-   URL, for example `VITE_API_BASE_URL=https://api.your-domain.com` in
-   `.env.production`. The default fallback in `service-worker.ts`
-   (`api.skipsponsor.example.com`) is a placeholder, and
-   `npm run package:extension` fails while the bundle still contains
-   `localhost`, `127.0.0.1` or `example.com`.
-2. **CORS.** The production API must allow the extension origin
-   `chrome-extension://<item id>`. The item ID is assigned on the first upload.
-3. **Privacy policy hosting.** `PRIVACY.md` must be live at the URL above,
-   so push it to `main`. Check that the data retention it states (30-day
-   results, 7-day request logs) matches the production infrastructure
-   settings and your Anthropic data-processing terms.
-4. **Developer account.** A Chrome Web Store developer account (one-time
-   registration fee) with a verified contact email.
-5. **Trader status (EU).** The dashboard asks whether you are a trader under
-   the EU Digital Services Act. Answer this based on your situation.
+1. **Production API.** _Code: done. Owner: deploy, domain, build._
+   - The placeholder fallback in `service-worker.ts` is gone. The API origin is
+     fixed at build time from `VITE_API_BASE_URL`; production builds fail
+     without an https URL, and `npm run package:extension` still refuses
+     `localhost`, `127.0.0.1` and the old placeholder host.
+   - The API persists analyses in Postgres, meters fresh analyses per install
+     and caps daily LLM spend. Hosting steps: [`docs/DEPLOY.md`](../docs/DEPLOY.md)
+     (InstaCloud preferred, Oracle Always Free VM as the alternative).
+   - **Owner:** choose the host, buy the domain, deploy, then build with
+     `VITE_API_BASE_URL=https://api.<your-domain>` in `.env.production`.
+2. **CORS.** _Code: done. Owner: set the item ID._ The API reads
+   `CORS_ORIGIN` (comma-separated). Until it is set, production allows any
+   `chrome-extension://` origin. **Owner:** after the first upload, set
+   `CORS_ORIGIN=chrome-extension://<item id>`.
+3. **Privacy policy hosting and retention.** _Code: retention enforced.
+   Owner: legal wording, merge to `main`._
+   - The API hard-deletes analyses after `CACHE_TTL_DAYS` (30), telemetry
+     after 30 days and quota counters after 2 days, every hour. Caption text
+     is never stored by the API.
+   - **Owner (legal wording in `PRIVACY.md`, not changed here):** it says the
+     backend is "hosted on Amazon Web Services" and that secrets sit in "a
+     managed secrets service", so update both to the chosen host. It does not
+     say that Anthropic keeps API inputs and outputs for up to 30 days (longer
+     if flagged under its Usage Policy) unless a zero-retention agreement is
+     in place. It does not mention the per-install quota counter (a keyed hash
+     of the install token, kept 2 days). The "7-day request logs" promise
+     depends on the host's log retention setting.
+   - **Owner:** merge to `main` so the policy URL above serves the final text.
+4. **Developer account.** **Owner:** Chrome Web Store developer registration
+   (one-time $5 fee) with a verified contact email.
+5. **Trader status (EU).** **Owner:** the dashboard asks whether you are a
+   trader under the EU Digital Services Act. Answer it for your situation.
+6. **Reviewer path.** **Owner:** before submitting, open the two test videos
+   in section 5 once against the production API, so their analyses are cached
+   and the reviewer's run does not depend on that day's LLM budget. Keep
+   `ANTHROPIC_API_KEY` set and `LLM_DAILY_BUDGET_USD` above 0 during review.
