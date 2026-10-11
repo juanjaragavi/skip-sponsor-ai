@@ -1,0 +1,9 @@
+# TLS termination for the API (automatic Let's Encrypt certificate for API_DOMAIN).
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api:3000
+	log {
+		output stdout
+		format json
+	}
+}

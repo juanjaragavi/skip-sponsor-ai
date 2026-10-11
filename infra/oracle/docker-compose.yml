@@ -1,0 +1,60 @@
+# Single-VM production stack (Oracle Cloud Always Free or any Docker host).
+# See docs/DEPLOY.md › Option B. Run from the repo root:
+#   docker compose -f infra/oracle/docker-compose.yml --env-file infra/oracle/.env up -d --build
+name: skipsponsor-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: skipsponsor
+      POSTGRES_DB: skipsponsor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/oracle/.env}
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skipsponsor"]
+      interval: 10s
+      retries: 5
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgres://skipsponsor:${POSTGRES_PASSWORD}@postgres:5432/skipsponsor
+      INSTALL_TOKEN_SECRET: ${INSTALL_TOKEN_SECRET:?set INSTALL_TOKEN_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-2}
+      DAILY_ANALYSES_PER_INSTALL: ${DAILY_ANALYSES_PER_INSTALL:-25}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      TRUST_PROXY: "1"
+    networks: [internal]
+    # Not published: only Caddy reaches it.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80", "443:443"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN, e.g. api.example.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+volumes:
+  pgdata: {}
+  caddy_data: {}
+  caddy_config: {}
+
+networks:
+  internal: {}

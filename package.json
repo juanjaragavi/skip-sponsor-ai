@@ -37,7 +37,8 @@
     "db:migrate": "tsx --env-file-if-exists=.env src/api/db/migrate-cli.ts",
     "verify": "npm run lint && npm run typecheck && npm run test",
     "package:extension": "npm run build:extension && node scripts/zip-extension.mjs",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "stage:api": "node scripts/stage-api-context.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
