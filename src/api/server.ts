@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { config, checkProductionConfig } from "./config";
+import { corsOrigin } from "./cors";
 import { registerSegmentRoutes } from "./routes/segments";
 import { registerTelemetryRoutes } from "./routes/telemetry";
 import { registerInstallRoutes } from "./routes/installs";
@@ -40,6 +41,9 @@ export interface ServerDeps {
   dailyAnalysesPerInstall: number;
   llmDailyBudgetUsd: number;
   installsPerIpPerHour: number;
+  corsOrigin: string;
+  isProduction: boolean;
+  trustProxy: boolean;
 }
 
 const persistenceOf = new WeakMap<object, Persistence>();
@@ -56,7 +60,13 @@ export function buildServer(
 ): ReturnType<typeof Fastify> {
   // 4 MB: up to 5,000 caption cues of 600 chars (non-Latin scripts are
   // 3 bytes/char in UTF-8) did not fit Fastify's 1 MB default.
-  const app = Fastify({ logger: true, bodyLimit: 4 * 1024 * 1024 });
+  const app = Fastify({
+    logger: true,
+    bodyLimit: 4 * 1024 * 1024,
+    // Behind InstaCloud's router or Caddy: req.ip from X-Forwarded-For, so
+    // rate limits apply per client instead of per proxy.
+    trustProxy: deps.trustProxy ?? config.trustProxy,
+  });
   const persistence =
     deps.persistence ??
     (process.env["VITEST"] === "true"
@@ -64,7 +74,15 @@ export function buildServer(
       : createPersistence(config, app.log));
   persistenceOf.set(app, persistence);
   app.addHook("onClose", async () => persistence.close());
-  void app.register(cors, { origin: true });
+  void app.register(cors, {
+    origin: corsOrigin(
+      deps.corsOrigin ?? config.corsOrigin,
+      deps.isProduction ?? config.isProduction,
+    ),
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["authorization", "content-type", "x-extension-version"],
+    maxAge: 86400,
+  });
   void app.register(rateLimit, { max: 500, timeWindow: "1 minute" });
   // RFC7807 error envelope
   app.setErrorHandler((err, req, reply) => {
