@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS sponsor_segments (
   source      TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT chk_duration CHECK (end_time - start_time BETWEEN 5 AND 600),
-  EXCLUDE USING gist (video_id WITH =, numrange(start_time, end_time) WITH &&)
+  EXCLUDE USING gist (video_id WITH =, numrange(start_time::numeric, end_time::numeric) WITH &&)
 );
 CREATE INDEX IF NOT EXISTS idx_seg_video ON sponsor_segments (video_id, start_time);
 

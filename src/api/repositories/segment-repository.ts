@@ -1,6 +1,9 @@
 import type { VideoAnalysis } from "../../shared/types";
 
-/** Repository abstraction — Postgres + Redis in prod, memory in dev/test. */
+/**
+ * Repository abstraction — Postgres (+ optional Redis) in prod
+ * (PostgresSegmentRepository, CachedSegmentRepository), memory in dev/test.
+ */
 export interface SegmentRepository {
   get(videoId: string): Promise<VideoAnalysis | null>;
   put(analysis: VideoAnalysis): Promise<void>;
@@ -35,8 +38,11 @@ export class MemorySegmentRepository implements SegmentRepository {
   }
 }
 
+/**
+ * The in-memory repository (dev and tests). Production wiring — Postgres
+ * plus an optional Redis cache, selected by DATABASE_URL / REDIS_URL — lives
+ * in createPersistence() (src/api/persistence.ts).
+ */
 export function getRepository(): SegmentRepository {
-  // Production wiring (pg + ioredis) would be selected via env here.
-  // v1 ships memory + SQL migration; RDS/ElastiCache configured in infra/.
   return new MemorySegmentRepository();
 }

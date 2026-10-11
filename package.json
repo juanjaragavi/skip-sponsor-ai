@@ -27,11 +27,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run src/tests/integration",
     "test:e2e": "playwright test",
     "build:extension": "vite build",
     "build:api": "tsc -p tsconfig.api.json",
     "dev:extension": "vite --mode development",
     "dev:api": "tsx watch --env-file-if-exists=.env src/api/server.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env src/api/db/migrate-cli.ts",
     "verify": "npm run lint && npm run typecheck && npm run test",
     "package:extension": "npm run build:extension && node scripts/zip-extension.mjs",
     "icons": "node scripts/build-icons.mjs"

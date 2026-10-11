@@ -1,4 +1,6 @@
-version: "3.9"
+# Local dev services only. `name` keeps this project (and its volume) apart
+# from other repos' infra/docker-compose.yml files.
+name: skipsponsor
 services:
   postgres:
     image: postgres:16.3
