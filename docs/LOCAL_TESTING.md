@@ -685,7 +685,7 @@ redis-cli
 - **Run full test suite:** `npm run test`
 - **Check code quality:** `npm run verify`
 - **Build for Web Store:** `npm run build:extension -- --mode production`
-- **Deploy backend:** `terraform -chdir=infra/terraform plan && terraform -chdir=infra/terraform apply`
+- **Deploy backend:** InstaCloud, see [runbooks/deploy-instacloud.md](runbooks/deploy-instacloud.md) (the AWS Terraform is superseded)
 
 For more information, see:
 

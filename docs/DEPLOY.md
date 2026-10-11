@@ -1,9 +1,12 @@
 # Deploying the SkipSponsor AI API
 
 The extension needs one HTTPS API. It is a single stateless container plus
-PostgreSQL. Redis is optional; skip it at launch. This guide covers two cheap
-hosts: **InstaCloud** (preferred) and an **Oracle Cloud Always Free VM**. It
-documents the steps. Nothing here has been run against a live account.
+PostgreSQL. Redis is optional; skip it at launch. The API is hosted on
+**InstaCloud** ([ADR 0001](adr/0001-api-hosting-instacloud.md)). The live
+project, its URL and the verified commands are in
+[runbooks/deploy-instacloud.md](runbooks/deploy-instacloud.md). This guide
+keeps the generic steps and an **Oracle Cloud Always Free VM** fallback. The
+AWS Terraform in `infra/terraform` is superseded.
 
 - [What you deploy](#what-you-deploy)
 - [Production environment](#production-environment)
@@ -16,7 +19,7 @@ documents the steps. Nothing here has been run against a live account.
 
 | Piece | Required | Notes |
 | --- | --- | --- |
-| API container | Yes | Image from `infra/Dockerfile.api` (Node 22, runs as `node`, listens on `PORT`, default 3000). Liveness `GET /healthz`, readiness `GET /readyz` (checks Postgres). |
+| API container | Yes | Image from `infra/Dockerfile.api` (Node 22, runs as `node`, listens on `PORT`, default 3000). Liveness `GET /healthz`, readiness `GET /readyz` (gates on Postgres; also reports `redis` and `ai`). |
 | PostgreSQL 16+ | Yes | The shared analysis cache. Schema: `infra/db/migrations/*.sql`, applied by `node dist/api/migrate.mjs`. Migration 001 creates the `pgcrypto` and `btree_gist` extensions, so the database user must be allowed to create them. |
 | Redis 7 | No | Hot cache in front of Postgres (`REDIS_URL`). Postgres alone meets the cache-hit goal across instances. |
 
@@ -39,9 +42,9 @@ Set these on the host. Never commit them. `.env.example` lists every name.
 | Variable | Value | Why |
 | --- | --- | --- |
 | `NODE_ENV` | `production` | Turns on the startup checks below. |
-| `DATABASE_URL` | Postgres connection string (`?sslmode=require` when remote) | Persistence. The API refuses to start in production without it, unless `PERSISTENCE=memory` is set. |
+| `DATABASE_URL` | Postgres connection string (`?sslmode=require` when remote; pinned to `verify-full`) | Persistence. The API refuses to start in production without it, unless `PERSISTENCE=memory` is set. |
 | `INSTALL_TOKEN_SECRET` | 32+ random characters (`openssl rand -base64 48`) | Signs install tokens. Required in production. Rotating it invalidates every token; extensions fetch a new one on the next 401. |
-| `ANTHROPIC_API_KEY` | Your key | Without it every analysis falls back to SponsorBlock data. |
+| `ANTHROPIC_API_KEY` | Your key | Without it `POST /v1/segments:analyze` answers 503 `llm_not_configured` and lookups serve only cached and SponsorBlock data (`status: "degraded"`). No Claude call is attempted. |
 | `LLM_DAILY_BUDGET_USD` | e.g. `2` | Global daily LLM spend cap (estimated from token usage × list price). `0` turns the LLM off. |
 | `DAILY_ANALYSES_PER_INSTALL` | e.g. `25` | Fresh analyses one browser may trigger per UTC day. Cached videos never count. |
 | `TRUST_PROXY` | `1` | Both hosts below put a proxy in front: rate limits must see the client IP. |
@@ -56,11 +59,14 @@ On boot the API prints `config warning:` lines for risky but legal settings
 (no API key, unpinned CORS, `TRUST_PROXY` off) and exits with `config error:`
 when a required setting is missing.
 
-## Option A: InstaCloud (preferred)
+## Option A: InstaCloud (live)
 
+Deployed and verified on 2026-10-11 as project `skip-sponsor-ai`. The exact
+service names, secret names, URL, stop/start and the verification record are
+in [runbooks/deploy-instacloud.md](runbooks/deploy-instacloud.md). That
+runbook is authoritative; the generic outline below is for a fresh project.
 Billing is by actual usage, and new compute and Postgres scale to zero when
-idle. Commands below are for the owner's terminal. Agents add `--agent` and
-relay approvals instead of running them. Check flags against
+idle. Agents add `--agent` to every command. Check flags against
 `insta <command> --help` first, because the CLI changes often.
 
 ```bash
@@ -73,7 +79,7 @@ insta service add compute api --port 3000
 # 2. Credentials: bind the database, set secrets (values typed by you, never pasted into chat)
 insta secrets bind DATABASE_URL postgres/db --to compute/api
 openssl rand -base64 48 | insta secrets set INSTALL_TOKEN_SECRET
-insta secrets set ANTHROPIC_API_KEY                 # reads the value from stdin
+# ANTHROPIC_API_KEY: notes/cto/runbooks/set-skipsponsor-anthropic-key.sh (stdin, never printed)
 insta secrets set NODE_ENV production
 insta secrets set TRUST_PROXY 1
 insta secrets set LLM_DAILY_BUDGET_USD 2
@@ -91,7 +97,7 @@ insta deploy dist/deploy-api --group api --port 3000
 
 # 5. Verify: poll the printed URL
 curl -s https://<printed-host>/healthz              # {"ok":true,"version":"1.0.0"}
-curl -s https://<printed-host>/readyz               # {"ok":true,"persistence":"postgres"}
+curl -s https://<printed-host>/readyz               # {"ok":true,"persistence":"postgres","redis":"disabled","ai":"configured"}
 ```
 
 Notes:

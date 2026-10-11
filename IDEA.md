@@ -225,10 +225,11 @@ Minimum **80% coverage** enforced in CI:
 
 ### Backend Deployment
 
-See [docs/DEPLOY.md](./docs/DEPLOY.md): one container (`infra/Dockerfile.api`)
-plus PostgreSQL, on InstaCloud (preferred) or an Oracle Cloud Always Free VM.
-`infra/terraform` (AWS ECS Fargate, RDS, ElastiCache) is kept for later scale
-and is not the launch path.
+One container (`infra/Dockerfile.api`) plus PostgreSQL on InstaCloud
+([ADR 0001](./docs/adr/0001-api-hosting-instacloud.md),
+[runbook](./docs/runbooks/deploy-instacloud.md)). [docs/DEPLOY.md](./docs/DEPLOY.md)
+keeps an Oracle Cloud Always Free VM as a fallback. `infra/terraform` (AWS ECS
+Fargate, RDS, ElastiCache) is superseded and was never applied.
 
 ## Local Testing Guide
 

@@ -234,11 +234,13 @@ Full listing copy, assets, and privacy answers live in [`store/listing.md`](stor
 
 ### Backend
 
-One container (`infra/Dockerfile.api`) plus PostgreSQL. [`docs/DEPLOY.md`](docs/DEPLOY.md)
-covers the launch hosts: InstaCloud (preferred) and an Oracle Cloud Always Free
-VM (`infra/oracle/`). The Terraform in `infra/terraform` targets AWS ECS
-Fargate + RDS + ElastiCache; it is kept for later scale and is not the launch
-path.
+One container (`infra/Dockerfile.api`) plus PostgreSQL, hosted on InstaCloud
+([ADR 0001](docs/adr/0001-api-hosting-instacloud.md)). The live project and its
+start, stop and redeploy commands are in
+[`docs/runbooks/deploy-instacloud.md`](docs/runbooks/deploy-instacloud.md).
+[`docs/DEPLOY.md`](docs/DEPLOY.md) also covers an Oracle Cloud Always Free VM
+(`infra/oracle/`) as a fallback. The AWS Terraform in `infra/terraform` is
+**superseded** and was never applied.
 
 ```bash
 npm run build:api      # → dist/api/server.mjs + dist/api/migrate.mjs
