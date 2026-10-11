@@ -109,3 +109,10 @@ infra/terraform/override.tf
 *.tfvars.json
 
 .mcp.json
+
+# InstaCloud: machine-local state (.insta/project.json, the project link, is committed)
+.insta/agent-session.json
+.insta/.agent-session-*.tmp
+.insta/link-plane.json
+.insta/observe/
+.insta/audit.jsonl
