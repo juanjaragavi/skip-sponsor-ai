@@ -11,10 +11,17 @@ import {
   purgeExpired,
 } from "./repositories/postgres-segment-repository";
 import { CachedSegmentRepository } from "./repositories/redis-cache";
+import {
+  MemoryUsageStore,
+  PostgresUsageStore,
+  type UsageStore,
+} from "./repositories/usage-store";
 
 export interface Persistence {
   mode: "memory" | "postgres";
   repo: SegmentRepository;
+  /** Quota and spend counters for the cost guard. */
+  usage: UsageStore;
   pool: pg.Pool | null;
   /** Readiness: can the store answer queries? */
   ping(): Promise<boolean>;
@@ -27,6 +34,7 @@ export function memoryPersistence(): Persistence {
   return {
     mode: "memory",
     repo: new MemorySegmentRepository(),
+    usage: new MemoryUsageStore(),
     pool: null,
     ping: async () => true,
     purge: async () => ({}),
@@ -89,6 +97,7 @@ export function createPersistence(
   return {
     mode: "postgres",
     repo,
+    usage: new PostgresUsageStore(pool),
     pool,
     ping: async () => {
       try {

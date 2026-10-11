@@ -29,6 +29,19 @@ export function stripJsonFence(text: string): string {
   return start >= 0 && end > start ? body.slice(start, end + 1) : body;
 }
 
+/** Token usage of one Claude call; feeds the daily budget (cost-guard.ts). */
+export type LlmUsageListener = (
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+) => void;
+let usageListener: LlmUsageListener | null = null;
+
+/** Register the single listener told about every billed Claude call. */
+export function setLlmUsageListener(fn: LlmUsageListener | null): void {
+  usageListener = fn;
+}
+
 function formatCues(cues: readonly LlmChunk[]): string {
   return cues
     .map((c) => `${Number.isInteger(c.t0) ? c.t0 : c.t0.toFixed(1)}|${c.text}`)
@@ -51,6 +64,12 @@ async function callClaude(
         messages: [{ role: "user", content: formatCues(chunks) }],
       },
       { signal: controller.signal as unknown as AbortSignal },
+    );
+    // Billed even when the reply below fails to parse.
+    usageListener?.(
+      model,
+      msg.usage?.input_tokens ?? 0,
+      msg.usage?.output_tokens ?? 0,
     );
     const text = msg.content
       .filter((b) => b.type === "text")

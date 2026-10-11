@@ -11,6 +11,14 @@ import {
   memoryPersistence,
   type Persistence,
 } from "./persistence";
+import { CostGuard } from "./services/cost-guard";
+import {
+  InstallTokens,
+  bearerToken,
+  ipQuotaKey,
+} from "./services/install-token";
+import { setLlmUsageListener } from "./services/llm-client";
+import type { AnalysisGate } from "./routes/segments";
 
 /** Cues around each failing transcript index (dev diagnostics). */
 function badCues(body: unknown, err: ZodError): unknown[] {
@@ -28,6 +36,10 @@ function badCues(body: unknown, err: ZodError): unknown[] {
 export interface ServerDeps {
   /** Defaults to config-driven wiring (memory under Vitest). */
   persistence: Persistence;
+  installTokenSecret: string;
+  dailyAnalysesPerInstall: number;
+  llmDailyBudgetUsd: number;
+  installsPerIpPerHour: number;
 }
 
 const persistenceOf = new WeakMap<object, Persistence>();
@@ -91,9 +103,48 @@ export function buildServer(
       .code(ok ? 200 : 503)
       .send({ ok, persistence: persistence.mode });
   });
-  registerSegmentRoutes(app, persistence.repo);
-  registerTelemetryRoutes(app, persistence.repo);
-  registerInstallRoutes(app);
+  // Cost guard: per-install daily quota + global daily LLM budget.
+  const tokens = new InstallTokens(
+    deps.installTokenSecret ?? config.installTokenSecret,
+  );
+  const dailyAnalysesPerInstall =
+    deps.dailyAnalysesPerInstall ?? config.dailyAnalysesPerInstall;
+  const guard = new CostGuard(persistence.usage, {
+    dailyAnalysesPerInstall,
+    dailyBudgetUsd: deps.llmDailyBudgetUsd ?? config.llmDailyBudgetUsd,
+    onBudgetReached: (spentUsd) =>
+      app.log.warn(
+        { spentUsd },
+        "LLM daily budget reached; serving cached and SponsorBlock results until 00:00 UTC",
+      ),
+  });
+  setLlmUsageListener((model, input, output) => {
+    guard
+      .recordUsage(model, input, output)
+      .catch((err: unknown) =>
+        app.log.warn({ err }, "recording LLM usage failed"),
+      );
+  });
+  const gate: AnalysisGate = {
+    reserve: (req) => {
+      const key =
+        tokens.quotaKey(bearerToken(req.headers.authorization)) ??
+        // Local development only: no token, meter by client IP.
+        (tokens.signing ? null : ipQuotaKey(req.ip));
+      return guard.reserve(key);
+    },
+  };
+  // Registered as a plugin so it loads after @fastify/rate-limit: routes
+  // added before the limiter loads get neither the global nor a per-route limit.
+  void app.register(async (api) => {
+    registerSegmentRoutes(api, persistence.repo, gate);
+    registerTelemetryRoutes(api, persistence.repo);
+    registerInstallRoutes(api, {
+      tokens,
+      dailyAnalysesPerInstall,
+      installsPerHour: deps.installsPerIpPerHour ?? config.installsPerIpPerHour,
+    });
+  });
   return app;
 }
 

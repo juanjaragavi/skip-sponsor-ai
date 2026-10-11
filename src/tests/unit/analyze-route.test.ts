@@ -24,6 +24,7 @@ vi.mock("../../api/services/llm-client", () => ({
     ],
     model: "claude-haiku",
   })),
+  setLlmUsageListener: vi.fn(),
 }));
 
 import { buildServer } from "../../api/server";

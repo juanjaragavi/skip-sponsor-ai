@@ -51,6 +51,8 @@ export const config = {
   dailyAnalysesPerInstall: num("DAILY_ANALYSES_PER_INSTALL", 25),
   /** Global LLM spend cap per UTC day in USD. 0 = LLM disabled (kill switch). */
   llmDailyBudgetUsd: num("LLM_DAILY_BUDGET_USD", 2),
+  /** New install tokens one IP may mint per hour. */
+  installsPerIpPerHour: num("INSTALLS_PER_IP_PER_HOUR", 20),
   version: "1.0.0",
 };
 

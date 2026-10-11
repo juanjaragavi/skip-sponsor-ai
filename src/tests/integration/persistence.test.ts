@@ -41,6 +41,7 @@ import { buildServer } from "../../api/server";
 import { createPersistence } from "../../api/persistence";
 import { runMigrations } from "../../api/db/migrate";
 import { PostgresSegmentRepository } from "../../api/repositories/postgres-segment-repository";
+import { PostgresUsageStore } from "../../api/repositories/usage-store";
 import { classifyChunks } from "../../api/services/llm-client";
 import type { VideoAnalysis } from "../../shared/types";
 
@@ -83,7 +84,11 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
   it("applies every migration once and is idempotent", async () => {
     const first = await runMigrations(pool);
     expect(first).toEqual(
-      expect.arrayContaining(["001_init.sql", "002_launch_persistence.sql"]),
+      expect.arrayContaining([
+        "001_init.sql",
+        "002_launch_persistence.sql",
+        "003_cost_guard.sql",
+      ]),
     );
     expect(await runMigrations(pool)).toEqual([]);
   });
@@ -132,6 +137,43 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
       "SELECT count(*)::int AS n FROM telemetry_events WHERE video_id = 'bbbbbbbbbbb'",
     );
     expect(rows[0].n).toBe(3);
+  });
+
+  it("enforces the per-install quota atomically under concurrency", async () => {
+    const usage = new PostgresUsageStore(pool);
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        usage.consumeInstall("2026-10-11", "i:concurrency-test-key", 5),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(5);
+    await usage.addSpend("2026-10-11", 0.25, 1000, 50);
+    await usage.addSpend("2026-10-11", 0.5, 2000, 70);
+    expect(await usage.getSpend("2026-10-11")).toBeCloseTo(0.75, 6);
+    const { rows } = await pool.query(
+      "SELECT calls, input_tokens::int AS i FROM llm_spend_daily WHERE day = '2026-10-11'",
+    );
+    expect(rows[0]).toEqual({ calls: 2, i: 3000 });
+    // Old quota rows are purged (retention: 2 days).
+    await pool.query(
+      "INSERT INTO install_usage_daily (day, install_key, analyses) VALUES ('2020-01-01', 'i:old-key-000000000', 1)",
+    );
+    const p = createPersistence(
+      {
+        persistence: "postgres",
+        databaseUrl: url,
+        redisUrl: "",
+        pgPoolMax: 1,
+        cacheTtlSeconds: 3600,
+      },
+      log,
+    );
+    expect((await p.purge())["install_usage_daily"]).toBeGreaterThanOrEqual(1);
+    const old = await pool.query(
+      "SELECT 1 FROM install_usage_daily WHERE day = '2020-01-01'",
+    );
+    expect(old.rowCount).toBe(0);
+    await p.close();
   });
 
   async function sharedAcrossInstances(redis: string, videoId: string) {

@@ -1,4 +1,9 @@
-import type { FastifyBaseLogger, FastifyInstance } from "fastify";
+import type {
+  FastifyBaseLogger,
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
 import {
   getSegmentsParamsSchema,
   analyzeRequestSchema,
@@ -29,6 +34,50 @@ import {
   CORROBORATED_CONFIDENCE,
   FALLBACK_REFRESH_SECONDS,
 } from "../../shared/constants";
+import type { Allowance, LimitReason } from "../services/cost-guard";
+
+/** Meters fresh LLM analyses (cost-guard.ts). Cache hits never reach it. */
+export interface AnalysisGate {
+  reserve(req: FastifyRequest): Promise<Allowance>;
+}
+type Reserve = () => Promise<Allowance>;
+const ALLOW: Reserve = async () => ({ ok: true });
+const OPEN_GATE: AnalysisGate = { reserve: ALLOW };
+
+const LIMIT_TITLES: Record<LimitReason, string> = {
+  install_quota: "Daily analysis limit reached",
+  global_budget: "Analysis capacity reached for today",
+  llm_disabled: "AI analysis is paused",
+  unauthenticated: "Missing or invalid install token",
+};
+const LIMIT_STATUS: Record<LimitReason, number> = {
+  install_quota: 429,
+  global_budget: 429,
+  llm_disabled: 503,
+  unauthenticated: 401,
+};
+
+/** RFC7807 problem for a refused analysis; `reason` and `resetAt` drive the extension's notice. */
+function sendLimited(
+  req: FastifyRequest,
+  reply: FastifyReply,
+  a: Extract<Allowance, { ok: false }>,
+): FastifyReply {
+  const status = LIMIT_STATUS[a.reason];
+  if (status !== 401) {
+    const seconds = Math.ceil((Date.parse(a.resetAt) - Date.now()) / 1000);
+    void reply.header("retry-after", String(Math.max(1, seconds)));
+  }
+  return reply.code(status).send({
+    type: `https://api.skipsponsor.example.com/problems/${a.reason}`,
+    title: LIMIT_TITLES[a.reason],
+    status,
+    detail: `${LIMIT_TITLES[a.reason]}. Cached results keep working; new analyses resume at ${a.resetAt}.`,
+    instance: req.url,
+    reason: a.reason,
+    resetAt: a.resetAt,
+  });
+}
 
 const inflight = new Map<string, Promise<VideoAnalysis>>();
 const WHOLE_VIDEO = { start: 0, end: Number.POSITIVE_INFINITY };
@@ -47,12 +96,15 @@ function isStaleFallback(a: VideoAnalysis): boolean {
 export function registerSegmentRoutes(
   app: FastifyInstance,
   repo: SegmentRepository,
+  gate: AnalysisGate = OPEN_GATE,
 ): void {
   app.get("/v1/segments/:videoId", async (req, reply) => {
     const params = getSegmentsParamsSchema.parse(req.params);
     const cached = await repo.get(params.videoId);
     if (cached && !isStaleFallback(cached))
       return reply.send(toResponse(cached));
+    // Metered lazily, only once a transcript exists and the LLM would run;
+    // over the limit this falls back to SponsorBlock data (status degraded).
     const analysis = await analyzeVideo(
       repo,
       req.log,
@@ -60,6 +112,8 @@ export function registerSegmentRoutes(
       null,
       "en",
       Boolean(cached),
+      undefined,
+      () => gate.reserve(req),
     );
     return reply.send(toResponse(analysis));
   });
@@ -71,6 +125,11 @@ export function registerSegmentRoutes(
       // A client transcript supersedes degraded/unanalyzable results only.
       const usable = body.transcript ? cached?.status === "ready" : cached;
       if (cached && usable) return reply.code(200).send(toResponse(cached));
+    }
+    // Joining an analysis already in flight costs nothing extra.
+    if (!inflight.has(body.videoId)) {
+      const allowance = await gate.reserve(req);
+      if (!allowance.ok) return sendLimited(req, reply, allowance);
     }
     const analysis = await analyzeVideo(
       repo,
@@ -150,13 +209,22 @@ async function analyzeVideo(
   lang: string,
   force: boolean,
   transcript?: LlmChunk[],
+  reserve: Reserve = ALLOW,
 ): Promise<VideoAnalysis> {
   if (!force) {
     const cached = await repo.get(videoId);
     if (cached) return cached;
   }
   if (inflight.has(videoId)) return inflight.get(videoId)!;
-  const p = runAnalysis(repo, log, videoId, channelId, lang, transcript);
+  const p = runAnalysis(
+    repo,
+    log,
+    videoId,
+    channelId,
+    lang,
+    transcript,
+    reserve,
+  );
   inflight.set(videoId, p);
   try {
     return await p;
@@ -199,7 +267,8 @@ async function runAnalysis(
   videoId: string,
   channelId: string | null,
   lang: string,
-  transcript?: LlmChunk[],
+  transcript: LlmChunk[] | undefined,
+  reserve: Reserve,
 ): Promise<VideoAnalysis> {
   let status: VideoAnalysis["status"] = "ready";
   let segments: VideoAnalysis["segments"] = [];
@@ -214,6 +283,8 @@ async function runAnalysis(
     duration = chunks[chunks.length - 1]!.t1;
     hash = transcriptHash(JSON.stringify(chunks).slice(0, 20000));
     const windows = chunkTranscript(chunks);
+    const allowance = await reserve();
+    if (!allowance.ok) throw new Error(`LLM skipped: ${allowance.reason}`);
     const { candidates, model } = await classifyChunks(windows);
     segments = mergeCandidates(
       candidatesToSegments(
