@@ -17,6 +17,9 @@
   "engines": {
     "node": ">=20"
   },
+  "config": {
+    "port": "3040"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",

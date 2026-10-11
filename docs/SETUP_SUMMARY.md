@@ -2,28 +2,30 @@
 
 Complete reference of all environment variables, configuration files, and setup steps for SkipSponsor AI.
 
+> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+
 ## Files Created/Updated
 
 ### Documentation Files
 
-| File | Purpose | Read Time |
-| --- | --- | --- |
-| [README.md](../README.md) | Project overview, features, deployment | 10 min |
-| [CLAUDE.md](../CLAUDE.md) | AI assistant guidance for development | 5 min |
-| [QUICKSTART.md](../QUICKSTART.md) | 15-minute setup guide | 5 min |
-| [LOCAL_TESTING.md](./LOCAL_TESTING.md) | Detailed local testing & debugging | 20 min |
-| [ENV_VARIABLES.md](./ENV_VARIABLES.md) | Complete environment variable reference | 30 min |
-| [skip-sponsor-ai-technical-spec.md](../skip-sponsor-ai-technical-spec.md) | Full technical specification | 45 min |
-| [SETUP_SUMMARY.md](./SETUP_SUMMARY.md) | This file | 5 min |
+| File                                                                      | Purpose                                 | Read Time |
+| ------------------------------------------------------------------------- | --------------------------------------- | --------- |
+| [README.md](../README.md)                                                 | Project overview, features, deployment  | 10 min    |
+| [CLAUDE.md](../CLAUDE.md)                                                 | AI assistant guidance for development   | 5 min     |
+| [QUICKSTART.md](../QUICKSTART.md)                                         | 15-minute setup guide                   | 5 min     |
+| [LOCAL_TESTING.md](./LOCAL_TESTING.md)                                    | Detailed local testing & debugging      | 20 min    |
+| [ENV_VARIABLES.md](./ENV_VARIABLES.md)                                    | Complete environment variable reference | 30 min    |
+| [skip-sponsor-ai-technical-spec.md](../skip-sponsor-ai-technical-spec.md) | Full technical specification            | 45 min    |
+| [SETUP_SUMMARY.md](./SETUP_SUMMARY.md)                                    | This file                               | 5 min     |
 
 ### Configuration Files
 
-| File | Purpose | Status |
-| --- | --- | --- |
-| [.env.example](../.env.example) | Template for backend environment | Created |
-| [.env](../.env) | Backend configuration (secrets, API keys) | Created by user |
-| [.env.local](../.env.local) | Extension build-time configuration | Created by user |
-| [.gitignore](../.gitignore) | Git ignore patterns (secrets, build output) | Updated |
+| File                            | Purpose                                     | Status          |
+| ------------------------------- | ------------------------------------------- | --------------- |
+| [.env.example](../.env.example) | Template for backend environment            | Created         |
+| [.env](../.env)                 | Backend configuration (secrets, API keys)   | Created by user |
+| [.env.local](../.env.local)     | Extension build-time configuration          | Created by user |
+| [.gitignore](../.gitignore)     | Git ignore patterns (secrets, build output) | Updated         |
 
 ---
 
@@ -33,12 +35,13 @@ Complete reference of all environment variables, configuration files, and setup 
 
 ```bash
 # Build-time configuration for MV3 Chrome extension
-VITE_API_BASE_URL=http://localhost:3000           # Backend API endpoint
+VITE_API_BASE_URL=http://localhost:3040           # Backend API endpoint
 VITE_ENVIRONMENT=development                      # development|staging|production
 VITE_DEBUG_MODE=true                              # Enable verbose console logs
 ```
 
 **When to set:**
+
 - Before: `npm run build:extension`
 - After: reload extension in Chrome
 
@@ -53,7 +56,7 @@ REDIS_URL=redis://host:port                      # Redis cache (REQUIRED)
 # Optional (Server Config)
 NODE_ENV=development                              # development|staging|production
 LOG_LEVEL=debug                                   # trace|debug|info|warn|error|fatal
-PORT=3000                                         # HTTP server port
+PORT=3040                                         # HTTP server port
 CORS_ORIGIN=*                                     # Allowed CORS origins
 
 # Optional (LLM Behavior)
@@ -73,6 +76,7 @@ SENTRY_DSN=                                       # Sentry error tracking (optio
 ```
 
 **When to set:**
+
 - Before: `npm run dev:api` or `npm start`
 
 ---
@@ -87,7 +91,7 @@ SENTRY_DSN=                                       # Sentry error tracking (optio
 - [ ] Install dependencies: `npm ci`
 - [ ] Create `.env.local` with extension config
 - [ ] Create `.env` with backend config (with API key)
-- [ ] Start Docker services: `docker-compose up -d`
+- [ ] Start Docker services: `docker compose -f infra/docker-compose.yml up -d`
 - [ ] Build extension: `npm run build:extension`
 - [ ] Start backend: `npm run dev:api`
 - [ ] Load in Chrome: `chrome://extensions/ → Load unpacked`
@@ -135,11 +139,11 @@ npm run build:extension
 ```bash
 cat > .env << 'EOF'
 ANTHROPIC_API_KEY=sk-ant-your-full-key-here
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 NODE_ENV=development
 LOG_LEVEL=debug
-PORT=3000
+PORT=3040
 CORS_ORIGIN=*
 EOF
 ```
@@ -169,12 +173,12 @@ curl -H "Authorization: Bearer sk-ant-your-key" \
 
 ```bash
 # Start PostgreSQL + Redis
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
 # Verify
-docker-compose ps
-# postgres  ... Up 5432/tcp
-# redis     ... Up 6379/tcp
+docker compose -f infra/docker-compose.yml ps
+# postgres  ... Up 0.0.0.0:5434->5432/tcp
+# redis     ... Up 0.0.0.0:6380->6379/tcp
 ```
 
 ### Option 2: Manual PostgreSQL
@@ -191,7 +195,7 @@ CREATE DATABASE skipsponsor OWNER skipsponsor;
 SQL
 
 # Test connection
-psql postgresql://skipsponsor:password@localhost:5432/skipsponsor -c "SELECT 1"
+psql postgresql://skipsponsor:password@localhost:5434/skipsponsor -c "SELECT 1"
 ```
 
 ### Option 3: Manual Redis
@@ -245,6 +249,7 @@ ls dist/extension/manifest.json
 ```
 
 **Reload after changes:**
+
 ```
 chrome://extensions/ → Find "SkipSponsor AI" → Click reload icon
 ```
@@ -257,7 +262,7 @@ chrome://extensions/ → Find "SkipSponsor AI" → Click reload icon
 
 ```bash
 npm run dev:api
-# Output: [Fastify] listening on port 3000
+# Output: {"level":30,...,"msg":"Server listening at http://0.0.0.0:3040"}
 # Ctrl+C to stop
 ```
 
@@ -279,7 +284,7 @@ Ctrl+C
 Ctrl+C
 
 # Docker services
-docker-compose down
+docker compose -f infra/docker-compose.yml down
 ```
 
 ---
@@ -306,13 +311,13 @@ npm run dev:api
 
 ```bash
 # 1. Check PostgreSQL running
-docker-compose ps | grep postgres
+docker compose -f infra/docker-compose.yml ps | grep postgres
 # or
 psql -U postgres -c "SELECT 1"
 
 # 2. Check connection string format
 grep DATABASE_URL .env
-# Should be: postgresql://skipsponsor:password@localhost:5432/skipsponsor
+# Should be: postgresql://skipsponsor:password@localhost:5434/skipsponsor
 
 # 3. Test connection
 psql "$DATABASE_URL" -c "SELECT 1"
@@ -322,28 +327,28 @@ psql "$DATABASE_URL" -c "SELECT 1"
 
 ```bash
 # 1. Check Redis running
-docker-compose ps | grep redis
+docker compose -f infra/docker-compose.yml ps | grep redis
 # or
 redis-cli PING
 
 # 2. Check connection string
 grep REDIS_URL .env
-# Should be: redis://localhost:6379
+# Should be: redis://localhost:6380
 
 # 3. Test connection
-redis-cli -u "redis://localhost:6379" PING
+redis-cli -u "redis://localhost:6380" PING
 ```
 
 ### "API returns 404"
 
 ```bash
 # 1. Check backend running
-curl http://localhost:3000/health
-# Should return: {"status":"ok"}
+curl http://localhost:3040/healthz
+# Should return: {"ok":true,"version":"1.0.0"}
 
 # 2. Check .env.local has correct URL
 cat .env.local | grep VITE_API_BASE_URL
-# Should be: http://localhost:3000
+# Should be: http://localhost:3040
 
 # 3. Rebuild extension
 npm run build:extension
@@ -392,14 +397,14 @@ git secrets --add-pattern "sk-ant-"  # Anthropic keys
 
 ```bash
 # .env.local
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_ENVIRONMENT=development
 VITE_DEBUG_MODE=true
 
 # .env
 ANTHROPIC_API_KEY=sk-ant-...
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 NODE_ENV=development
 LOG_LEVEL=debug
 CORS_ORIGIN=*
@@ -452,6 +457,7 @@ After completing setup:
    - [ENV_VARIABLES.md](./ENV_VARIABLES.md) for detailed variable descriptions
 
 2. **Run tests:**
+
    ```bash
    npm run test
    npm run test:coverage
@@ -459,6 +465,7 @@ After completing setup:
    ```
 
 3. **Start development:**
+
    ```bash
    npm run dev:extension  # Terminal 1
    npm run dev:api        # Terminal 2

@@ -2,6 +2,8 @@
 
 Complete documentation of all environment variables used by SkipSponsor AI across the extension client, backend server, and infrastructure.
 
+> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+
 ## Table of Contents
 
 1. [Extension Client Variables](#extension-client-variables)
@@ -20,10 +22,11 @@ These variables are loaded at **build time** by Vite and baked into the extensio
 
 **Type:** `string` (URL)  
 **Required:** Yes  
-**Default:** `http://localhost:3000`  
-**Example:** 
+**Default:** `http://localhost:3040`  
+**Example:**
+
 ```
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_API_BASE_URL=https://api.skipsponsor.ai
 ```
 
@@ -31,16 +34,18 @@ VITE_API_BASE_URL=https://api.skipsponsor.ai
 Backend API endpoint used by the extension content script to fetch sponsor segments. The extension sends `GET /v1/segments/{videoId}` requests to this URL.
 
 **Usage:**
-- **Local development:** `http://localhost:3000` (backend running locally)
+
+- **Local development:** `http://localhost:3040` (backend running locally)
 - **Staging:** `https://staging-api.skipsponsor.ai`
 - **Production:** `https://api.skipsponsor.ai`
 
 **Impact:** If misconfigured, the extension cannot fetch segments and falls back to SponsorBlock read-only API.
 
 **Setting Up:**
+
 ```bash
 # Create .env.local
-echo 'VITE_API_BASE_URL=http://localhost:3000' > .env.local
+echo 'VITE_API_BASE_URL=http://localhost:3040' > .env.local
 
 # After changing, rebuild the extension
 npm run build:extension
@@ -55,6 +60,7 @@ npm run build:extension
 **Default:** `development`  
 **Values:** `development` | `staging` | `production`  
 **Example:**
+
 ```
 VITE_ENVIRONMENT=development
 ```
@@ -62,15 +68,16 @@ VITE_ENVIRONMENT=development
 **Description:**  
 Configures the environment context for the extension. Controls logging verbosity, error handling, and feature flags.
 
-| Value | Behavior |
-| --- | --- |
-| `development` | Console logs enabled, detailed error messages, all features active |
-| `staging` | Minimal logging, staging-specific endpoints, beta features enabled |
-| `production` | No console logs (stripped at build), minimal errors, stable features only |
+| Value         | Behavior                                                                  |
+| ------------- | ------------------------------------------------------------------------- |
+| `development` | Console logs enabled, detailed error messages, all features active        |
+| `staging`     | Minimal logging, staging-specific endpoints, beta features enabled        |
+| `production`  | No console logs (stripped at build), minimal errors, stable features only |
 
 **Impact:** Affects how much debugging information is available in DevTools console.
 
 **Setting Up:**
+
 ```bash
 # For development
 VITE_ENVIRONMENT=development npm run build:extension
@@ -87,6 +94,7 @@ VITE_ENVIRONMENT=production npm run build:extension
 **Required:** No  
 **Default:** `false`  
 **Example:**
+
 ```
 VITE_DEBUG_MODE=true
 ```
@@ -95,6 +103,7 @@ VITE_DEBUG_MODE=true
 When enabled (`true`), the extension logs detailed information to the browser console. Helps debug detection, skipping, and cache issues.
 
 **Output Format:**
+
 ```
 [SkipSponsor] DEBUG: Initializing detector for video: dQw4w9WgXcQ
 [SkipSponsor] DEBUG: Captions found, 42 segments
@@ -103,15 +112,18 @@ When enabled (`true`), the extension logs detailed information to the browser co
 ```
 
 **When to Enable:**
+
 - Active development and debugging
 - Testing detection on new videos
 - Troubleshooting extension failures
 
 **When to Disable:**
+
 - Production builds (verbose logging slows extension)
 - End-user deployments (logs contain videoId)
 
 **Setting Up:**
+
 ```bash
 # Enable debug logs
 VITE_DEBUG_MODE=true npm run build:extension
@@ -138,6 +150,7 @@ These variables are loaded at **server startup** from the `.env` file and config
 **Required:** Yes  
 **Default:** None (must be set)  
 **Example:**
+
 ```
 ANTHROPIC_API_KEY=sk-ant-abc123xyz789...
 ```
@@ -161,11 +174,13 @@ API key for Anthropic Claude integration. Required for LLM-based sponsor segment
    ```
 
 **Pricing & Limits:**
+
 - **Free tier:** $5 credit/month (sufficient for dev/testing)
 - **Pay-as-you-go:** ~$0.80 per 1M input tokens for Haiku
 - **Rate limit:** Default ~100k tokens/min (sufficient for 24k videos/day at $0.004/video)
 
 **Security Best Practices:**
+
 - ✅ Store in AWS Secrets Manager / Azure Key Vault in production
 - ✅ Use separate keys for dev/staging/prod environments
 - ✅ Rotate keys quarterly
@@ -174,6 +189,7 @@ API key for Anthropic Claude integration. Required for LLM-based sponsor segment
 - ✅ Never expose in logs or error messages
 
 **Verifying Key Validity:**
+
 ```bash
 # Test key locally
 curl -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
@@ -198,9 +214,10 @@ curl -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
 **Default:** None (must be set)  
 **Format:** `postgresql://[user]:[password]@[host]:[port]/[database]`  
 **Examples:**
+
 ```
 # Local development
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
 
 # Docker Compose
 DATABASE_URL=postgresql://skipsponsor:password@postgres:5432/skipsponsor
@@ -214,6 +231,7 @@ DATABASE_URL=postgresql://skipsponsor:password@34.89.123.45/skipsponsor
 
 **Description:**  
 PostgreSQL connection string for the video analysis and sponsor segment database. Stores:
+
 - `video_analyses`: Metadata about analyzed videos (cache)
 - `sponsor_segments`: Detected sponsor segments with timestamps
 - `telemetry_events`: Skip events for analytics
@@ -221,15 +239,17 @@ PostgreSQL connection string for the video analysis and sponsor segment database
 **Setting Up:**
 
 **Option 1: Docker Compose (recommended for local dev)**
+
 ```bash
 # Start PostgreSQL
-docker-compose up -d postgres
+docker compose -f infra/docker-compose.yml up -d postgres
 
 # Connection string is:
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
 ```
 
 **Option 2: Local PostgreSQL**
+
 ```bash
 # Install PostgreSQL 16
 brew install postgresql@16  # macOS
@@ -240,10 +260,11 @@ psql -U postgres -c "CREATE USER skipsponsor WITH PASSWORD 'password';"
 psql -U postgres -c "CREATE DATABASE skipsponsor OWNER skipsponsor;"
 
 # Connection string:
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
 ```
 
 **Option 3: AWS RDS**
+
 ```bash
 # Create RDS instance (PostgreSQL 16)
 aws rds create-db-instance \
@@ -263,13 +284,14 @@ DATABASE_URL=postgresql://admin:YourSecurePassword123@skip-sponsor-db.c9akciq32.
 ```
 
 **Verifying Connection:**
+
 ```bash
 # Test with psql
 psql "$DATABASE_URL" -c "SELECT 1"
 # Should return: (1 row)
 
-# Or in Node.js
-npm run db:migrate  # Should complete successfully
+# Apply the schema (no migrate script yet)
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 ```
 
 ---
@@ -281,9 +303,10 @@ npm run db:migrate  # Should complete successfully
 **Default:** None (must be set)  
 **Format:** `redis://[password@][host]:[port][/db]`  
 **Examples:**
+
 ```
 # Local development
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 
 # Docker Compose
 REDIS_URL=redis://redis:6379
@@ -299,6 +322,7 @@ REDIS_URL=redis://:password@10.0.0.3:6379
 Redis connection string for caching sponsor segments. Implements TTL-based cache (30 days) to avoid redundant LLM calls.
 
 **Cache Behavior:**
+
 - **Key format:** `seg:{videoId}` → JSON `VideoAnalysis` object
 - **TTL:** 30 days (configurable via `CACHE_TTL_DAYS`)
 - **Hit rate target:** ≥65% (reduces LLM calls significantly)
@@ -306,14 +330,16 @@ Redis connection string for caching sponsor segments. Implements TTL-based cache
 **Setting Up:**
 
 **Option 1: Docker Compose (recommended)**
+
 ```bash
-docker-compose up -d redis
+docker compose -f infra/docker-compose.yml up -d redis
 
 # Connection string:
 REDIS_URL=redis://redis:6379
 ```
 
 **Option 2: Local Redis**
+
 ```bash
 # Install Redis
 brew install redis  # macOS
@@ -323,10 +349,11 @@ brew install redis  # macOS
 redis-server
 
 # Connection string:
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 ```
 
 **Option 3: AWS ElastiCache**
+
 ```bash
 # Create ElastiCache cluster
 aws elasticache create-cache-cluster \
@@ -346,9 +373,10 @@ REDIS_URL=redis://:your-auth-token@endpoint:6379
 ```
 
 **Verifying Connection:**
+
 ```bash
 # Test with redis-cli
-redis-cli -u "redis://localhost:6379" PING
+redis-cli -u "redis://localhost:6380" PING
 # Should return: PONG
 
 # Check cache entries
@@ -365,6 +393,7 @@ redis-cli -u "$REDIS_URL" KEYS "seg:*"
 **Default:** `development`  
 **Values:** `development` | `staging` | `production`  
 **Example:**
+
 ```
 NODE_ENV=production
 ```
@@ -372,13 +401,14 @@ NODE_ENV=production
 **Description:**  
 Node.js environment mode. Controls error handling, logging, response headers, and performance optimizations.
 
-| Value | Effect |
-| --- | --- |
-| `development` | Detailed errors, verbose logs, no compression, slower startup |
-| `staging` | Balanced logging, compression enabled, auth tokens logged (redacted) |
-| `production` | Minimal logs, max compression, strict error messages, optimized startup |
+| Value         | Effect                                                                  |
+| ------------- | ----------------------------------------------------------------------- |
+| `development` | Detailed errors, verbose logs, no compression, slower startup           |
+| `staging`     | Balanced logging, compression enabled, auth tokens logged (redacted)    |
+| `production`  | Minimal logs, max compression, strict error messages, optimized startup |
 
 **Setting Up:**
+
 ```bash
 # Local development
 NODE_ENV=development npm run dev:api
@@ -396,6 +426,7 @@ NODE_ENV=production npm start
 **Default:** `info`  
 **Values:** `trace` | `debug` | `info` | `warn` | `error` | `fatal`  
 **Example:**
+
 ```
 LOG_LEVEL=debug
 ```
@@ -403,26 +434,28 @@ LOG_LEVEL=debug
 **Description:**  
 Minimum logging level for pino structured logger. Controls verbosity of JSON logs to CloudWatch/stdout.
 
-| Level | Output | Use Case |
-| --- | --- | --- |
-| `trace` | All function calls, argument values | Deep debugging (performance intensive) |
-| `debug` | Variable state, decision points | Development, troubleshooting |
-| `info` | Key events, latencies, cache hits | Normal operations |
-| `warn` | Potential issues, fallbacks activated | Monitoring for anomalies |
-| `error` | Failures, exceptions | Alert on errors |
-| `fatal` | Unrecoverable errors, server crashes | Critical alerts |
+| Level   | Output                                | Use Case                               |
+| ------- | ------------------------------------- | -------------------------------------- |
+| `trace` | All function calls, argument values   | Deep debugging (performance intensive) |
+| `debug` | Variable state, decision points       | Development, troubleshooting           |
+| `info`  | Key events, latencies, cache hits     | Normal operations                      |
+| `warn`  | Potential issues, fallbacks activated | Monitoring for anomalies               |
+| `error` | Failures, exceptions                  | Alert on errors                        |
+| `fatal` | Unrecoverable errors, server crashes  | Critical alerts                        |
 
 **Example Output:**
+
 ```json
 // LOG_LEVEL=debug
 {"level":20,"time":"2026-10-06T...","pid":1234,"msg":"Cache HIT","videoId":"dQw4w9WgXcQ"}
-{"level":30,"time":"2026-10-06T...","pid":1234,"msg":"LLM classification","model":"claude-4-5-haiku","latencyMs":820,"confidence":0.91}
+{"level":30,"time":"2026-10-06T...","pid":1234,"msg":"LLM classification","model":"claude-haiku-4-5-20251001","latencyMs":820,"confidence":0.91}
 
 // LOG_LEVEL=warn
 {"level":40,"time":"2026-10-06T...","pid":1234,"msg":"Fallback to SponsorBlock","reason":"no_captions"}
 ```
 
 **Setting Up:**
+
 ```bash
 # Verbose debugging
 LOG_LEVEL=debug npm run dev:api
@@ -437,9 +470,10 @@ LOG_LEVEL=info npm start
 
 **Type:** `number`  
 **Required:** No  
-**Default:** `3000`  
+**Default:** `3040` under `npm run dev:api` (package.json `config.port`); `3000` otherwise (the container port in `infra/Dockerfile.api`)  
 **Valid Range:** 1024–65535  
 **Example:**
+
 ```
 PORT=8080
 ```
@@ -448,14 +482,15 @@ PORT=8080
 HTTP port on which the Fastify server listens. Extension makes requests to `http://localhost:{PORT}/v1/segments/{videoId}`.
 
 **Setting Up:**
+
 ```bash
 # Custom port
 PORT=8080 npm run dev:api
 # Now accessible at http://localhost:8080/v1/segments/...
 
 # Check if port is in use
-lsof -i :3000  # macOS/Linux
-netstat -ano | findstr :3000  # Windows
+lsof -i :3040  # macOS/Linux
+netstat -ano | findstr :3040  # Windows
 ```
 
 ---
@@ -466,9 +501,10 @@ netstat -ano | findstr :3000  # Windows
 **Required:** No  
 **Default:** `*`  
 **Examples:**
+
 ```
 CORS_ORIGIN=*
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3040
 CORS_ORIGIN=https://skipsponsor.ai
 CORS_ORIGIN=https://skipsponsor.ai,https://staging.skipsponsor.ai
 ```
@@ -477,6 +513,7 @@ CORS_ORIGIN=https://skipsponsor.ai,https://staging.skipsponsor.ai
 Comma-separated list of allowed CORS origins for API requests. Controls which domains can call the backend API.
 
 **Setting Up:**
+
 ```bash
 # Local development (allow all)
 CORS_ORIGIN=*
@@ -497,6 +534,7 @@ CORS_ORIGIN=https://skipsponsor.ai,https://staging.skipsponsor.ai
 **Default:** `8000` (8 seconds)  
 **Valid Range:** 1000–30000  
 **Example:**
+
 ```
 LLM_TIMEOUT_MS=8000
 ```
@@ -505,16 +543,19 @@ LLM_TIMEOUT_MS=8000
 Maximum time the backend waits for Anthropic Claude to return a classification response. If exceeded, the request is retried or escalated to Sonnet.
 
 **When to Adjust:**
+
 - **Increase (e.g., 15000):** If experiencing frequent timeouts, network is slow, or during high API load
 - **Decrease (e.g., 5000):** If you want faster fallbacks to SponsorBlock
 
 **Behavior on Timeout:**
+
 1. LLM call exceeds threshold
 2. Retry once with Haiku (if `LLM_MAX_RETRIES=1`)
 3. If retry fails, escalate to Sonnet (slower but more reliable)
 4. If Sonnet times out, fall back to SponsorBlock read-only API
 
 **Setting Up:**
+
 ```bash
 LLM_TIMEOUT_MS=15000 npm run dev:api
 ```
@@ -528,6 +569,7 @@ LLM_TIMEOUT_MS=15000 npm run dev:api
 **Default:** `1`  
 **Valid Range:** 0–3  
 **Example:**
+
 ```
 LLM_MAX_RETRIES=2
 ```
@@ -535,15 +577,16 @@ LLM_MAX_RETRIES=2
 **Description:**  
 Number of retry attempts when Haiku LLM times out before escalating to Sonnet or fallback.
 
-| Value | Behavior |
-| --- | --- |
-| `0` | No retries; timeout → Sonnet immediately |
-| `1` | Retry Haiku once; if fails → Sonnet |
-| `2` | Retry Haiku twice; then Sonnet |
+| Value | Behavior                                 |
+| ----- | ---------------------------------------- |
+| `0`   | No retries; timeout → Sonnet immediately |
+| `1`   | Retry Haiku once; if fails → Sonnet      |
+| `2`   | Retry Haiku twice; then Sonnet           |
 
 **Trade-off:** More retries = higher success rate but slower response time.
 
 **Setting Up:**
+
 ```bash
 LLM_MAX_RETRIES=2 npm run dev:api
 ```
@@ -557,6 +600,7 @@ LLM_MAX_RETRIES=2 npm run dev:api
 **Default:** `0.78`  
 **Valid Range:** 0.5–0.95  
 **Example:**
+
 ```
 CONFIDENCE_THRESHOLD=0.85
 ```
@@ -565,15 +609,17 @@ CONFIDENCE_THRESHOLD=0.85
 Minimum confidence score required to accept a sponsor segment. Segments below this threshold are discarded.
 
 **Impact on Accuracy:**
-| Threshold | Precision | Recall | Use Case |
-| --- | --- | --- | --- |
-| 0.50 | ~70% | ~98% | Very lenient, many false positives |
-| 0.70 | ~85% | ~95% | Aggressive skipping |
-| **0.78** | **~93%** | **~90%** | Balanced (default) |
-| 0.85 | ~96% | ~82% | Conservative, fewer false positives |
-| 0.95 | ~99% | ~60% | Very strict, high false negatives |
+
+| Threshold | Precision | Recall   | Use Case                            |
+| --------- | --------- | -------- | ----------------------------------- |
+| 0.50      | ~70%      | ~98%     | Very lenient, many false positives  |
+| 0.70      | ~85%      | ~95%     | Aggressive skipping                 |
+| **0.78**  | **~93%**  | **~90%** | Balanced (default)                  |
+| 0.85      | ~96%      | ~82%     | Conservative, fewer false positives |
+| 0.95      | ~99%      | ~60%     | Very strict, high false negatives   |
 
 **Setting Up:**
+
 ```bash
 # Conservative (few false positives)
 CONFIDENCE_THRESHOLD=0.85 npm run dev:api
@@ -591,6 +637,7 @@ CONFIDENCE_THRESHOLD=0.70 npm run dev:api
 **Default:** `30`  
 **Valid Range:** 1–365  
 **Example:**
+
 ```
 CACHE_TTL_DAYS=30
 ```
@@ -599,10 +646,12 @@ CACHE_TTL_DAYS=30
 How long sponsor segment analysis results are cached in Redis and PostgreSQL before being deleted. Reduces LLM calls for frequently watched videos.
 
 **Cache Hit Impact:**
+
 - With 30-day TTL: ~65% hit rate (fewer LLM calls)
 - With 7-day TTL: ~40% hit rate (more fresh data)
 
 **Setting Up:**
+
 ```bash
 CACHE_TTL_DAYS=30 npm run dev:api
 ```
@@ -615,6 +664,7 @@ CACHE_TTL_DAYS=30 npm run dev:api
 **Required:** No  
 **Default:** `60000` (1 minute)  
 **Example:**
+
 ```
 RATE_LIMIT_WINDOW_MS=60000
 ```
@@ -623,6 +673,7 @@ RATE_LIMIT_WINDOW_MS=60000
 Time window for rate limit calculation. Requests are counted within this rolling window.
 
 **Example:** With `RATE_LIMIT_WINDOW_MS=60000` and `RATE_LIMIT_MAX_REQUESTS=60`:
+
 - Allow 60 requests per minute per install
 - Requests reset every 60 seconds
 
@@ -634,6 +685,7 @@ Time window for rate limit calculation. Requests are counted within this rolling
 **Required:** No  
 **Default:** `60`  
 **Example:**
+
 ```
 RATE_LIMIT_MAX_REQUESTS=100
 ```
@@ -651,6 +703,7 @@ Maximum requests allowed per install within the rate limit window.
 **Required:** No  
 **Default:** Empty (disabled)  
 **Example:**
+
 ```
 SENTRY_DSN=https://abc123@sentry.io/1234567
 ```
@@ -675,6 +728,7 @@ Sentry error tracking DSN for monitoring exceptions and crashes. Leave empty to 
 ### Best Practices
 
 ✅ **DO:**
+
 - Store API keys in AWS Secrets Manager, Azure Key Vault, or similar
 - Use separate keys for dev/staging/prod
 - Rotate keys quarterly
@@ -683,6 +737,7 @@ Sentry error tracking DSN for monitoring exceptions and crashes. Leave empty to 
 - Use environment variable injection at container runtime
 
 ❌ **DON'T:**
+
 - Commit `.env` files to git
 - Hardcode secrets in source code
 - Share API keys via email or Slack
@@ -722,7 +777,7 @@ cd skip-sponsor-ai
 
 # Create .env.local (extension config)
 cat > .env.local << 'EOF'
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_ENVIRONMENT=development
 VITE_DEBUG_MODE=true
 EOF
@@ -730,11 +785,11 @@ EOF
 # Create .env (backend config)
 cat > .env << 'EOF'
 ANTHROPIC_API_KEY=sk-ant-your-key-here
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 NODE_ENV=development
 LOG_LEVEL=debug
-PORT=3000
+PORT=3040
 CORS_ORIGIN=*
 EOF
 
@@ -742,7 +797,7 @@ EOF
 npm ci
 
 # Start PostgreSQL + Redis
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
 # Build extension
 npm run build:extension
@@ -784,7 +839,7 @@ REDIS_URL=redis://...@staging-cache.elasticache.amazonaws.com:6379
 NODE_ENV=staging
 LOG_LEVEL=debug
 PORT=3000
-CORS_ORIGIN=https://staging.skipsponsor.ai,http://localhost:3000
+CORS_ORIGIN=https://staging.skipsponsor.ai,http://localhost:3040
 SENTRY_DSN=https://...@sentry.io/...
 ```
 
@@ -810,6 +865,7 @@ LOG_LEVEL=debug
 ---
 
 For more information, see:
+
 - [README.md](../README.md)
 - [LOCAL_TESTING.md](./LOCAL_TESTING.md)
 - [skip-sponsor-ai-technical-spec.md](../skip-sponsor-ai-technical-spec.md)

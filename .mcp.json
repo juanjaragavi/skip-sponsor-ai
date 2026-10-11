@@ -13,7 +13,7 @@
     "AgentMail": {
       "url": "https://mcp.agentmail.to/mcp",
       "headers": {
-        "x-api-key": "$AGENTMAIL_API_KEY"
+        "x-api-key": "${AGENTMAIL_API_KEY}"
       }
     },
     "resend": {
@@ -44,7 +44,7 @@
       "command": "npx",
       "args": ["-y", "-p", "@devspeak/mcp", "devspeak-mcp"],
       "env": {
-        "DEVSPEAK_API_KEY": "$DEVSPEAK_API_KEY"
+        "DEVSPEAK_API_KEY": "${DEVSPEAK_API_KEY}"
       }
     },
     "microsoft/markitdown": {

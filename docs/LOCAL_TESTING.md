@@ -2,6 +2,8 @@
 
 Complete step-by-step instructions for setting up, building, and testing the SkipSponsor AI extension on your local Chrome browser.
 
+> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
@@ -18,13 +20,15 @@ Complete step-by-step instructions for setting up, building, and testing the Ski
 Before starting, ensure you have:
 
 ### Required
+
 - **macOS/Windows/Linux** with Chrome 116 or later installed
 - **Node.js 20 LTS** → [Download](https://nodejs.org/en/download/current)
-- **npm** (included with Node.js) or **pnpm** → [Install pnpm](https://pnpm.io/installation)
+- **npm** (included with Node.js; the repo ships `package-lock.json`)
 - **Git** for version control
 - **Anthropic API Key** → [Get one free](https://console.anthropic.com/account/keys)
 
 ### Optional (for full backend testing)
+
 - **Docker & Docker Compose** → [Install](https://docs.docker.com/get-docker/)
 - **PostgreSQL 16** client tools (psql)
 - **Redis CLI** (redis-cli)
@@ -65,14 +69,15 @@ Create `.env.local` in project root:
 ```bash
 cat > .env.local << 'EOF'
 # SkipSponsor AI Extension Configuration
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_ENVIRONMENT=development
 VITE_DEBUG_MODE=true
 EOF
 ```
 
 **Explanation:**
-- `VITE_API_BASE_URL`: Backend API endpoint (http://localhost:3000 for local dev)
+
+- `VITE_API_BASE_URL`: Backend API endpoint (http://localhost:3040 for local dev)
 - `VITE_ENVIRONMENT`: Set to `development` for local testing
 - `VITE_DEBUG_MODE`: Enable verbose console logging for debugging
 
@@ -86,13 +91,13 @@ cat > .env << 'EOF'
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Database Configuration
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 
 # Server Configuration
 NODE_ENV=development
 LOG_LEVEL=debug
-PORT=3000
+PORT=3040
 CORS_ORIGIN=*
 
 # LLM Configuration
@@ -141,54 +146,27 @@ For full end-to-end testing with LLM classification, you'll need the backend run
 #### Start PostgreSQL & Redis
 
 ```bash
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 ```
 
 This starts:
-- PostgreSQL on `localhost:5432` (user: skipsponsor, pass: password)
-- Redis on `localhost:6379`
+
+- PostgreSQL on `localhost:5434` (user: skipsponsor, pass: password)
+- Redis on `localhost:6380`
 
 Verify:
+
 ```bash
-docker-compose ps
+docker compose -f infra/docker-compose.yml ps
 # Should show postgres and redis running
 ```
 
-#### Run Database Migrations
+#### Apply the Database Schema
+
+There is no `db:migrate` script yet; apply the schema file directly:
 
 ```bash
-npm run db:migrate
-```
-
-If `db:migrate` script doesn't exist yet, you can create tables manually:
-
-```bash
-psql postgresql://skipsponsor:password@localhost:5432/skipsponsor << 'EOF'
-CREATE TABLE IF NOT EXISTS video_analyses (
-  video_id TEXT PRIMARY KEY CHECK (char_length(video_id) = 11),
-  channel_id TEXT,
-  duration_sec REAL NOT NULL,
-  language TEXT NOT NULL DEFAULT 'en',
-  status TEXT NOT NULL DEFAULT 'ready',
-  transcript_hash TEXT NOT NULL,
-  analyzed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '30 days'
-);
-
-CREATE TABLE IF NOT EXISTS sponsor_segments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  video_id TEXT NOT NULL REFERENCES video_analyses(video_id),
-  start_time DOUBLE PRECISION NOT NULL,
-  end_time DOUBLE PRECISION NOT NULL,
-  confidence REAL NOT NULL,
-  category TEXT NOT NULL,
-  source TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_video_expires ON video_analyses (expires_at);
-CREATE INDEX idx_seg_video ON sponsor_segments (video_id, start_time);
-EOF
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 ```
 
 #### Start Backend Server
@@ -199,16 +177,17 @@ In a new terminal:
 npm run dev:api
 ```
 
-Backend starts on `http://localhost:3000`. You should see:
+Backend starts on `http://localhost:3040`. You should see:
+
 ```
-[Fastify] listening on port 3000
+{"level":30,...,"msg":"Server listening at http://0.0.0.0:3040"}
 ```
 
 #### Verify Backend is Working
 
 ```bash
-curl -X GET http://localhost:3000/health
-# Should return: {"status":"ok"}
+curl -X GET http://localhost:3040/healthz
+# Should return: {"ok":true,"version":"1.0.0"}
 ```
 
 ### Option B: Manual PostgreSQL + Redis Setup
@@ -216,28 +195,31 @@ curl -X GET http://localhost:3000/health
 If not using Docker:
 
 1. **Install PostgreSQL 16:**
+
    ```bash
    # macOS
    brew install postgresql@16
    brew services start postgresql@16
-   
+
    # Ubuntu/Debian
    sudo apt-get install postgresql postgresql-contrib
    sudo service postgresql start
    ```
 
 2. **Create database & user:**
+
    ```bash
    psql -U postgres -c "CREATE USER skipsponsor WITH PASSWORD 'password';"
    psql -U postgres -c "CREATE DATABASE skipsponsor OWNER skipsponsor;"
    ```
 
 3. **Install Redis:**
+
    ```bash
    # macOS
    brew install redis
    brew services start redis
-   
+
    # Ubuntu/Debian
    sudo apt-get install redis-server
    sudo service redis-server start
@@ -255,7 +237,7 @@ For rapid iteration with hot module replacement:
 npm run dev:extension
 ```
 
-This starts Vite dev server with live reload. Any changes to `src/extension/` trigger automatic rebuild.
+This starts the Vite dev server on `localhost:5174` (`strictPort`, set in `vite.config.ts`; 5173 is left to other projects) with live reload. Any changes to `src/extension/` trigger automatic rebuild.
 
 ### Production Build
 
@@ -266,13 +248,15 @@ npm run build:extension
 ```
 
 This generates:
+
 - `dist/extension/` — Bundled MV3 extension files
 - Ready for loading in Chrome or uploading to Web Store
 
 Verify build succeeded:
+
 ```bash
 ls -la dist/extension/
-# Should contain: manifest.json, content.js, service-worker.js, etc.
+# Should contain: manifest.json, service-worker-loader.js, assets/, icons/, src/
 ```
 
 ## Loading in Chrome
@@ -282,6 +266,7 @@ ls -la dist/extension/
 **Best for active development with frequent code changes.**
 
 1. **Open Chrome Extensions:**
+
    ```
    chrome://extensions/
    ```
@@ -308,18 +293,21 @@ ls -la dist/extension/
 **Better for testing production builds.**
 
 1. **Build extension:**
+
    ```bash
    npm run build:extension
    ```
 
 2. **Convert to CRX (if needed):**
    Most production builds generate `.zip`. To create `.crx`:
+
    ```bash
    # Using CRXJS (already integrated in vite.config.ts)
    npm run build:extension -- --outDir=dist-crx
    ```
 
 3. **Load in Chrome:**
+
    ```
    chrome://extensions/ → Load unpacked → dist/extension
    ```
@@ -336,10 +324,10 @@ ls -la dist/extension/
 
 Use official YouTube test videos with known sponsor segments:
 
-| Video | Channel | Sponsors | Purpose |
-| --- | --- | --- | --- |
+| Video                                                      | Channel     | Sponsors           | Purpose          |
+| ---------------------------------------------------------- | ----------- | ------------------ | ---------------- |
 | [dQw4w9WgXcQ](https://www.youtube.com/watch?v=dQw4w9WgXcQ) | Rick Astley | Pre-roll, mid-roll | Standard testing |
-| [jNQXAC9IVRw](https://www.youtube.com/watch?v=jNQXAC9IVRw) | YouTube | N/A | API test video |
+| [jNQXAC9IVRw](https://www.youtube.com/watch?v=jNQXAC9IVRw) | YouTube     | N/A                | API test video   |
 
 Or find real videos with known sponsors using [SponsorBlock database](https://www.sponsorblock.org).
 
@@ -420,17 +408,20 @@ Or find real videos with known sponsors using [SponsorBlock database](https://ww
 ### Chrome DevTools Console
 
 **Content Script Logs:**
+
 ```
 chrome://extensions/ → SkipSponsor AI → Details
 → Inspect views → content-script → Console
 ```
 
 Look for:
+
 - Segment detection logs
 - Skip events
 - Policy decisions
 
 **Service Worker Logs:**
+
 ```
 chrome://extensions/ → SkipSponsor AI → Service Workers
 → Click service-worker link
@@ -438,6 +429,7 @@ chrome://extensions/ → SkipSponsor AI → Service Workers
 ```
 
 Check:
+
 - Cache hits/misses
 - API requests
 - Telemetry events
@@ -448,10 +440,11 @@ If running `npm run dev:api`:
 
 ```bash
 # Terminal shows structured JSON logs:
-{"level":"INFO","reqId":"abc123","videoId":"dQw4w9WgXcQ","latencyMs":1200,"model":"claude-4-5-haiku"}
+{"level":"INFO","reqId":"abc123","videoId":"dQw4w9WgXcQ","latencyMs":1200,"model":"claude-haiku-4-5-20251001"}
 ```
 
 Increase verbosity:
+
 ```bash
 LOG_LEVEL=debug npm run dev:api
 ```
@@ -462,21 +455,24 @@ LOG_LEVEL=debug npm run dev:api
 2. Go to **Network** tab
 3. Filter by `Fetch/XHR`
 4. Reload YouTube page
-5. Look for requests to `http://localhost:3000/v1/segments/...`
+5. Look for requests to `http://localhost:3040/v1/segments/...`
 
 Check response:
+
 - Status: 200 (OK) or 202 (Accepted, pending)
 - Payload: `{videoId, segments[], status, analyzedAt}`
 
 ### Extension Manifest Issues
 
 Verify manifest is valid:
+
 ```bash
 npm run typecheck
 # Should pass with no TypeScript errors
 ```
 
 Check in Chrome:
+
 ```
 chrome://extensions/ → SkipSponsor AI → Details → Errors
 # Should show no errors
@@ -485,18 +481,21 @@ chrome://extensions/ → SkipSponsor AI → Details → Errors
 ### Database Queries (if using PostgreSQL)
 
 Open psql terminal:
+
 ```bash
-psql postgresql://skipsponsor:password@localhost:5432/skipsponsor
+psql postgresql://skipsponsor:password@localhost:5434/skipsponsor
 ```
 
 Check stored segments:
+
 ```sql
-SELECT * FROM sponsor_segments 
-WHERE video_id = 'dQw4w9WgXcQ' 
+SELECT * FROM sponsor_segments
+WHERE video_id = 'dQw4w9WgXcQ'
 ORDER BY start_time;
 ```
 
 Check cache status:
+
 ```bash
 redis-cli
 > GET seg:dQw4w9WgXcQ
@@ -510,6 +509,7 @@ redis-cli
 **Problem:** `chrome://extensions/` shows error or extension missing
 
 **Solution:**
+
 1. Verify `dist/extension/manifest.json` exists:
    ```bash
    ls -la dist/extension/manifest.json
@@ -529,6 +529,7 @@ redis-cli
 **Problem:** Chrome shows red error in extensions page
 
 **Solution:**
+
 1. Check `manifest.json` syntax:
    ```bash
    npm run typecheck
@@ -547,15 +548,16 @@ redis-cli
 **Problem:** Extension can't reach backend
 
 **Solution:**
+
 1. Verify backend is running:
    ```bash
-   curl http://localhost:3000/health
-   # Should return {"status":"ok"}
+   curl http://localhost:3040/healthz
+   # Should return {"ok":true,"version":"1.0.0"}
    ```
 2. Check `.env.local`:
    ```bash
    grep VITE_API_BASE_URL .env.local
-   # Should be http://localhost:3000
+   # Should be http://localhost:3040
    ```
 3. Rebuild extension:
    ```bash
@@ -568,6 +570,7 @@ redis-cli
 **Problem:** Backend fails on startup
 
 **Solution:**
+
 1. Verify `.env` file exists and has `ANTHROPIC_API_KEY`:
    ```bash
    grep ANTHROPIC_API_KEY .env
@@ -589,6 +592,7 @@ redis-cli
 **Problem:** Sponsor detection hangs, times out
 
 **Solution:**
+
 1. Check Anthropic API status: https://status.anthropic.com
 2. Increase timeout in `.env`:
    ```
@@ -607,26 +611,27 @@ redis-cli
 
 ### PostgreSQL connection errors
 
-**Problem:** `error: connect ECONNREFUSED 127.0.0.1:5432`
+**Problem:** `error: connect ECONNREFUSED 127.0.0.1:5434`
 
 **Solution:**
+
 1. Verify PostgreSQL is running:
    ```bash
-   docker-compose ps | grep postgres
+   docker compose -f infra/docker-compose.yml ps | grep postgres
    # Should show "postgres ... Up"
    ```
 2. Restart if needed:
    ```bash
-   docker-compose restart postgres
+   docker compose -f infra/docker-compose.yml restart postgres
    ```
 3. Check connection string:
    ```bash
    grep DATABASE_URL .env
-   # Should be: postgresql://skipsponsor:password@localhost:5432/skipsponsor
+   # Should be: postgresql://skipsponsor:password@localhost:5434/skipsponsor
    ```
 4. Test connection:
    ```bash
-   psql postgresql://skipsponsor:password@localhost:5432/skipsponsor -c "SELECT 1"
+   psql postgresql://skipsponsor:password@localhost:5434/skipsponsor -c "SELECT 1"
    ```
 
 ### Redis cache issues
@@ -634,9 +639,10 @@ redis-cli
 **Problem:** Cache not working, always hitting LLM
 
 **Solution:**
+
 1. Verify Redis running:
    ```bash
-   docker-compose ps | grep redis
+   docker compose -f infra/docker-compose.yml ps | grep redis
    # Should show "redis ... Up"
    ```
 2. Test connection:
@@ -655,6 +661,7 @@ redis-cli
 **Problem:** Extensions skips correctly but no segments returned
 
 **Solution:**
+
 1. Verify video has captions:
    - Open video in browser
    - Look for CC button in player (should be enabled)
@@ -678,9 +685,10 @@ redis-cli
 - **Run full test suite:** `npm run test`
 - **Check code quality:** `npm run verify`
 - **Build for Web Store:** `npm run build:extension -- --mode production`
-- **Deploy backend:** `npm run tf:plan && npm run tf:apply`
+- **Deploy backend:** `terraform -chdir=infra/terraform plan && terraform -chdir=infra/terraform apply`
 
 For more information, see:
+
 - [README.md](../README.md)
 - [CLAUDE.md](../CLAUDE.md)
 - [Technical Specification](../skip-sponsor-ai-technical-spec.md)

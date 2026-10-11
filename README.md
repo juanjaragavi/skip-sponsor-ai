@@ -19,7 +19,7 @@
 
 **SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it offers precision sponsor detection with 93%+ accuracy while respecting user preferences and privacy.
 
-- 🧠 **AI-powered** — Claude 3.5 Haiku analyzes captions; Sonnet fallback for ambiguous cases
+- 🧠 **AI-powered** — Claude Haiku 4.5 analyzes captions; Claude Sonnet 5.5 fallback for ambiguous cases
 - ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back
 - 🎛️ **You're in control** — Auto / Notify / Off per video, confidence threshold (50–95%), per-channel opt-out
 - 🌍 **Any language** — works with auto or uploaded captions; SponsorBlock fallback when captions are missing
@@ -30,12 +30,12 @@
 
 ![SkipSponsor AI in action](store/showcase/showcase-1280x720.png)
 
-| Skip automatically | Changed your mind? Undo | Auto, Notify, or Off |
-| --- | --- | --- |
+| Skip automatically                                                               | Changed your mind? Undo                       | Auto, Notify, or Off                                     |
+| -------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
 | ![Skip sponsor reads automatically](store/screenshots/01-skip-sponsor-reads.png) | ![Undo a skip](store/screenshots/02-undo.png) | ![Three modes](store/screenshots/03-auto-notify-off.png) |
 
-| Works in any language | Private by design |
-| --- | --- |
+| Works in any language                                           | Private by design                                                |
+| --------------------------------------------------------------- | ---------------------------------------------------------------- |
 | ![Works in any language](store/screenshots/04-any-language.png) | ![Private by design](store/screenshots/05-private-by-design.png) |
 
 > All screenshots are 1280×800 Chrome Web Store assets in [`store/screenshots/`](store/screenshots/). Brand marks and lockups live in [`brand/`](brand/).
@@ -106,12 +106,23 @@ This generates `dist/extension/` for local testing.
 For full local development with LLM inference:
 
 ```bash
-docker-compose up -d
-npm run db:migrate
+docker compose -f infra/docker-compose.yml up -d
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql   # no migrate script yet
 npm run dev:api
 ```
 
-Backend listens on `http://localhost:3000` by default.
+Backend listens on `http://localhost:3040` by default.
+
+Local ports are unique across DevSpeak projects so several can run at once:
+
+| Service                                | Host port | Set in                                              |
+| -------------------------------------- | --------- | --------------------------------------------------- |
+| API (`npm run dev:api`)                | 3040      | `package.json` `config.port` (override with `PORT`) |
+| Extension dev server (`dev:extension`) | 5174      | `vite.config.ts` (`strictPort`)                     |
+| Postgres (Docker)                      | 5434      | `infra/docker-compose.yml` (container port 5432)    |
+| Redis (Docker)                         | 6380      | `infra/docker-compose.yml` (container port 6379)    |
+
+The API container (`infra/Dockerfile.api`) still listens on 3000 when `PORT` is unset.
 
 ## Environment Variables
 
@@ -119,32 +130,36 @@ Backend listens on `http://localhost:3000` by default.
 
 In `.env.local`, loaded at build time:
 
-| Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `VITE_API_BASE_URL` | Yes | `http://localhost:3000` | Backend API endpoint (dev) or production domain |
-| `VITE_ENVIRONMENT` | No | `development` | `development`, `staging`, or `production` |
-| `VITE_DEBUG_MODE` | No | `false` | Verbose console logging in content script |
+| Variable            | Required | Default                                                                     | Description                                     |
+| ------------------- | -------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
+| `VITE_API_BASE_URL` | Yes      | `https://api.skipsponsor.example.com` (set `http://localhost:3040` for dev) | Backend API endpoint (dev) or production domain |
+| `VITE_ENVIRONMENT`  | No       | `development`                                                               | `development`, `staging`, or `production`       |
+| `VITE_DEBUG_MODE`   | No       | `false`                                                                     | Verbose console logging in content script       |
+
+Only `VITE_API_BASE_URL` is read by the extension code today; the other two are placeholders.
 
 ### Backend API (Server-Side)
 
 In `.env`, loaded at server startup:
 
-| Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Yes | — | API key from [console.anthropic.com](https://console.anthropic.com) |
-| `DATABASE_URL` | Yes | `postgresql://localhost:5432/skipsponsor` | PostgreSQL connection string |
-| `REDIS_URL` | Yes | `redis://localhost:6379` | Redis connection string |
-| `NODE_ENV` | No | `development` | `development`, `staging`, or `production` |
-| `LOG_LEVEL` | No | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
-| `CORS_ORIGIN` | No | `*` | CORS allowed origin (restrict in production) |
-| `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window (ms) |
-| `RATE_LIMIT_MAX_REQUESTS` | No | `60` | Max requests per window |
-| `LLM_TIMEOUT_MS` | No | `8000` | LLM inference timeout (ms) |
-| `LLM_MAX_RETRIES` | No | `1` | LLM retry attempts on timeout |
-| `CONFIDENCE_THRESHOLD` | No | `0.78` | Default confidence threshold (0.5–0.95) |
-| `CACHE_TTL_DAYS` | No | `30` | Cache retention in days |
-| `SENTRY_DSN` | No | — | Sentry error tracking DSN (optional) |
-| `PORT` | No | `3000` | Server listen port |
+| Variable                  | Required | Default                                                   | Description                                                         |
+| ------------------------- | -------- | --------------------------------------------------------- | ------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`       | Yes      | —                                                         | API key from [console.anthropic.com](https://console.anthropic.com) |
+| `DATABASE_URL`            | Yes      | `postgresql://localhost:5434/skipsponsor`                 | PostgreSQL connection string                                        |
+| `REDIS_URL`               | Yes      | `redis://localhost:6380`                                  | Redis connection string                                             |
+| `NODE_ENV`                | No       | `development`                                             | `development`, `staging`, or `production`                           |
+| `LOG_LEVEL`               | No       | `info`                                                    | `trace`, `debug`, `info`, `warn`, `error`, `fatal`                  |
+| `CORS_ORIGIN`             | No       | `*`                                                       | CORS allowed origin (restrict in production)                        |
+| `RATE_LIMIT_WINDOW_MS`    | No       | `60000`                                                   | Rate limit window (ms)                                              |
+| `RATE_LIMIT_MAX_REQUESTS` | No       | `60`                                                      | Max requests per window                                             |
+| `LLM_TIMEOUT_MS`          | No       | `8000`                                                    | LLM inference timeout (ms)                                          |
+| `LLM_MAX_RETRIES`         | No       | `1`                                                       | LLM retry attempts on timeout                                       |
+| `CONFIDENCE_THRESHOLD`    | No       | `0.78`                                                    | Default confidence threshold (0.5–0.95)                             |
+| `CACHE_TTL_DAYS`          | No       | `30`                                                      | Cache retention in days                                             |
+| `SENTRY_DSN`              | No       | —                                                         | Sentry error tracking DSN (optional)                                |
+| `PORT`                    | No       | `3040` local (`npm run dev:api`), `3000` in the container | Server listen port                                                  |
+
+The server reads only `ANTHROPIC_API_KEY`, `PORT`, `NODE_ENV`, and `GLOBAL_KILL` (kill switch served by `GET /v1/config`). `DATABASE_URL` and `REDIS_URL` are parsed in `src/api/config.ts` but unused while segments live in memory; the remaining rows are `.env.example` placeholders no code reads.
 
 ### Getting an Anthropic API Key
 
@@ -169,12 +184,12 @@ npm run test:e2e           # Playwright E2E
 
 npm run build:extension    # bundle MV3 extension
 npm run build:api          # build backend
-npm run dev:extension      # Vite HMR + CRXJS
-npm run dev:api            # Fastify dev server
+npm run dev:extension      # Vite HMR + CRXJS on :5174
+npm run dev:api            # Fastify dev server on :3040
 npm run verify             # lint + typecheck + test
 
-npm run db:migrate         # run migrations
-npm run db:seed            # seed test data
+# Database: no migrate/seed scripts yet; apply SQL directly
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 ```
 
 ### Project Structure
@@ -183,24 +198,26 @@ npm run db:seed            # seed test data
 src/
 ├── extension/              # Chrome MV3 extension
 │   ├── content-script.ts  # detector + skipper
-│   ├── service-worker.ts  # policy engine + cache
+│   ├── service-worker.ts  # API calls, in-flight dedupe, install token
+│   ├── policy.ts          # decideSkip() policy engine
 │   ├── toast.ts           # Shadow DOM UI
+│   ├── popup.* / options.* # toolbar popup and options page
 │   └── manifest.json
 ├── api/                    # Fastify backend
 │   ├── routes/            # API endpoints
-│   ├── services/          # business logic
-│   ├── repositories/      # data access
+│   ├── services/          # business logic (LLM, chunking, SponsorBlock)
+│   ├── repositories/      # data access (in-memory today)
 │   ├── config.ts          # config loader
-│   └── types.ts           # domain types
-├── shared/                 # shared TypeScript types
-├── tests/                  # unit, integration, E2E tests
-└── styles/                 # Tailwind + component styles
+│   └── server.ts          # Fastify setup
+├── shared/                 # shared types, Zod validators, constants
+├── types/                  # ambient declarations (opossum)
+└── tests/                  # unit (Vitest) and e2e (Playwright)
 ```
 
 ## Testing & Quality
 
 ```bash
-npm run test -- --run   # unit: mergeSegments(), thresholdFilter(), policyEngine(), route validation
+npm run test -- --run   # unit: mergeSegments(), thresholdFilter(), decideSkip(), route validation
 npm run test:e2e        # loads extension, plays fixture videos, asserts skip + undo
 ```
 
@@ -221,9 +238,9 @@ Full listing copy, assets, and privacy answers live in [`store/listing.md`](stor
 ### Backend (AWS ECS)
 
 ```bash
-npm run tf:plan
-npm run tf:apply
-npm run deploy:api
+terraform -chdir=infra/terraform plan
+terraform -chdir=infra/terraform apply
+# API image: infra/Dockerfile.api (no deploy:api script yet)
 ```
 
 Deploys to ECS Fargate with ALB, RDS PostgreSQL, ElastiCache Redis.

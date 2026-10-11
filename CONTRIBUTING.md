@@ -43,9 +43,9 @@ Load the extension: `chrome://extensions/` → Developer Mode →
 Optional backend (full LLM path):
 
 ```bash
-docker-compose up -d
-npm run db:migrate
-npm run dev:api   # http://localhost:3000
+docker compose -f infra/docker-compose.yml up -d
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql   # no migrate script yet
+npm run dev:api   # http://localhost:3040
 ```
 
 ## 3. Branching and commits

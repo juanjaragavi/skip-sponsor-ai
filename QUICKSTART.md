@@ -2,6 +2,8 @@
 
 Get up and running with SkipSponsor AI in 15 minutes. This guide covers the essential steps to develop, test, and deploy the Chrome extension locally.
 
+> **Code status (verified 2026-10-10):** the API reads only `ANTHROPIC_API_KEY`, `PORT` (default 3000 in the container; `npm run dev:api` defaults to 3040 via package.json `config.port`), `GLOBAL_KILL`, and `NODE_ENV`. `src/api/config.ts` also parses `DATABASE_URL`, `REDIS_URL`, and `API_BASE`, but segments are still stored in memory, so nothing uses them yet. The extension reads only `VITE_API_BASE_URL` (unset: `https://api.skipsponsor.example.com`). Other variables here are spec placeholders from `.env.example` that no code reads. The health check is `GET /healthz` → `{"ok":true,"version":"1.0.0"}`. There are no `db:migrate`, `db:seed`, `tf:*`, or `deploy:api` scripts.
+
 ## TL;DR (5-Minute Setup)
 
 ```bash
@@ -15,20 +17,20 @@ npm ci
 # Copy your key (starts with sk-ant-)
 
 # 3. Create environment files
-echo 'VITE_API_BASE_URL=http://localhost:3000' > .env.local
+echo 'VITE_API_BASE_URL=http://localhost:3040' > .env.local
 echo 'VITE_DEBUG_MODE=true' >> .env.local
 
 cat > .env << EOF
 ANTHROPIC_API_KEY=sk-ant-your-key-here
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 NODE_ENV=development
 LOG_LEVEL=debug
-PORT=3000
+PORT=3040
 EOF
 
 # 4. Start services
-docker-compose up -d  # PostgreSQL + Redis
+docker compose -f infra/docker-compose.yml up -d  # PostgreSQL + Redis
 npm run build:extension  # Build extension
 npm run dev:api  # Backend (new terminal)
 
@@ -43,12 +45,13 @@ npm run dev:api  # Backend (new terminal)
 Before starting, verify you have:
 
 - [ ] Node.js 20 LTS or later
-- [ ] npm or pnpm
+- [ ] npm (the repo ships `package-lock.json`)
 - [ ] Chrome 116 or later
 - [ ] Docker & Docker Compose (optional but recommended)
 - [ ] Anthropic API key (free: [console.anthropic.com](https://console.anthropic.com))
 
 **Verify installations:**
+
 ```bash
 node --version && npm --version && chrome --version
 # Output: v20.x.x, 8.x.x, Google Chrome 116.x.x
@@ -82,13 +85,14 @@ npm ci
 
 ```bash
 cat > .env.local << 'EOF'
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_ENVIRONMENT=development
 VITE_DEBUG_MODE=true
 EOF
 ```
 
 **Explanation:**
+
 - `VITE_API_BASE_URL`: Where the extension finds the backend API
 - `VITE_ENVIRONMENT`: Set to development for verbose logging
 - `VITE_DEBUG_MODE`: Enable console debug messages
@@ -99,16 +103,17 @@ EOF
 cat > .env << 'EOF'
 # Replace sk-ant-xxx with your actual API key from Step 1
 ANTHROPIC_API_KEY=sk-ant-your-api-key-here
-DATABASE_URL=postgresql://skipsponsor:password@localhost:5432/skipsponsor
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://skipsponsor:password@localhost:5434/skipsponsor
+REDIS_URL=redis://localhost:6380
 NODE_ENV=development
 LOG_LEVEL=debug
-PORT=3000
+PORT=3040
 CORS_ORIGIN=*
 EOF
 ```
 
 **⚠️ IMPORTANT:**
+
 - Never commit `.env` files to git
 - `.env` contains your Anthropic API key — keep it private
 - Already in `.gitignore` — safe to create
@@ -119,16 +124,17 @@ EOF
 
 ```bash
 # Start PostgreSQL + Redis in background
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
 # Verify services running
-docker-compose ps
+docker compose -f infra/docker-compose.yml ps
 # Should show: postgres (Up) and redis (Up)
 ```
 
 ### Option B: Manual Setup (if no Docker)
 
 **PostgreSQL:**
+
 ```bash
 brew install postgresql@16  # macOS
 # or: apt-get install postgresql postgresql-contrib  # Linux
@@ -139,6 +145,7 @@ psql -U postgres -c "CREATE DATABASE skipsponsor OWNER skipsponsor;"
 ```
 
 **Redis:**
+
 ```bash
 brew install redis  # macOS
 # or: apt-get install redis-server  # Linux
@@ -155,6 +162,7 @@ npm run build:extension
 Output: `dist/extension/` containing bundled extension files
 
 Verify build:
+
 ```bash
 ls -la dist/extension/ | grep manifest.json
 # Should show: manifest.json
@@ -169,14 +177,16 @@ npm run dev:api
 ```
 
 Expected output:
+
 ```
-[Fastify] listening on port 3000
+{"level":30,...,"msg":"Server listening at http://0.0.0.0:3040"}
 ```
 
 Verify API working:
+
 ```bash
-curl http://localhost:3000/health
-# Should return: {"status":"ok"}
+curl http://localhost:3040/healthz
+# Should return: {"ok":true,"version":"1.0.0"}
 ```
 
 ## Step 7: Load Extension in Chrome (2 minutes)
@@ -184,6 +194,7 @@ curl http://localhost:3000/health
 ### Load Unpacked Extension
 
 1. **Open Chrome Extensions:**
+
    ```
    chrome://extensions/
    ```
@@ -195,7 +206,7 @@ curl http://localhost:3000/health
    - Click **Load unpacked**
    - Navigate to `/path/to/skip-sponsor-ai/dist/extension`
    - Select folder → Open
-   
+
 4. **Verify Installation:**
    - Extension appears in Chrome toolbar
    - Extension name: "SkipSponsor AI"
@@ -239,14 +250,15 @@ curl http://localhost:3000/health
 
 ## Troubleshooting
 
-### "Cannot connect to http://localhost:3000"
+### "Cannot connect to http://localhost:3040"
 
 **Problem:** Extension can't reach backend
 
 **Solution:**
+
 ```bash
 # 1. Verify backend is running
-curl http://localhost:3000/health
+curl http://localhost:3040/healthz
 
 # 2. Check .env.local
 cat .env.local | grep VITE_API_BASE_URL
@@ -263,6 +275,7 @@ chrome://extensions/ → Reload icon
 **Problem:** Backend crashes on startup
 
 **Solution:**
+
 ```bash
 # 1. Verify .env file exists and has API key
 cat .env | grep ANTHROPIC_API_KEY
@@ -285,6 +298,7 @@ npm run dev:api
 **Problem:** Extension doesn't skip any sponsors
 
 **Solution:**
+
 ```bash
 # 1. Verify video has captions
 # YouTube video → Check CC icon in player (should be enabled)
@@ -303,23 +317,24 @@ VITE_DEBUG_MODE=true npm run build:extension
 
 ### Docker containers not starting
 
-**Problem:** `docker-compose up -d` fails
+**Problem:** `docker compose -f infra/docker-compose.yml up -d` fails
 
 **Solution:**
+
 ```bash
 # 1. Verify Docker is running
 docker ps  # Should return container list (or empty)
 
 # 2. Start services with output
-docker-compose up  # (no -d flag, shows logs)
+docker compose -f infra/docker-compose.yml up  # (no -d flag, shows logs)
 
 # 3. Check for port conflicts
-lsof -i :5432  # PostgreSQL port
-lsof -i :6379  # Redis port
+lsof -i :5434  # PostgreSQL port
+lsof -i :6380  # Redis port
 
 # 4. Clean up and restart
-docker-compose down
-docker-compose up -d
+docker compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml up -d
 ```
 
 ## Next Steps
@@ -335,12 +350,13 @@ After verifying basic functionality:
 
 2. **Read comprehensive docs:**
    - [README.md](./README.md) — Full project overview
-   - [CLAUDE.md](./CLAUDE.md) — AI assistant guidance
+   - [AGENTS.md](./AGENTS.md) — AI agent guidance (`CLAUDE.md` imports it)
    - [LOCAL_TESTING.md](./docs/LOCAL_TESTING.md) — Detailed testing guide
    - [ENV_VARIABLES.md](./docs/ENV_VARIABLES.md) — Complete env var reference
    - [skip-sponsor-ai-technical-spec.md](./skip-sponsor-ai-technical-spec.md) — Full spec
 
 3. **Run tests:**
+
    ```bash
    npm run test  # Unit tests
    npm run test:coverage  # Coverage report
@@ -357,11 +373,13 @@ After verifying basic functionality:
 When ready for production:
 
 1. **Build for production:**
+
    ```bash
    VITE_ENVIRONMENT=production npm run build:extension
    ```
 
 2. **Create distribution zip:**
+
    ```bash
    cd dist/extension && zip -r ../skipsponsor-v1.0.0.zip . && cd ../..
    ```
@@ -376,7 +394,7 @@ When ready for production:
 
 ```bash
 # Development
-npm run dev:extension       # Build with Vite HMR
+npm run dev:extension       # Build with Vite HMR (dev server on :5174)
 npm run dev:api            # Start backend with live reload
 
 # Building
@@ -395,13 +413,12 @@ npm run format            # Prettier formatting
 npm run typecheck         # TypeScript check
 npm run verify            # All checks (lint + typecheck + test)
 
-# Database
-npm run db:migrate        # Run migrations
-npm run db:seed           # Seed test data
+# Database (no migrate/seed scripts yet)
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 
-# Infrastructure
-npm run tf:plan           # Terraform plan
-npm run tf:apply          # Deploy to AWS
+# Infrastructure (no npm scripts)
+terraform -chdir=infra/terraform plan
+terraform -chdir=infra/terraform apply
 ```
 
 ## Debug Tools
@@ -409,16 +426,19 @@ npm run tf:apply          # Deploy to AWS
 ### Chrome DevTools
 
 **Console (Extension Logs):**
+
 1. `F12` → Console tab
 2. Select **youtube.com** context
 3. Look for `[SkipSponsor]` prefixed messages
 
 **Network (API Requests):**
+
 1. `F12` → Network tab
 2. Filter by `Fetch/XHR`
 3. Click requests to see request/response
 
 **Storage (Extension Data):**
+
 1. `F12` → Application → Storage
 2. `chrome-extension://` (extension ID)
 3. View LocalStorage and SyncStorage

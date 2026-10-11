@@ -4,7 +4,7 @@
 
 ## Features
 
-- **AI-Powered Detection:** Uses Claude 3.5 Haiku to analyze video captions and identify sponsor segments
+- **AI-Powered Detection:** Uses Claude Haiku 4.5 (Sonnet 5.5 fallback; see `MODEL_POLICY` in `src/shared/constants.ts`) to analyze video captions and identify sponsor segments
 - **Auto-Skip:** Automatically seeks past detected sponsor reads with a 4-second undo window
 - **Per-Channel Control:** Enable/disable detection on specific channels via allowlist/blocklist
 - **Smart Fallback:** Falls back to SponsorBlock API when captions unavailable or LLM fails
@@ -17,7 +17,7 @@
 ### Prerequisites
 
 - **Node.js:** 20 LTS
-- **npm:** 8.x+ or pnpm
+- **npm:** 8.x+ (the repo ships `package-lock.json`)
 - **Chrome:** 116+
 - **Docker:** For local PostgreSQL + Redis (optional, for full backend setup)
 - **Anthropic API Key:** Sign up at [console.anthropic.com](https://console.anthropic.com)
@@ -62,16 +62,16 @@ For full local development with LLM inference:
 
 ```bash
 # Start PostgreSQL + Redis
-docker-compose up -d
+docker compose -f infra/docker-compose.yml up -d
 
-# Run migrations
-npm run db:migrate
+# Apply the schema (no migrate script yet)
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 
 # Start backend server
 npm run dev:api
 ```
 
-Backend listens on `http://localhost:3000` by default.
+Backend listens on `http://localhost:3040` by default.
 
 ## Environment Variables
 
@@ -79,32 +79,36 @@ Backend listens on `http://localhost:3000` by default.
 
 Located in `.env.local` and loaded at build time:
 
-| Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `VITE_API_BASE_URL` | Yes | `http://localhost:3000` | Backend API endpoint (dev) or production domain |
-| `VITE_ENVIRONMENT` | No | `development` | `development`, `staging`, or `production` |
-| `VITE_DEBUG_MODE` | No | `false` | Enable verbose console logging in content script |
+| Variable            | Required | Default                                                                     | Description                                      |
+| ------------------- | -------- | --------------------------------------------------------------------------- | ------------------------------------------------ |
+| `VITE_API_BASE_URL` | Yes      | `https://api.skipsponsor.example.com` (set `http://localhost:3040` for dev) | Backend API endpoint (dev) or production domain  |
+| `VITE_ENVIRONMENT`  | No       | `development`                                                               | `development`, `staging`, or `production`        |
+| `VITE_DEBUG_MODE`   | No       | `false`                                                                     | Enable verbose console logging in content script |
+
+Only `VITE_API_BASE_URL` is read by the extension code today; the other two are placeholders.
 
 ### Backend API (Server-Side)
 
 Located in `.env` and loaded at server startup:
 
-| Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Yes | — | API key from [console.anthropic.com](https://console.anthropic.com) |
-| `DATABASE_URL` | Yes | `postgresql://localhost:5432/skipsponsor` | PostgreSQL connection string |
-| `REDIS_URL` | Yes | `redis://localhost:6379` | Redis connection string |
-| `NODE_ENV` | No | `development` | `development`, `staging`, or `production` |
-| `LOG_LEVEL` | No | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
-| `CORS_ORIGIN` | No | `*` | CORS allowed origin (restrict in production) |
-| `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window (ms) |
-| `RATE_LIMIT_MAX_REQUESTS` | No | `60` | Max requests per window |
-| `LLM_TIMEOUT_MS` | No | `8000` | LLM inference timeout (ms) |
-| `LLM_MAX_RETRIES` | No | `1` | LLM retry attempts on timeout |
-| `CONFIDENCE_THRESHOLD` | No | `0.78` | Default confidence threshold (0.5–0.95) |
-| `CACHE_TTL_DAYS` | No | `30` | Cache retention in days |
-| `SENTRY_DSN` | No | — | Sentry error tracking DSN (optional) |
-| `PORT` | No | `3000` | Server listen port |
+| Variable                  | Required | Default                                                   | Description                                                         |
+| ------------------------- | -------- | --------------------------------------------------------- | ------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`       | Yes      | —                                                         | API key from [console.anthropic.com](https://console.anthropic.com) |
+| `DATABASE_URL`            | Yes      | `postgresql://localhost:5434/skipsponsor`                 | PostgreSQL connection string                                        |
+| `REDIS_URL`               | Yes      | `redis://localhost:6380`                                  | Redis connection string                                             |
+| `NODE_ENV`                | No       | `development`                                             | `development`, `staging`, or `production`                           |
+| `LOG_LEVEL`               | No       | `info`                                                    | `trace`, `debug`, `info`, `warn`, `error`, `fatal`                  |
+| `CORS_ORIGIN`             | No       | `*`                                                       | CORS allowed origin (restrict in production)                        |
+| `RATE_LIMIT_WINDOW_MS`    | No       | `60000`                                                   | Rate limit window (ms)                                              |
+| `RATE_LIMIT_MAX_REQUESTS` | No       | `60`                                                      | Max requests per window                                             |
+| `LLM_TIMEOUT_MS`          | No       | `8000`                                                    | LLM inference timeout (ms)                                          |
+| `LLM_MAX_RETRIES`         | No       | `1`                                                       | LLM retry attempts on timeout                                       |
+| `CONFIDENCE_THRESHOLD`    | No       | `0.78`                                                    | Default confidence threshold (0.5–0.95)                             |
+| `CACHE_TTL_DAYS`          | No       | `30`                                                      | Cache retention in days                                             |
+| `SENTRY_DSN`              | No       | —                                                         | Sentry error tracking DSN (optional)                                |
+| `PORT`                    | No       | `3040` local (`npm run dev:api`), `3000` in the container | Server listen port                                                  |
+
+The server reads only `ANTHROPIC_API_KEY`, `PORT`, `NODE_ENV`, and `GLOBAL_KILL` (kill switch served by `GET /v1/config`). `DATABASE_URL` and `REDIS_URL` are parsed in `src/api/config.ts` but unused while segments live in memory; the remaining rows are `.env.example` placeholders no code reads.
 
 ### Getting Anthropic API Key
 
@@ -125,7 +129,7 @@ npm run typecheck
 
 # Linting
 npm run lint
-npm run lint --fix
+npm run lint -- --fix
 
 # Formatting
 npm run format
@@ -147,9 +151,8 @@ npm run dev:api                # Fastify dev server
 # Code quality verification
 npm run verify                 # lint + typecheck + test
 
-# Database (if using PostgreSQL)
-npm run db:migrate            # Run migrations
-npm run db:seed               # Seed test data
+# Database: no migrate/seed scripts yet; apply SQL directly
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 ```
 
 ### Project Structure
@@ -157,19 +160,21 @@ npm run db:seed               # Seed test data
 ```
 src/
 ├── extension/              # Chrome MV3 extension
-│   ├── content-script.ts  # Detector + skipper
-│   ├── service-worker.ts  # Policy engine + cache
+│   ├── content-script.ts  # detector + skipper
+│   ├── service-worker.ts  # API calls, in-flight dedupe, install token
+│   ├── policy.ts          # decideSkip() policy engine
 │   ├── toast.ts           # Shadow DOM UI
+│   ├── popup.* / options.* # toolbar popup and options page
 │   └── manifest.json
-├── api/                   # Fastify backend
+├── api/                    # Fastify backend
 │   ├── routes/            # API endpoints
-│   ├── services/          # Business logic
-│   ├── repositories/      # Data access
-│   ├── config.ts          # Config loader
-│   └── types.ts           # Domain types
-├── shared/                # Shared TypeScript types
-├── tests/                 # Unit, integration, E2E tests
-└── styles/                # Tailwind + component styles
+│   ├── services/          # business logic (LLM, chunking, SponsorBlock)
+│   ├── repositories/      # data access (in-memory today)
+│   ├── config.ts          # config loader
+│   └── server.ts          # Fastify setup
+├── shared/                 # shared types, Zod validators, constants
+├── types/                  # ambient declarations (opossum)
+└── tests/                  # unit (Vitest) and e2e (Playwright)
 ```
 
 ## Testing & Quality
@@ -225,13 +230,12 @@ Minimum **80% coverage** enforced in CI:
 
 ```bash
 # Plan infrastructure
-npm run tf:plan
+terraform -chdir=infra/terraform plan
 
 # Apply Terraform configuration
-npm run tf:apply
+terraform -chdir=infra/terraform apply
 
-# Deploy updated service
-npm run deploy:api
+# API image: infra/Dockerfile.api (no deploy:api script yet)
 ```
 
 Deploys to AWS ECS Fargate with ALB, RDS PostgreSQL, ElastiCache Redis.
@@ -273,6 +277,8 @@ See [skip-sponsor-ai-technical-spec.md § 6](./skip-sponsor-ai-technical-spec.md
 
 ## Monitoring & Observability
 
+Spec targets; only Fastify's pino request logging exists in code today.
+
 - **Metrics:** Prometheus + Grafana dashboard
 - **Tracing:** OpenTelemetry with 10% sampling
 - **Logging:** Pino structured JSON → CloudWatch
@@ -291,7 +297,7 @@ See [skip-sponsor-ai-technical-spec.md § 6](./skip-sponsor-ai-technical-spec.md
 ### Backend API errors
 
 1. Verify `ANTHROPIC_API_KEY` is set and valid
-2. Check PostgreSQL + Redis running: `docker-compose ps`
+2. Check PostgreSQL + Redis running: `docker compose -f infra/docker-compose.yml ps`
 3. Review backend logs: `npm run dev:api`
 4. Check rate limiting: default 60 req/min/install
 

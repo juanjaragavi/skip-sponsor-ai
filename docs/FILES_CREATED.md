@@ -5,9 +5,11 @@ Complete list of all documentation and configuration files created for SkipSpons
 ## Documentation Files
 
 ### 1. **README.md** (Main Project Documentation)
+
 **Location:** `/skip-sponsor-ai/README.md`
 **Purpose:** Complete project overview, features, quick start, environment setup
 **Sections:**
+
 - Features overview
 - Prerequisites & installation
 - Environment variables reference
@@ -23,10 +25,12 @@ Complete list of all documentation and configuration files created for SkipSpons
 
 ---
 
-### 2. **CLAUDE.md** (AI Assistant Guidance)
-**Location:** `/skip-sponsor-ai/CLAUDE.md`
-**Purpose:** Guidance for Claude Code AI assistant when working on this codebase
+### 2. **AGENTS.md** (AI Agent Guidance; `CLAUDE.md` imports it)
+
+**Location:** `/skip-sponsor-ai/AGENTS.md`
+**Purpose:** Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes) working on this codebase
 **Sections:**
+
 - Project overview & tech stack
 - Development workflow & commands
 - Architecture & component topology
@@ -38,14 +42,16 @@ Complete list of all documentation and configuration files created for SkipSpons
 - Common implementation tasks
 - Technical spec references
 
-**When to Read:** Referenced by Claude Code for context-aware development
+**When to Read:** Loaded by AI coding agents for context-aware development
 
 ---
 
 ### 3. **QUICKSTART.md** (15-Minute Setup)
+
 **Location:** `/skip-sponsor-ai/QUICKSTART.md`
 **Purpose:** Rapid onboarding guide for new developers
 **Sections:**
+
 - TL;DR 5-minute setup
 - Prerequisites checklist
 - Step-by-step setup (8 steps)
@@ -61,9 +67,11 @@ Complete list of all documentation and configuration files created for SkipSpons
 ---
 
 ### 4. **LOCAL_TESTING.md** (Comprehensive Testing Guide)
+
 **Location:** `/skip-sponsor-ai/docs/LOCAL_TESTING.md`
 **Purpose:** Detailed instructions for testing and debugging locally
 **Sections:**
+
 - Prerequisites & verification
 - Environment file setup (.env, .env.local)
 - Getting Anthropic API key
@@ -81,9 +89,11 @@ Complete list of all documentation and configuration files created for SkipSpons
 ---
 
 ### 5. **ENV_VARIABLES.md** (Complete Variable Reference)
+
 **Location:** `/skip-sponsor-ai/docs/ENV_VARIABLES.md`
 **Purpose:** Comprehensive documentation of all environment variables
 **Sections:**
+
 - Extension client variables (3 variables)
   - VITE_API_BASE_URL
   - VITE_ENVIRONMENT
@@ -113,9 +123,11 @@ Complete list of all documentation and configuration files created for SkipSpons
 ---
 
 ### 6. **SETUP_SUMMARY.md** (Quick Reference)
+
 **Location:** `/skip-sponsor-ai/docs/SETUP_SUMMARY.md`
 **Purpose:** Condensed reference of all setup steps and variables
 **Sections:**
+
 - Files created/updated table
 - Quick reference of all env variables
 - Setup checklist (initial + workflow)
@@ -137,9 +149,11 @@ Complete list of all documentation and configuration files created for SkipSpons
 ## Configuration Files
 
 ### 1. **.env.example** (Backend Configuration Template)
+
 **Location:** `/skip-sponsor-ai/.env.example`
 **Purpose:** Template for backend environment variables
 **Contains:**
+
 - Extension variables section
 - Backend variables section (required & optional)
 - Server configuration
@@ -152,6 +166,7 @@ Complete list of all documentation and configuration files created for SkipSpons
 - Comprehensive notes & best practices
 
 **How to Use:**
+
 ```bash
 cp .env.example .env
 # Edit .env with your actual values (API keys, database creds)
@@ -162,11 +177,13 @@ cp .env.example .env
 ---
 
 ### 2. **.env.local** (Extension Build Configuration)
+
 **Location:** `/skip-sponsor-ai/.env.local`
 **Purpose:** Build-time configuration for Chrome extension
 **Created by User with:**
+
 ```
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3040
 VITE_ENVIRONMENT=development
 VITE_DEBUG_MODE=true
 ```
@@ -174,6 +191,7 @@ VITE_DEBUG_MODE=true
 **When to Create:** Step 3 in QUICKSTART.md
 
 **When to Rebuild:** After any changes to these variables
+
 ```bash
 npm run build:extension
 ```
@@ -183,9 +201,11 @@ npm run build:extension
 ---
 
 ### 3. **.env** (Backend Configuration - User Created)
+
 **Location:** `/skip-sponsor-ai/.env`
 **Purpose:** Runtime configuration for Node.js backend API
 **Contains:**
+
 - Anthropic API key (sk-ant-...)
 - PostgreSQL connection string
 - Redis connection string
@@ -206,9 +226,11 @@ npm run build:extension
 ---
 
 ### 4. **.gitignore** (Git Ignore Patterns - UPDATED)
+
 **Location:** `/skip-sponsor-ai/.gitignore`
 **Purpose:** Prevent accidental commits of sensitive files
 **Updated to Include:**
+
 - Environment files (.env, .env.local, .env.*.local)
 - API keys & credentials (*.key, *.pem, *.json secrets)
 - Dependencies (node_modules/)
@@ -222,6 +244,7 @@ npm run build:extension
 - OS files (.DS_Store, Thumbs.db)
 
 **Verification:**
+
 ```bash
 git check-ignore -v .env
 # Should output: .gitignore:7:.env
@@ -233,22 +256,24 @@ git check-ignore -v .env
 
 ### Extension Variables (`.env.local`)
 
-| Variable | Type | Default | Purpose |
-| --- | --- | --- | --- |
-| VITE_API_BASE_URL | URL | http://localhost:3000 | Backend API endpoint |
-| VITE_ENVIRONMENT | string | development | Environment context |
-| VITE_DEBUG_MODE | boolean | false | Enable debug logs |
+| Variable          | Type    | Default               | Purpose              |
+| ----------------- | ------- | --------------------- | -------------------- |
+| VITE_API_BASE_URL | URL     | http://localhost:3040 | Backend API endpoint |
+| VITE_ENVIRONMENT  | string  | development           | Environment context  |
+| VITE_DEBUG_MODE   | boolean | false                 | Enable debug logs    |
 
 ### Backend Variables (`.env`)
 
 **Required:**
-| Variable | Type | Purpose |
-| --- | --- | --- |
+
+| Variable          | Type   | Purpose                     |
+| ----------------- | ------ | --------------------------- |
 | ANTHROPIC_API_KEY | string | Claude API key (sk-ant-...) |
-| DATABASE_URL | string | PostgreSQL connection |
-| REDIS_URL | string | Redis cache connection |
+| DATABASE_URL      | string | PostgreSQL connection       |
+| REDIS_URL         | string | Redis cache connection      |
 
 **Optional (with sensible defaults):**
+
 - NODE_ENV, LOG_LEVEL, PORT, CORS_ORIGIN
 - LLM_TIMEOUT_MS, LLM_MAX_RETRIES, CONFIDENCE_THRESHOLD
 - CACHE_TTL_DAYS, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS
@@ -259,6 +284,7 @@ git check-ignore -v .env
 ## How to Get Your Anthropic API Key
 
 **Quick Steps:**
+
 1. Visit https://console.anthropic.com
 2. Sign in or create account (free: $5 credit/month)
 3. Navigate to Account → API Keys
@@ -267,6 +293,7 @@ git check-ignore -v .env
 6. Add to `.env`: `ANTHROPIC_API_KEY=sk-ant-your-key`
 
 **Verify Key:**
+
 ```bash
 curl -H "Authorization: Bearer sk-ant-your-key" \
   https://api.anthropic.com/v1/messages \
@@ -286,20 +313,20 @@ curl -H "Authorization: Bearer sk-ant-your-key" \
 
 1. **QUICKSTART.md** (~5 min)
    - Follow 8-step setup process
-   
+
 2. **LOCAL_TESTING.md** (reference)
    - Test on YouTube
    - Debug issues
-   
+
 3. **ENV_VARIABLES.md** (reference)
    - Understand each variable
    - Configure for your needs
-   
+
 4. **README.md** (comprehensive)
    - Full project overview
    - Deployment information
-   
-5. **CLAUDE.md** (for AI assistants)
+
+5. **AGENTS.md** (for AI agents; `CLAUDE.md` imports it)
    - AI-specific development guidance
 
 6. **skip-sponsor-ai-technical-spec.md** (deep dive)
@@ -316,7 +343,7 @@ README.md
 └── References: skip-sponsor-ai-technical-spec.md
 
 QUICKSTART.md
-├── Links to: LOCAL_TESTING.md, README.md, CLAUDE.md
+├── Links to: LOCAL_TESTING.md, README.md, AGENTS.md
 └── References: ENV_VARIABLES.md
 
 LOCAL_TESTING.md
@@ -327,9 +354,9 @@ ENV_VARIABLES.md
 ├── Links to: README.md, LOCAL_TESTING.md
 └── References: .env.example, console.anthropic.com
 
-CLAUDE.md
+AGENTS.md
 ├── References: skip-sponsor-ai-technical-spec.md
-└── Used by: Claude Code AI assistant
+└── Used by: AI coding agents (CLAUDE.md imports it for Claude Code)
 
 SETUP_SUMMARY.md
 ├── Summarizes: All env variables, all setup steps
@@ -343,27 +370,32 @@ SETUP_SUMMARY.md
 After setup, verify each component:
 
 **Extension:**
+
 - [ ] `dist/extension/manifest.json` exists
 - [ ] Extension loads in Chrome without errors
 - [ ] Extension appears in toolbar
 - [ ] DevTools console shows `[SkipSponsor]` logs
 
 **Backend:**
+
 - [ ] `npm run dev:api` starts without errors
-- [ ] `curl http://localhost:3000/health` returns `{"status":"ok"}`
+- [ ] `curl http://localhost:3040/healthz` returns `{"ok":true,"version":"1.0.0"}`
 - [ ] Backend logs show incoming requests
 
 **Database:**
-- [ ] `docker-compose ps` shows postgres and redis running
+
+- [ ] `docker compose -f infra/docker-compose.yml ps` shows postgres and redis running
 - [ ] `psql "$DATABASE_URL" -c "SELECT 1"` succeeds
 - [ ] `redis-cli -u "$REDIS_URL" PING` returns PONG
 
 **API Integration:**
+
 - [ ] Navigate to YouTube video in Chrome
-- [ ] DevTools shows API request to http://localhost:3000/v1/segments/...
+- [ ] DevTools shows API request to http://localhost:3040/v1/segments/...
 - [ ] Response returns segments[] or pending status
 
 **Sponsor Detection:**
+
 - [ ] Video enters sponsor segment
 - [ ] Video auto-seeks forward
 - [ ] Toast notification appears with "Sponsor skipped!"
