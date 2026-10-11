@@ -225,3 +225,42 @@ test("settings changes apply to the playing video without a reload", async ({
   await page.waitForTimeout(500);
   expect(await tick(page, 31)).toBeCloseTo(60.25, 2);
 });
+
+test("over the daily limit: community segments still skip and a notice shows once", async ({
+  h,
+}) => {
+  h.api.analyzeLimit = {
+    reason: "install_quota",
+    resetAt: new Date(Date.now() + 3600_000).toISOString(),
+  };
+  h.api.fallbackSegments.set(VIDEO_A.id, [
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      videoId: VIDEO_A.id,
+      channelId: null,
+      startTime: 30,
+      endTime: 60,
+      confidence: 0.85,
+      category: "sponsor",
+      source: "sponsorblock",
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+  const page = await h.open(VIDEO_A.id);
+  const notice = page.locator("#skipsponsor-notice-host");
+  await expect(notice).toHaveCount(1);
+  await expect(notice.locator(".tc")).toHaveText(
+    "Daily AI analysis limit reached",
+  );
+  // The signed token minted by POST /v1/installs is what analyze carries.
+  expect(h.api.installs).toBeGreaterThanOrEqual(1);
+  expect(h.api.analyzeAuth.at(-1)).toMatch(/^Bearer v1\.a+1\.e2e-signature$/);
+  await notice.locator("button.ok").click();
+  await expectSkip(page, 31, 60.25);
+
+  // Same limit on the next video: no second notice.
+  await page.evaluate((id) => window.__fx.navigate(id), VIDEO_B.id);
+  await expect.poll(() => h.api.analyzeAuth.length).toBeGreaterThanOrEqual(2);
+  await page.waitForTimeout(500);
+  await expect(notice).toHaveCount(0);
+});

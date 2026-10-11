@@ -51,6 +51,10 @@ button:focus-visible{outline:2px solid #9B87FF;outline-offset:2px}
 .cut .range{background:#3DDC97;animation:drain var(--ms) linear forwards}
 .cut .head{animation:drain-head var(--ms) linear forwards}
 .ask .range{background:#FFB547}
+.note .tag{background:rgba(155,135,255,.16);color:#9B87FF}
+.note .tc{font-size:13px}
+.note .strip{display:none}
+.ok{background:rgba(255,255,255,.12)}.ok:hover{background:rgba(255,255,255,.2)}
 @keyframes drain{from{width:100%}to{width:0}}
 @keyframes drain-head{from{left:calc(100% - 2px)}to{left:0}}
 @keyframes enter{from{opacity:0;transform:translateY(6px)}}
@@ -59,7 +63,7 @@ button:focus-visible{outline:2px solid #9B87FF;outline-offset:2px}
 
 interface Spec {
   hostId: string;
-  kind: "cut" | "ask";
+  kind: "cut" | "ask" | "note";
   tag: string;
   glyph: IconName;
   range: string;
@@ -171,6 +175,25 @@ export function showSkipToast(
     sub: `${categoryLabel(segment.category)} · ${seconds(segment)}s skipped`,
     action: { className: "undo", text: "Undo", icon: "undo-2", run: cb.onUndo },
     durationMs: UNDO_TOAST_MS,
+  }).dismiss;
+}
+
+/** Informational note, e.g. "LIMIT Daily AI analysis limit reached [OK]". */
+export function showNoticeToast(title: string, sub: string): () => void {
+  return render({
+    hostId: "skipsponsor-notice-host",
+    kind: "note",
+    tag: "LIMIT",
+    glyph: "info",
+    range: title,
+    sub,
+    action: {
+      className: "ok",
+      text: "OK",
+      icon: "check",
+      run: () => undefined,
+    },
+    durationMs: 8000,
   }).dismiss;
 }
 

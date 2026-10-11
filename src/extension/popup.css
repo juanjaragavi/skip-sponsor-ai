@@ -219,6 +219,10 @@ body {
   background: var(--violet-strong);
   animation: pulse 1.2s ease-in-out infinite;
 }
+/* Daily analysis limit / paused notice above the edit list. */
+.edit--empty.is-limit {
+  color: var(--amber);
+}
 @keyframes pulse {
   50% {
     opacity: 0.25;

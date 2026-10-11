@@ -3,6 +3,7 @@ import type {
   SponsorSegment,
   UserPolicy,
 } from "../shared/types";
+import type { AnalysisLimit } from "../shared/messages";
 import { decideSkip } from "./policy";
 
 export type Tag = "CUT" | "ASK" | "KEEP";
@@ -162,6 +163,50 @@ export function thresholdSummary(
         ? "gets a Skip button"
         : "gets cut";
   return `Dots are this video’s detected segments. Anything right of the line ${outcome} — ${over} of ${sponsors.length} here.`;
+}
+
+/** Local wall-clock time of a reset, e.g. "7:00 PM". */
+const resetTime = (iso: string): string =>
+  new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+/**
+ * Wording for an analysis the API refused (daily allowance, global budget,
+ * paused). Already-analyzed videos and community segments keep skipping.
+ */
+export function limitCopy(limit: AnalysisLimit): {
+  title: string;
+  sub: string;
+  popup: string;
+} {
+  const at = resetTime(limit.resetAt);
+  switch (limit.reason) {
+    case "install_quota":
+      return {
+        title: "Daily AI analysis limit reached",
+        sub: `Analyzed videos still skip · more at ${at}`,
+        popup: `You’ve used today’s free AI analyses. Videos already analyzed and community-labelled sponsors still skip. More analyses at ${at}.`,
+      };
+    case "global_budget":
+      return {
+        title: "AI analysis is busy today",
+        sub: `Analyzed videos still skip · resumes ${at}`,
+        popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed and community-labelled sponsors still skip. New analyses resume at ${at}.`,
+      };
+    case "llm_disabled":
+      return {
+        title: "AI analysis is paused",
+        sub: "Analyzed videos still skip",
+        popup:
+          "AI analysis is paused for now. Videos already analyzed and community-labelled sponsors still skip.",
+      };
+    default:
+      return {
+        title: "Couldn’t reach SkipSponsor AI",
+        sub: "Using community segments for now",
+        popup:
+          "This browser couldn’t be verified with the SkipSponsor AI server. Community-labelled sponsors still skip.",
+      };
+  }
 }
 
 export const MODE_HELP: Record<UserPolicy["mode"], string> = {

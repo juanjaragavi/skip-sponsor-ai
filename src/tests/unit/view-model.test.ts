@@ -12,6 +12,7 @@ import {
   segmentRows,
   thresholdSummary,
   type RowContext,
+  limitCopy,
 } from "../../extension/view-model";
 
 const seg = (over: Partial<SponsorSegment> = {}): SponsorSegment => ({
@@ -260,5 +261,21 @@ describe("gatePosition", () => {
     expect(gatePosition(0.725)).toBeCloseTo(0.5, 5);
     expect(gatePosition(0.2)).toBe(0);
     expect(gatePosition(1)).toBe(1);
+  });
+});
+
+describe("limitCopy", () => {
+  const resetAt = "2026-10-12T00:00:00.000Z";
+  it.each([
+    ["install_quota", /today’s free AI analyses/],
+    ["global_budget", /free analysis capacity/],
+    ["llm_disabled", /paused/],
+    ["unauthenticated", /couldn’t be verified/],
+  ] as const)("explains %s and keeps skipping", (reason, re) => {
+    const copy = limitCopy({ reason, resetAt });
+    expect(copy.popup).toMatch(re);
+    expect(copy.popup).toMatch(/still skip/);
+    expect(copy.title.length).toBeGreaterThan(0);
+    expect(copy.sub.length).toBeLessThanOrEqual(48);
   });
 });

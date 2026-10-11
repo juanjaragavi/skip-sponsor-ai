@@ -23,6 +23,12 @@ export class FakeApi {
   readonly fallbackSegments = new Map<string, unknown[]>();
   /** Extra segments appended to the analyze result per video (e.g. low confidence). */
   readonly extraSegments = new Map<string, unknown[]>();
+  /** When set, POST analyze answers 429 like the real API over its daily limit. */
+  analyzeLimit: { reason: string; resetAt: string } | null = null;
+  /** Install tokens minted by POST /v1/installs. */
+  installs = 0;
+  /** Authorization headers seen on analyze calls. */
+  readonly analyzeAuth: string[] = [];
   private server: Server | null = null;
 
   async start(port: number): Promise<void> {
@@ -54,6 +60,8 @@ export class FakeApi {
   reset(): void {
     this.analyzeCalls.length = 0;
     this.telemetry.length = 0;
+    this.analyzeAuth.length = 0;
+    this.analyzeLimit = null;
   }
 
   private async handle(
@@ -64,6 +72,11 @@ export class FakeApi {
     if (req.method === "GET" && url.pathname === "/healthz")
       return { status: 200, body: { ok: true, version: "e2e" } };
     const raw = await readBody(req);
+    if (req.method === "POST" && url.pathname === "/v1/installs") {
+      this.installs++;
+      const id = String(this.installs).padStart(32, "a");
+      return { status: 201, body: { installToken: `v1.${id}.e2e-signature` } };
+    }
     const get = /^\/v1\/segments\/([A-Za-z0-9_-]{11})$/.exec(url.pathname);
     if (req.method === "GET" && get) {
       return {
@@ -76,6 +89,18 @@ export class FakeApi {
       };
     }
     if (req.method === "POST" && url.pathname === "/v1/segments:analyze") {
+      this.analyzeAuth[this.analyzeAuth.length] = String(
+        req.headers["authorization"] ?? "",
+      );
+      if (this.analyzeLimit)
+        return {
+          status: 429,
+          body: {
+            status: 429,
+            title: "Daily analysis limit reached",
+            ...this.analyzeLimit,
+          },
+        };
       const parsed = analyzeRequestSchema.safeParse(JSON.parse(raw || "{}"));
       const videoId = (JSON.parse(raw || "{}") as { videoId?: string }).videoId;
       if (!parsed.success) {

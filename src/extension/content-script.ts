@@ -3,11 +3,22 @@ import type {
   VideoAnalysis,
   UserPolicy,
 } from "../shared/types";
-import type { AnalysisPhase, PageState } from "../shared/messages";
+import type {
+  AnalysisLimit,
+  AnalysisPhase,
+  AnalyzeReply,
+  PageState,
+} from "../shared/messages";
 import { DomVideoAdapter, getVideoIdFromUrl } from "./video-adapter";
 import { isInSegment } from "./segments";
 import { decideSkip, DEFAULT_POLICY } from "./policy";
-import { showNotifyBanner, showSkipToast, type NotifyHandle } from "./toast";
+import {
+  showNoticeToast,
+  showNotifyBanner,
+  showSkipToast,
+  type NotifyHandle,
+} from "./toast";
+import { limitCopy } from "./view-model";
 import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 import { SkipGuard } from "./skip-guard";
@@ -24,6 +35,8 @@ let banner: { segmentId: string; handle: NotifyHandle } | null = null;
 let lastVideoId: string | null = null;
 let phase: AnalysisPhase = "idle";
 let fallback = false;
+/** The API refused a fresh analysis for this video (quota, budget, paused). */
+let limit: AnalysisLimit | null = null;
 let detachTimeUpdate: (() => void) | null = null;
 let detachSeeking: (() => void) | null = null;
 let debounceTimer = 0;
@@ -85,6 +98,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     blocked: current ? guard.blocked() : [],
     skippingPaused: current && guard.isTripped(),
     adPlaying: adapter.isAdPlaying(),
+    limit: current ? limit : null,
   };
   sendResponse(state);
   return false;
@@ -123,13 +137,21 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
   );
   if (!transcript || !stillCurrent()) return initial;
   try {
-    const res = await chrome.runtime.sendMessage({
+    const res = (await chrome.runtime.sendMessage({
       type: "SEGMENTS_ANALYZE",
       videoId,
       // Read after the transcript: by then the page shows the new video's channel.
       channelId: adapter.getChannelId(),
       transcript,
-    });
+    })) as AnalyzeReply | undefined;
+    if (res?.limit && stillCurrent()) {
+      // Keep the cached / community (SponsorBlock) result; say why once a day.
+      limit = res.limit;
+      if (res.announce) {
+        const copy = limitCopy(res.limit);
+        showNoticeToast(copy.title, copy.sub);
+      }
+    }
     return (res?.analysis as VideoAnalysis | null) ?? initial;
   } catch {
     return initial;
@@ -238,6 +260,7 @@ async function initForVideo(videoId: string): Promise<void> {
   segments = [];
   phase = "analyzing";
   fallback = false;
+  limit = null;
   detachTimeUpdate?.();
   detachSeeking?.();
   detachTimeUpdate = detachSeeking = null;

@@ -14,6 +14,7 @@ import {
   segmentRows,
   thresholdSummary,
   type SegmentRow,
+  limitCopy,
 } from "./view-model";
 import {
   loadPolicy,
@@ -285,6 +286,11 @@ function renderMonitor(): void {
         return row;
       }),
     );
+  }
+  if (s.limit && s.phase === "ready") {
+    const note = emptyRow(limitCopy(s.limit).popup);
+    note.classList.add("is-limit");
+    els.edits.prepend(note);
   }
 
   els.channel.hidden = !s.channelId;
