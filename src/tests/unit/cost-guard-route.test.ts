@@ -165,6 +165,30 @@ describe("cost guard on the API", () => {
     await app.close();
   });
 
+  it("answers 503 llm_not_configured without calling Claude when no key is set", async () => {
+    const app = server({ llmConfigured: false });
+    const res = await analyze(app, "qa000000011", await token(app));
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({
+      status: 503,
+      reason: "llm_not_configured",
+      title: "AI analysis is not configured",
+    });
+    expect(res.json().detail).toMatch(/no AI provider key/);
+    // Lookups still answer, honestly labelled as the community fallback.
+    const get = await app.inject({
+      method: "GET",
+      url: "/v1/segments/qa000000012",
+    });
+    expect(get.statusCode).toBe(200);
+    expect(get.json().status).toBe("degraded");
+    expect(classifyChunks).not.toHaveBeenCalled();
+    expect(
+      (await app.inject({ method: "GET", url: "/readyz" })).json(),
+    ).toMatchObject({ ok: true, ai: "not_configured", redis: "disabled" });
+    await app.close();
+  });
+
   it("meters by IP in local development (no secret, no token)", async () => {
     const app = server({ installTokenSecret: "" });
     expect((await analyze(app, "qa000000009")).statusCode).toBe(200);

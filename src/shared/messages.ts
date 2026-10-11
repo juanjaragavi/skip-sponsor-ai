@@ -6,7 +6,11 @@ export type AnalysisPhase = "idle" | "analyzing" | "ready" | "unavailable";
 /** Why the API refused a fresh analysis (RFC7807 `reason`), and when it resets. */
 export interface AnalysisLimit {
   reason:
-    "install_quota" | "global_budget" | "llm_disabled" | "unauthenticated";
+    | "llm_not_configured"
+    | "install_quota"
+    | "global_budget"
+    | "llm_disabled"
+    | "unauthenticated";
   /** ISO time new analyses are accepted again (next 00:00 UTC). */
   resetAt: string;
 }

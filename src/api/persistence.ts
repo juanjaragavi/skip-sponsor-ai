@@ -18,6 +18,8 @@ import {
   type UsageStore,
 } from "./repositories/usage-store";
 
+export type RedisStatus = "disabled" | "ok" | "down";
+
 export interface Persistence {
   mode: "memory" | "postgres";
   repo: SegmentRepository;
@@ -26,6 +28,8 @@ export interface Persistence {
   pool: pg.Pool | null;
   /** Readiness: can the store answer queries? */
   ping(): Promise<boolean>;
+  /** Optional Redis cache: "disabled" when REDIS_URL is unset. Never gates readiness. */
+  redisStatus(): Promise<RedisStatus>;
   /** Hard-delete rows past retention (no-op in memory mode). */
   purge(): Promise<Record<string, number>>;
   close(): Promise<void>;
@@ -38,6 +42,7 @@ export function memoryPersistence(): Persistence {
     usage: new MemoryUsageStore(),
     pool: null,
     ping: async () => true,
+    redisStatus: async () => "disabled",
     purge: async () => ({}),
     close: async () => undefined,
   };
@@ -106,6 +111,15 @@ export function createPersistence(
         return true;
       } catch {
         return false;
+      }
+    },
+    redisStatus: async () => {
+      if (!redis) return "disabled";
+      try {
+        // Offline queue is off: a disconnected client rejects at once.
+        return (await redis.ping()) === "PONG" ? "ok" : "down";
+      } catch {
+        return "down";
       }
     },
     purge: () => purgeExpired(pool),

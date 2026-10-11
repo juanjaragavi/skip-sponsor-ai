@@ -91,6 +91,7 @@ describe("createPersistence", () => {
       );
       expect(p.mode).toBe("postgres");
       expect(await p.ping()).toBe(false);
+      expect(await p.redisStatus()).toBe(redisUrl ? "down" : "disabled");
       await p.close();
     }
   });
@@ -166,6 +167,8 @@ describe("health endpoints", () => {
     ).toEqual({
       ok: true,
       persistence: "memory",
+      redis: "disabled",
+      ai: "configured",
     });
     await app.close();
   });

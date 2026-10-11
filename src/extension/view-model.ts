@@ -192,6 +192,13 @@ export function limitCopy(limit: AnalysisLimit): {
         sub: `Analyzed videos still skip · resumes ${at}`,
         popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed and community-labelled sponsors still skip. New analyses resume at ${at}.`,
       };
+    case "llm_not_configured":
+      return {
+        title: "AI analysis is unavailable",
+        sub: "Community segments still skip",
+        popup:
+          "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed and community-labelled sponsors still skip.",
+      };
     case "llm_disabled":
       return {
         title: "AI analysis is paused",

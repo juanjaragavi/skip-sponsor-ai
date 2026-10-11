@@ -270,6 +270,7 @@ describe("limitCopy", () => {
     ["install_quota", /today’s free AI analyses/],
     ["global_budget", /free analysis capacity/],
     ["llm_disabled", /paused/],
+    ["llm_not_configured", /isn’t set up for AI analysis/],
     ["unauthenticated", /couldn’t be verified/],
   ] as const)("explains %s and keeps skipping", (reason, re) => {
     const copy = limitCopy({ reason, resetAt });

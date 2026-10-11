@@ -116,6 +116,18 @@ describe("CostGuard", () => {
     expect(reached).toEqual([1]);
   });
 
+  it("refuses every fresh analysis when no AI key is configured", async () => {
+    const { guard } = mk({ llmConfigured: false });
+    expect(await guard.reserve("i:a")).toMatchObject({
+      ok: false,
+      reason: "llm_not_configured",
+    });
+    // Checked before the token: nothing is metered without a key.
+    expect(await guard.reserve(null)).toMatchObject({
+      reason: "llm_not_configured",
+    });
+  });
+
   it("treats a zero budget as the LLM kill switch", async () => {
     const { guard } = mk({ dailyBudgetUsd: 0 });
     expect(await guard.reserve("i:a")).toMatchObject({

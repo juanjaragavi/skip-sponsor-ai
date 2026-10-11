@@ -208,7 +208,12 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
     expect(classifyChunks).toHaveBeenCalledTimes(1);
     expect(
       (await two.inject({ method: "GET", url: "/readyz" })).json(),
-    ).toEqual({ ok: true, persistence: "postgres" });
+    ).toEqual({
+      ok: true,
+      persistence: "postgres",
+      redis: redis ? "ok" : "disabled",
+      ai: "configured",
+    });
     await one.close();
     await two.close();
   }

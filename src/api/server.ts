@@ -44,6 +44,8 @@ export interface ServerDeps {
   corsOrigin: string;
   isProduction: boolean;
   trustProxy: boolean;
+  /** An AI provider key is set. Defaults to ANTHROPIC_API_KEY presence (true under Vitest, where the LLM is mocked). */
+  llmConfigured: boolean;
 }
 
 const persistenceOf = new WeakMap<object, Persistence>();
@@ -115,11 +117,22 @@ export function buildServer(
   });
   app.get("/healthz", async () => ({ ok: true, version: config.version }));
   // Readiness: the store answers. Liveness (/healthz) stays dependency-free.
+  const llmConfigured =
+    deps.llmConfigured ??
+    (process.env["VITEST"] === "true" || Boolean(config.anthropicKey));
+  // Redis is optional and reported, not gated on; `ai` says whether fresh
+  // analyses can run at all (no key: cached and SponsorBlock results only).
   app.get("/readyz", async (_req, reply) => {
-    const ok = await persistence.ping();
-    return reply
-      .code(ok ? 200 : 503)
-      .send({ ok, persistence: persistence.mode });
+    const [ok, redis] = await Promise.all([
+      persistence.ping(),
+      persistence.redisStatus(),
+    ]);
+    return reply.code(ok ? 200 : 503).send({
+      ok,
+      persistence: persistence.mode,
+      redis,
+      ai: llmConfigured ? "configured" : "not_configured",
+    });
   });
   // Cost guard: per-install daily quota + global daily LLM budget.
   const tokens = new InstallTokens(
@@ -128,6 +141,7 @@ export function buildServer(
   const dailyAnalysesPerInstall =
     deps.dailyAnalysesPerInstall ?? config.dailyAnalysesPerInstall;
   const guard = new CostGuard(persistence.usage, {
+    llmConfigured,
     dailyAnalysesPerInstall,
     dailyBudgetUsd: deps.llmDailyBudgetUsd ?? config.llmDailyBudgetUsd,
     onBudgetReached: (spentUsd) =>

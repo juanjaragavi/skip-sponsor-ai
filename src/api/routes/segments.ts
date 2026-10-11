@@ -45,12 +45,14 @@ const ALLOW: Reserve = async () => ({ ok: true });
 const OPEN_GATE: AnalysisGate = { reserve: ALLOW };
 
 const LIMIT_TITLES: Record<LimitReason, string> = {
+  llm_not_configured: "AI analysis is not configured",
   install_quota: "Daily analysis limit reached",
   global_budget: "Analysis capacity reached for today",
   llm_disabled: "AI analysis is paused",
   unauthenticated: "Missing or invalid install token",
 };
 const LIMIT_STATUS: Record<LimitReason, number> = {
+  llm_not_configured: 503,
   install_quota: 429,
   global_budget: 429,
   llm_disabled: 503,
@@ -68,11 +70,15 @@ function sendLimited(
     const seconds = Math.ceil((Date.parse(a.resetAt) - Date.now()) / 1000);
     void reply.header("retry-after", String(Math.max(1, seconds)));
   }
+  const detail =
+    a.reason === "llm_not_configured"
+      ? "This server has no AI provider key configured, so it cannot analyze new videos. Cached results and community (SponsorBlock) segments keep working."
+      : `${LIMIT_TITLES[a.reason]}. Cached results keep working; new analyses resume at ${a.resetAt}.`;
   return reply.code(status).send({
     type: `https://api.skipsponsor.example.com/problems/${a.reason}`,
     title: LIMIT_TITLES[a.reason],
     status,
-    detail: `${LIMIT_TITLES[a.reason]}. Cached results keep working; new analyses resume at ${a.resetAt}.`,
+    detail,
     instance: req.url,
     reason: a.reason,
     resetAt: a.resetAt,

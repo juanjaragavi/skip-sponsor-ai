@@ -79,7 +79,7 @@ export function checkProductionConfig(c: AppConfig): {
     );
   if (!c.anthropicKey)
     warnings.push(
-      "ANTHROPIC_API_KEY is not set: every analysis falls back to SponsorBlock data.",
+      "ANTHROPIC_API_KEY is not set: fresh analyses are refused (503 llm_not_configured); lookups serve cached and SponsorBlock data only.",
     );
   if (!c.corsOrigin)
     warnings.push(

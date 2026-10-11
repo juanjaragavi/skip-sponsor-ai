@@ -28,6 +28,8 @@ export function estimateCostUsd(
 }
 
 export type LimitReason =
+  /** No AI provider key on this server (ANTHROPIC_API_KEY unset). */
+  | "llm_not_configured"
   /** This install used its fresh analyses for today. */
   | "install_quota"
   /** Global LLM spend for today reached LLM_DAILY_BUDGET_USD. */
@@ -41,6 +43,8 @@ export type Allowance =
   { ok: true } | { ok: false; reason: LimitReason; resetAt: string };
 
 export interface CostGuardOptions {
+  /** False when the server has no AI provider key: every fresh analysis is refused. Default true. */
+  llmConfigured?: boolean;
   dailyAnalysesPerInstall: number;
   dailyBudgetUsd: number;
   now?: () => Date;
@@ -75,6 +79,10 @@ export class CostGuard {
   async reserve(installKey: string | null): Promise<Allowance> {
     const now = this.now();
     const resetAt = nextUtcMidnight(now).toISOString();
+    // Checked first: without a key no Claude call is attempted (and nothing
+    // is metered), instead of failing against Anthropic with a bogus key.
+    if (this.opts.llmConfigured === false)
+      return { ok: false, reason: "llm_not_configured", resetAt };
     if (this.opts.dailyBudgetUsd <= 0)
       return { ok: false, reason: "llm_disabled", resetAt };
     if (!installKey) return { ok: false, reason: "unauthenticated", resetAt };
