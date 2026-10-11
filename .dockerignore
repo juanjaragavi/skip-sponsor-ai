@@ -1,0 +1,18 @@
+# Keep secrets and local state out of image build contexts and source deploys.
+.env
+.env.*
+!.env.example
+.git
+.insta
+node_modules
+dist
+release
+coverage
+test-results
+artifacts
+design
+store
+brand
+.agents
+.claude
+**/.DS_Store

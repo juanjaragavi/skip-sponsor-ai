@@ -1,8 +1,28 @@
-FROM node:20-alpine
+# Production image for the SkipSponsor AI API.
+# Build from the repo root:  docker build -f infra/Dockerfile.api -t skipsponsor-api .
+# Runtime config is env only (see docs/DEPLOY.md); nothing secret is baked in.
+
+FROM node:22-alpine AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY . .
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY tsconfig.json tsconfig.api.json ./
+COPY scripts/build-api.mjs scripts/
+COPY src ./src
 RUN npm run build:api
+
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production \
+    PORT=3000
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund \
+ && npm cache clean --force
+COPY --from=build /app/dist/api ./dist/api
+COPY infra/db/migrations ./infra/db/migrations
+COPY infra/start.sh ./start.sh
+USER node
 EXPOSE 3000
-CMD ["node", "dist/api/src/api/server.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+  CMD wget -qO- "http://127.0.0.1:${PORT}/healthz" >/dev/null || exit 1
+CMD ["sh", "./start.sh"]

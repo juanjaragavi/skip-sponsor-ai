@@ -65,7 +65,6 @@ lerna-debug.log*
 # Docker & Infrastructure
 # ============================================================================
 docker-compose.override.yml
-.dockerignore
 docker-compose.prod.yml
 
 # ============================================================================
