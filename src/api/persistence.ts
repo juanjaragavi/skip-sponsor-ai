@@ -11,6 +11,7 @@ import {
   purgeExpired,
 } from "./repositories/postgres-segment-repository";
 import { CachedSegmentRepository } from "./repositories/redis-cache";
+import { pinVerifiedTls } from "./db/connection";
 import {
   MemoryUsageStore,
   PostgresUsageStore,
@@ -58,7 +59,7 @@ export function createPersistence(
     throw new Error("PERSISTENCE=postgres needs DATABASE_URL to be set.");
 
   const pool = new pg.Pool({
-    connectionString: c.databaseUrl,
+    connectionString: pinVerifiedTls(c.databaseUrl),
     max: c.pgPoolMax,
     // Below managed-Postgres idle/suspend windows (scale-to-zero databases).
     idleTimeoutMillis: 10_000,
