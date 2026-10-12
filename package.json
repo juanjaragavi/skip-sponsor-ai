@@ -36,6 +36,8 @@
     "dev:tunnel": "node scripts/dev-tunnel.mjs",
     "start:api": "node --enable-source-maps dist/api/server.mjs",
     "db:migrate": "tsx --env-file-if-exists=.env src/api/db/migrate-cli.ts",
+    "db:dump:local": "bash scripts/db-local.sh dump",
+    "db:restore:local": "bash scripts/db-local.sh restore",
     "verify": "npm run lint && npm run typecheck && npm run test",
     "package:extension": "npm run build:extension && node scripts/zip-extension.mjs",
     "icons": "node scripts/build-icons.mjs",

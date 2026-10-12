@@ -133,6 +133,8 @@ The API container (`infra/Dockerfile.api`) still listens on 3000 when `PORT` is 
 - A quick tunnel gets a new `*.trycloudflare.com` URL on every run, so rebuild and re-share the extension each time, or run with `DEV_TUNNEL_NAME=<name> DEV_TUNNEL_HOSTNAME=<hostname>` for a named tunnel (`cloudflared tunnel create`, `cloudflared tunnel route dns`).
 - `npm run dev:extension` (HMR on :5174) keeps targeting `http://localhost:3040`. The URL is written to `.env.tunnel.local` (gitignored, removed on exit).
 
+Local database backups: `npm run db:dump:local` writes a `pg_dump -Fc` file to `.backups/local/` (gitignored). `npm run db:restore:local -- .backups/local/<file>.dump --yes` dumps the current state first, then restores the file in one transaction (stop the API first).
+
 ## Environment Variables
 
 ### Extension (Client-Side)
