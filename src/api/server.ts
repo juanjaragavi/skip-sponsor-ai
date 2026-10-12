@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { LogController } from "fastify";
 import { ZodError } from "zod";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
@@ -20,6 +20,17 @@ import {
 } from "./services/install-token";
 import { setLlmUsageListener } from "./services/llm-client";
 import type { AnalysisGate } from "./routes/segments";
+import { buildHealth } from "./health";
+import {
+  CORRELATION_HEADER,
+  acceptCorrelationId,
+  runWithCorrelationId,
+} from "./observability/correlation";
+import {
+  SERVICE_NAME,
+  createLogger,
+  loggerOptions,
+} from "./observability/logger";
 
 /** Cues around each failing transcript index (dev diagnostics). */
 function badCues(body: unknown, err: ZodError): unknown[] {
@@ -65,9 +76,13 @@ export function buildServer(
   // 4 MB: up to 5,000 caption cues of 600 chars (non-Latin scripts are
   // 3 bytes/char in UTF-8) did not fit Fastify's 1 MB default.
   const app = Fastify({
-    logger: true,
+    // One JSON object per line: ts, level, service, msg, correlation_id.
+    logger: loggerOptions(),
+    // The request id is the correlation id (caller's when valid, else UUIDv4).
+    genReqId: (req) => acceptCorrelationId(req.headers[CORRELATION_HEADER]),
+    logController: new LogController({ requestIdLogLabel: "correlation_id" }),
     bodyLimit: 4 * 1024 * 1024,
-    // Behind InstaCloud's router or Caddy: req.ip from X-Forwarded-For, so
+    // Behind the DevSpeak Labs Cloud edge (Caddy): req.ip from X-Forwarded-For, so
     // rate limits apply per client instead of per proxy.
     trustProxy: deps.trustProxy ?? config.trustProxy,
   });
@@ -77,6 +92,11 @@ export function buildServer(
       ? memoryPersistence()
       : createPersistence(config, app.log));
   persistenceOf.set(app, persistence);
+  // Echo the correlation id and expose it to outbound calls (retry.ts).
+  app.addHook("onRequest", (req, reply, done) => {
+    void reply.header(CORRELATION_HEADER, req.id);
+    runWithCorrelationId(req.id, done);
+  });
   app.addHook("onClose", async () => persistence.close());
   void app.register(cors, {
     origin: corsOrigin(
@@ -84,7 +104,13 @@ export function buildServer(
       deps.isProduction ?? config.isProduction,
     ),
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowedHeaders: ["authorization", "content-type", "x-extension-version"],
+    allowedHeaders: [
+      "authorization",
+      "content-type",
+      "x-extension-version",
+      CORRELATION_HEADER,
+    ],
+    exposedHeaders: [CORRELATION_HEADER],
     maxAge: 86400,
   });
   void app.register(rateLimit, { max: 500, timeWindow: "1 minute" });
@@ -132,6 +158,22 @@ export function buildServer(
   const llmConfigured =
     deps.llmConfigured ??
     (process.env["VITEST"] === "true" || Boolean(config.anthropicKey));
+  // Platform-standard health for the portfolio monitor (health.ts).
+  app.get("/api/health", async (_req, reply) => {
+    const [database, redis] = await Promise.all([
+      persistence.ping(),
+      persistence.redisStatus(),
+    ]);
+    const { code, body } = buildHealth({
+      service: SERVICE_NAME,
+      version: config.version,
+      commit: config.commit,
+      database,
+      redis,
+      llmConfigured,
+    });
+    return reply.code(code).send(body);
+  });
   // Redis is optional and reported, not gated on; `ai` says whether fresh
   // analyses can run at all (no key: cached and SponsorBlock results only).
   app.get("/readyz", async (_req, reply) => {
@@ -200,10 +242,11 @@ export function buildServer(
 const PURGE_INTERVAL_MS = 3600 * 1000;
 
 async function main(): Promise<void> {
+  const boot = createLogger();
   const { errors, warnings } = checkProductionConfig(config);
-  for (const w of warnings) console.warn(`config warning: ${w}`);
+  for (const w of warnings) boot.warn(`config warning: ${w}`);
   if (errors.length) {
-    for (const e of errors) console.error(`config error: ${e}`);
+    for (const e of errors) boot.error(`config error: ${e}`);
     process.exit(1);
   }
   const app = buildServer();
@@ -239,11 +282,11 @@ async function main(): Promise<void> {
   await app
     .listen({ port: config.port, host: "0.0.0.0" })
     .catch((e: unknown) => {
-      console.error(
-        (e as { code?: string }).code === "EADDRINUSE"
-          ? `Port ${config.port} is already in use — another API instance is running. Stop it or set PORT.`
-          : e,
-      );
+      if ((e as { code?: string }).code === "EADDRINUSE")
+        boot.error(
+          `Port ${config.port} is already in use — another API instance is running. Stop it or set PORT.`,
+        );
+      else boot.error({ err: e }, "listen failed");
       process.exit(1);
     });
 }
