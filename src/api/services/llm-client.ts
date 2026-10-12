@@ -1,6 +1,17 @@
 import Anthropic from "@anthropic-ai/sdk";
 import CircuitBreaker from "opossum";
+import { randomUUID } from "node:crypto";
 import { config } from "../config";
+import {
+  RETRYABLE_STATUS,
+  parseRetryAfter,
+  retryAsync,
+  type FailureKind,
+} from "../lib/retry";
+import {
+  CORRELATION_HEADER,
+  currentCorrelationId,
+} from "../observability/correlation";
 import type { LlmChunk, LlmSegmentCandidate } from "../../shared/types";
 import {
   SYSTEM_PROMPT,
@@ -18,7 +29,29 @@ const client = new Anthropic({
   // Same default as before: no key → "missing" (requests then fail with 401;
   // the server refuses fresh analyses without a key anyway).
   apiKey: config.anthropicKey || "missing",
+  // Retries follow the platform policy (retryAsync below), not the SDK's.
+  maxRetries: 0,
 });
+
+/** Statuses the platform retry policy retries; anything else is final. */
+export function classifyLlmError(err: unknown): FailureKind {
+  if (err instanceof Anthropic.APIUserAbortError) return "retry";
+  if (err instanceof Anthropic.APIConnectionError) return "retry";
+  const status = (err as { status?: unknown } | null)?.status;
+  return typeof status === "number" && RETRYABLE_STATUS.has(status)
+    ? "retry"
+    : "fatal";
+}
+
+function llmRetryAfterMs(err: unknown): number | null {
+  const headers = (err as { headers?: Record<string, string> | Headers })
+    ?.headers;
+  const value =
+    headers instanceof Headers
+      ? headers.get("retry-after")
+      : headers?.["retry-after"];
+  return parseRetryAfter(value, Date.now());
+}
 
 /**
  * Haiku 4.5 wraps JSON in a ```json fence and may append commentary. Prefer
@@ -51,40 +84,60 @@ function formatCues(cues: readonly LlmChunk[]): string {
     .join("\n");
 }
 
+/**
+ * One classification with the platform retry policy. The LLM call sets its
+ * own deadline (MODEL_POLICY.timeoutMs for all attempts together, inside the
+ * circuit breaker's timeout) and sends one Idempotency-Key for every attempt,
+ * so a retried request is the same logical call. Usage is recorded from the
+ * answer that succeeds, so the daily budget still applies.
+ */
 async function callClaude(
   model: string,
   chunks: LlmChunk[],
 ): Promise<LlmSegmentCandidate[]> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), MODEL_POLICY.timeoutMs);
-  try {
-    const msg = await client.messages.create(
-      {
-        model,
-        max_tokens: MODEL_POLICY.maxTokens,
-        temperature: 0,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: formatCues(chunks) }],
-      },
-      { signal: controller.signal as unknown as AbortSignal },
-    );
-    // Billed even when the reply below fails to parse.
-    usageListener?.(
-      model,
-      msg.usage?.input_tokens ?? 0,
-      msg.usage?.output_tokens ?? 0,
-    );
-    const text = msg.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { text: string }).text)
-      .join("");
-    const parsed = JSON.parse(stripJsonFence(text)) as {
-      segments?: LlmSegmentCandidate[];
-    };
-    return Array.isArray(parsed.segments) ? parsed.segments : [];
-  } finally {
-    clearTimeout(t);
-  }
+  const idempotencyKey = randomUUID();
+  const correlationId = currentCorrelationId();
+  const headers: Record<string, string> = { "Idempotency-Key": idempotencyKey };
+  if (correlationId) headers[CORRELATION_HEADER] = correlationId;
+  const msg = await retryAsync(
+    async (_attempt, remainingMs) => {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), remainingMs);
+      try {
+        return await client.messages.create(
+          {
+            model,
+            max_tokens: MODEL_POLICY.maxTokens,
+            temperature: 0,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: "user", content: formatCues(chunks) }],
+          },
+          { signal: controller.signal as unknown as AbortSignal, headers },
+        );
+      } finally {
+        clearTimeout(t);
+      }
+    },
+    classifyLlmError,
+    {
+      policy: { deadlineMs: MODEL_POLICY.timeoutMs },
+      retryAfterMs: llmRetryAfterMs,
+    },
+  );
+  // Billed even when the reply below fails to parse.
+  usageListener?.(
+    model,
+    msg.usage?.input_tokens ?? 0,
+    msg.usage?.output_tokens ?? 0,
+  );
+  const text = msg.content
+    .filter((b) => b.type === "text")
+    .map((b) => (b as { text: string }).text)
+    .join("");
+  const parsed = JSON.parse(stripJsonFence(text)) as {
+    segments?: LlmSegmentCandidate[];
+  };
+  return Array.isArray(parsed.segments) ? parsed.segments : [];
 }
 
 const breaker = new CircuitBreaker(callClaude, {

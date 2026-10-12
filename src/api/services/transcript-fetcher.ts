@@ -1,3 +1,5 @@
+import { fetchWithRetry } from "../lib/retry";
+
 const YT_ALLOW = /^https:\/\/[\w.-]*youtube\.com\/api\/timedtext/;
 const SB_ALLOW = "https://sponsor.ajay.app";
 
@@ -26,12 +28,21 @@ export async function fetchTimedText(
   for (const u of urls) {
     assertFetchAllowed(u);
     try {
-      const res = await fetch(u, {
-        headers: { "User-Agent": UA[Math.floor(Math.random() * UA.length)]! },
-        // Without YouTube's proof-of-origin token this usually fails; never
-        // let it hold the request (it took up to ~30s).
-        signal: AbortSignal.timeout(TIMEDTEXT_TIMEOUT_MS),
-      });
+      // Without YouTube's proof-of-origin token this usually fails; never
+      // let it hold the request (it took up to ~30s). Platform retry policy
+      // with a tighter deadline: at most 2 attempts within the 4 s budget.
+      const res = await fetchWithRetry(
+        u,
+        {
+          headers: {
+            "User-Agent": UA[Math.floor(Math.random() * UA.length)]!,
+          },
+        },
+        {
+          attemptTimeoutMs: TIMEDTEXT_TIMEOUT_MS,
+          policy: { maxAttempts: 2, deadlineMs: TIMEDTEXT_TIMEOUT_MS },
+        },
+      );
       if (res.status === 404) continue;
       if (!res.ok) {
         lastErr = new Error(`timedtext ${res.status}`);

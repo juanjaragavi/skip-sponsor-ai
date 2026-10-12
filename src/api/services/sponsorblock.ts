@@ -1,6 +1,7 @@
 import type { SponsorSegment } from "../../shared/types";
 import { assertFetchAllowed } from "./transcript-fetcher";
 import { MODEL_POLICY } from "../../shared/constants";
+import { fetchWithRetry } from "../lib/retry";
 
 interface SBEntry {
   segment: [number, number];
@@ -15,7 +16,13 @@ export async function fetchSponsorBlock(
     `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}` +
     `&categories=["sponsor","intro","outro","selfpromo","interaction_reminder"]`;
   assertFetchAllowed(url);
-  const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+  // Platform retry policy with a tighter deadline: this lookup sits on the
+  // request path (each attempt ≤5 s, all attempts within 8 s).
+  const res = await fetchWithRetry(
+    url,
+    {},
+    { attemptTimeoutMs: 5000, policy: { deadlineMs: 8000 } },
+  );
   // SponsorBlock answers 404 when a video has no segments: that is data
   // ("no sponsors"), not a failure.
   if (res.status === 404) return [];
