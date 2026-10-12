@@ -19,6 +19,29 @@ const flag = (name: string): boolean =>
 
 const databaseUrl = env["DATABASE_URL"] ?? "";
 
+/**
+ * Env vars that may carry the deployed commit, checked in this order: our
+ * own (container builds, InstaCloud), Vercel's, then the generic name some
+ * hosts (Coolify, Dokku) inject. `/healthz` echoes it so a deploy can be
+ * verified against git, not just against a 200.
+ */
+export const COMMIT_ENV_VARS = [
+  "GIT_COMMIT_SHA",
+  "VERCEL_GIT_COMMIT_SHA",
+  "SOURCE_COMMIT",
+] as const;
+
+/** First set (non-blank) commit variable, else "unknown". */
+export function resolveCommit(
+  source: Readonly<Record<string, string | undefined>>,
+): string {
+  for (const name of COMMIT_ENV_VARS) {
+    const value = source[name]?.trim();
+    if (value) return value;
+  }
+  return "unknown";
+}
+
 export type PersistenceMode = "memory" | "postgres";
 
 export const config = {
@@ -54,6 +77,8 @@ export const config = {
   /** New install tokens one IP may mint per hour. */
   installsPerIpPerHour: num("INSTALLS_PER_IP_PER_HOUR", 20),
   version: "1.0.0",
+  /** Deployed commit for `/healthz` (see COMMIT_ENV_VARS). */
+  commit: resolveCommit(env),
 };
 
 export type AppConfig = typeof config;

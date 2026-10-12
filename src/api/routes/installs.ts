@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { config } from "../config";
 import type { InstallTokens } from "../services/install-token";
 
 export interface InstallRouteOptions {
@@ -24,7 +25,7 @@ export function registerInstallRoutes(
   );
   app.get("/v1/config", async (_req, reply) => {
     return reply.send({
-      globalKill: process.env["GLOBAL_KILL"] === "1",
+      globalKill: config.globalKill,
       minVersion: "1.0.0",
       dailyAnalysesPerInstall: opts.dailyAnalysesPerInstall,
     });

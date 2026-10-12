@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import CircuitBreaker from "opossum";
+import { config } from "../config";
 import type { LlmChunk, LlmSegmentCandidate } from "../../shared/types";
 import {
   SYSTEM_PROMPT,
@@ -14,7 +15,9 @@ import {
 } from "./candidate-validation";
 
 const client = new Anthropic({
-  apiKey: process.env["ANTHROPIC_API_KEY"] ?? "missing",
+  // Same default as before: no key → "missing" (requests then fail with 401;
+  // the server refuses fresh analyses without a key anyway).
+  apiKey: config.anthropicKey || "missing",
 });
 
 /**

@@ -100,7 +100,7 @@ export function buildServer(
             .slice(0, 5)
             .map((i) => `${i.path.join(".")}: ${i.message}`),
           // Dev only: the offending caption cues, to debug client parsing.
-          ...(process.env["NODE_ENV"] !== "production" && {
+          ...(!config.isProduction && {
             cues: badCues(req.body, err),
           }),
         },
@@ -115,7 +115,11 @@ export function buildServer(
       instance: req.url,
     });
   });
-  app.get("/healthz", async () => ({ ok: true, version: config.version }));
+  app.get("/healthz", async () => ({
+    ok: true,
+    version: config.version,
+    commit: config.commit,
+  }));
   // Readiness: the store answers. Liveness (/healthz) stays dependency-free.
   const llmConfigured =
     deps.llmConfigured ??
