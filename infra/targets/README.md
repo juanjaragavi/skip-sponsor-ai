@@ -6,8 +6,8 @@ One file per place the SkipSponsor AI API (and the extension build that points a
 | --------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Local (laptop)        | [`local.md`](./local.md)                           | Works: `npm run dev:api`, `infra/docker-compose.yml`, `npm run dev:tunnel`               |
 | Vercel                | [`vercel.md`](./vercel.md)                         | Not used: the API is a long-running Fastify container                                    |
-| InstaCloud (hosted)   | [`instacloud-cloud.md`](./instacloud-cloud.md)     | Provisioned, stopped since 2026-10-11 (`docs/runbooks/deploy-instacloud.md`)             |
-| instacloud-oss on AWS | [`aws-instacloud-oss.md`](./aws-instacloud-oss.md) | Planned (`notes/cto/plans/2026-10-12-aws-instacloud-oss-plan.md`, project `skipsponsor`) |
+| InstaCloud (hosted)   | [`instacloud-cloud.md`](./instacloud-cloud.md)     | Historical: org suspended 2026-10-12; nothing depends on it                              |
+| DevSpeak Labs Cloud (the box) | [`aws-instacloud-oss.md`](./aws-instacloud-oss.md) | **Live** (2026-10-12, ADR 0002, project `skipsponsor`) |
 
 Other descriptors already in the repo: `infra/Dockerfile.api` (the one image every target runs), `infra/oracle/` (compose + Caddy for any VPS), `infra/terraform/` (AWS ECS Fargate, the original spec target).
 

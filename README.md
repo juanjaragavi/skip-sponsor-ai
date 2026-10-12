@@ -245,13 +245,14 @@ Full listing copy, assets, and privacy answers live in [`store/listing.md`](stor
 
 ### Backend
 
-One container (`infra/Dockerfile.api`) plus PostgreSQL, hosted on InstaCloud
-([ADR 0001](docs/adr/0001-api-hosting-instacloud.md)). The live project and its
-start, stop and redeploy commands are in
-[`docs/runbooks/deploy-instacloud.md`](docs/runbooks/deploy-instacloud.md).
-[`docs/DEPLOY.md`](docs/DEPLOY.md) also covers an Oracle Cloud Always Free VM
-(`infra/oracle/`) as a fallback. The AWS Terraform in `infra/terraform` is
-**superseded** and was never applied.
+One container (`infra/Dockerfile.api`) plus PostgreSQL and Redis, hosted on
+DevSpeak Labs Cloud, the self-hosted box
+([ADR 0002](docs/adr/0002-api-hosting-devspeak-labs-cloud.md)):
+`https://api-skipsponsor-main.cloud.devspeak.dev`. Operations, environment and
+release steps: [`docs/runbooks/deploy-box.md`](docs/runbooks/deploy-box.md).
+The earlier hosted project ([ADR 0001](docs/adr/0001-api-hosting-instacloud.md))
+is historical; the AWS Terraform in `infra/terraform` is **superseded** and was
+never applied.
 
 ```bash
 npm run build:api      # → dist/api/server.mjs + dist/api/migrate.mjs

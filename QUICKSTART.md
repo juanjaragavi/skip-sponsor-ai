@@ -416,9 +416,9 @@ npm run verify            # All checks (lint + typecheck + test)
 # Database (no migrate/seed scripts yet)
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/db/migrations/001_init.sql
 
-# Deploy the API (InstaCloud): see docs/runbooks/deploy-instacloud.md
+# Deploy the API (DevSpeak Labs Cloud): see docs/runbooks/deploy-box.md
 npm run stage:api && insta deploy dist/deploy-api --group api --port 3000
-# infra/terraform (AWS) is superseded (docs/adr/0001-api-hosting-instacloud.md)
+# infra/terraform is superseded (docs/adr/0002-api-hosting-devspeak-labs-cloud.md)
 ```
 
 ## Debug Tools

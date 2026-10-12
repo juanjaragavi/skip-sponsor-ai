@@ -1,3 +1,5 @@
+> **Historical (2026-10-12).** The API moved to DevSpeak Labs Cloud (the box): [ADR 0002](../adr/0002-api-hosting-devspeak-labs-cloud.md), [`deploy-box.md`](deploy-box.md). The hosted project below is suspended; nothing depends on it.
+
 # Runbook: deploy and operate the API on InstaCloud
 
 The decision record is [ADR 0001](../adr/0001-api-hosting-instacloud.md).
