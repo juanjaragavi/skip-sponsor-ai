@@ -124,6 +124,15 @@ Local ports are unique across DevSpeak projects so several can run at once:
 
 The API container (`infra/Dockerfile.api`) still listens on 3000 when `PORT` is unset.
 
+### 6. Local tunnel (share the local API)
+
+`npm run dev:tunnel` opens a Cloudflare tunnel to `http://localhost:3040` and runs the local stack behind it: Postgres and Redis (`docker compose -f infra/docker-compose.yml up -d --wait`), `npm run db:migrate`, then `npm run dev:api` against the Docker Postgres (5434) and Redis (6380). It needs `cloudflared` (`brew install cloudflared`). Ctrl+C stops the API and the tunnel; the containers keep running (`docker compose -f infra/docker-compose.yml down` stops them, data stays in the `pgdata` volume).
+
+- It also builds `dist/extension-tunnel/` with `VITE_API_BASE_URL=<tunnel URL>`: load it unpacked or zip it for testers. Their extension then calls your local API. Real analyses need `ANTHROPIC_API_KEY` in `.env`; without it the API serves cached and SponsorBlock results only.
+- There are no inbound webhooks. Check the public URL with `curl <tunnel URL>/healthz` and `/readyz`.
+- A quick tunnel gets a new `*.trycloudflare.com` URL on every run, so rebuild and re-share the extension each time, or run with `DEV_TUNNEL_NAME=<name> DEV_TUNNEL_HOSTNAME=<hostname>` for a named tunnel (`cloudflared tunnel create`, `cloudflared tunnel route dns`).
+- `npm run dev:extension` (HMR on :5174) keeps targeting `http://localhost:3040`. The URL is written to `.env.tunnel.local` (gitignored, removed on exit).
+
 ## Environment Variables
 
 ### Extension (Client-Side)

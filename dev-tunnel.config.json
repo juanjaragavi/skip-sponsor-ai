@@ -1,0 +1,35 @@
+{
+  "port": 3040,
+  "envFile": ".env.tunnel.local",
+  "env": {
+    "VITE_API_BASE_URL": "{url}"
+  },
+  "setup": [
+    {
+      "name": "infra",
+      "cmd": "docker compose -f infra/docker-compose.yml up -d --wait"
+    },
+    {
+      "name": "migrate",
+      "cmd": "DATABASE_URL=postgresql://skipsponsor:skipsponsor@localhost:5434/skipsponsor npm run db:migrate"
+    },
+    {
+      "name": "extension",
+      "cmd": "npx vite build --mode development --outDir dist/extension-tunnel --emptyOutDir"
+    }
+  ],
+  "services": [
+    {
+      "name": "api",
+      "cmd": "DATABASE_URL=postgresql://skipsponsor:skipsponsor@localhost:5434/skipsponsor REDIS_URL=redis://localhost:6380 npm run dev:api"
+    }
+  ],
+  "readyPath": "/readyz",
+  "webhooks": [],
+  "notes": [
+    "No inbound webhooks: the tunnel exposes the API (GET /healthz, GET /readyz, /v1/*) so testers' extensions can reach it.",
+    "dist/extension-tunnel is built with VITE_API_BASE_URL=<tunnel URL>: zip it or load it unpacked; rebuild on every run (quick tunnel URLs change).",
+    "The API uses the local Docker Postgres (5434) and Redis (6380); ANTHROPIC_API_KEY and other settings still come from .env.",
+    "npm run dev:extension (HMR on :5174) keeps targeting http://localhost:3040."
+  ]
+}

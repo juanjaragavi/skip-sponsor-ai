@@ -10,8 +10,19 @@ services:
       POSTGRES_DB: skipsponsor
     ports: ["5434:5432"] # host 5434: 5432 is left to other local Postgres instances
     volumes: ["pgdata:/var/lib/postgresql/data"]
+    # Lets `docker compose up -d --wait` (npm run dev:tunnel) return only once Postgres accepts connections.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skipsponsor -d skipsponsor"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   redis:
     image: redis:7.2
     ports: ["6380:6379"] # host 6380: 6379 is left to other local Redis instances
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
   pgdata: {}

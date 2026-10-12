@@ -33,6 +33,7 @@
     "build:api": "node scripts/build-api.mjs",
     "dev:extension": "vite --mode development",
     "dev:api": "tsx watch --env-file-if-exists=.env src/api/server.ts",
+    "dev:tunnel": "node scripts/dev-tunnel.mjs",
     "start:api": "node --enable-source-maps dist/api/server.mjs",
     "db:migrate": "tsx --env-file-if-exists=.env src/api/db/migrate-cli.ts",
     "verify": "npm run lint && npm run typecheck && npm run test",
