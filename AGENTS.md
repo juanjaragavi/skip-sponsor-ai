@@ -62,6 +62,11 @@ docker compose -f infra/docker-compose.yml up -d   # local Postgres on host 5434
 npm run verify                 # lint + typecheck + test
 ```
 
+### Local stack and tunnel
+
+- `npm run dev:tunnel`: Cloudflare quick tunnel to the API on :3040. It starts the compose Postgres/Redis, migrates, runs `dev:api` against them, and builds `dist/extension-tunnel/` pointed at the tunnel URL for testers. There are no inbound webhooks.
+- `npm run db:dump:local` / `npm run db:restore:local -- <file> --yes`: `pg_dump -Fc` backups of the compose Postgres into `.backups/local/`.
+
 ## Architecture & Component Topology
 
 ### High-Level Flow
