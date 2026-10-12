@@ -88,12 +88,17 @@ export const telemetryRequestSchema = z.object({
   latencyMs: z.number().int().nonnegative().optional(),
 });
 
-export const correctionRequestSchema = z.object({
-  startTime: z.number().finite().min(0),
-  endTime: z.number().finite().positive(),
-  category: segmentCategorySchema,
-  action: z.enum(["confirm", "reject"]),
-});
+export const correctionRequestSchema = z
+  .object({
+    startTime: z.number().finite().min(0),
+    endTime: z.number().finite().positive(),
+    category: segmentCategorySchema,
+    action: z.enum(["confirm", "reject"]),
+  })
+  .refine((c) => c.endTime > c.startTime, {
+    message: "endTime must be after startTime",
+    path: ["endTime"],
+  });
 
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
 export type TelemetryRequest = z.infer<typeof telemetryRequestSchema>;

@@ -44,6 +44,8 @@ export interface ServerDeps {
   corsOrigin: string;
   isProduction: boolean;
   trustProxy: boolean;
+  /** ADMIN_API_TOKEN: operator-only cache mutations; empty disables them (404). */
+  adminToken: string;
   /** An AI provider key is set. Defaults to ANTHROPIC_API_KEY presence (true under Vitest, where the LLM is mocked). */
   llmConfigured: boolean;
 }
@@ -92,7 +94,13 @@ export function buildServer(
       err instanceof ZodError
         ? 400
         : ((err as { statusCode?: number }).statusCode ?? 500);
-    const message = err instanceof Error ? err.message : "Unexpected error";
+    // 5xx bodies stay generic: internals (driver errors, hosts) go to the log only.
+    const message =
+      status >= 500
+        ? "Internal Server Error"
+        : err instanceof Error
+          ? err.message
+          : "Unexpected error";
     if (err instanceof ZodError)
       req.log.warn(
         {
@@ -173,7 +181,12 @@ export function buildServer(
   // Registered as a plugin so it loads after @fastify/rate-limit: routes
   // added before the limiter loads get neither the global nor a per-route limit.
   void app.register(async (api) => {
-    registerSegmentRoutes(api, persistence.repo, gate);
+    registerSegmentRoutes(
+      api,
+      persistence.repo,
+      gate,
+      deps.adminToken ?? config.adminToken,
+    );
     registerTelemetryRoutes(api, persistence.repo);
     registerInstallRoutes(api, {
       tokens,

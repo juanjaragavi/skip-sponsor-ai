@@ -35,6 +35,7 @@ import {
   FALLBACK_REFRESH_SECONDS,
 } from "../../shared/constants";
 import type { Allowance, LimitReason } from "../services/cost-guard";
+import { ADMIN_TOKEN_HEADER, adminTokenMatches } from "../services/admin-token";
 
 /** Meters fresh LLM analyses (cost-guard.ts). Cache hits never reach it. */
 export interface AnalysisGate {
@@ -99,10 +100,28 @@ function isStaleFallback(a: VideoAnalysis): boolean {
   return !(age < FALLBACK_REFRESH_SECONDS * 1000);
 }
 
+/**
+ * Operator-only routes (security audit 2026-10-12): 404 while no
+ * ADMIN_API_TOKEN is configured, 401 without the right `x-admin-token`.
+ * Returns the refusal already sent, or null when the caller is the operator.
+ */
+function refuseUnlessAdmin(
+  req: FastifyRequest,
+  reply: FastifyReply,
+  adminToken: string,
+): FastifyReply | null {
+  if (adminToken.length === 0)
+    return reply.code(404).send(problem(404, "Not found", req.url));
+  if (adminTokenMatches(adminToken, req.headers[ADMIN_TOKEN_HEADER]))
+    return null;
+  return reply.code(401).send(problem(401, "Admin token required", req.url));
+}
+
 export function registerSegmentRoutes(
   app: FastifyInstance,
   repo: SegmentRepository,
   gate: AnalysisGate = OPEN_GATE,
+  adminToken = "",
 ): void {
   app.get("/v1/segments/:videoId", async (req, reply) => {
     const params = getSegmentsParamsSchema.parse(req.params);
@@ -126,6 +145,14 @@ export function registerSegmentRoutes(
 
   app.post("/v1/segments:analyze", async (req, reply) => {
     const body = analyzeRequestSchema.parse(req.body);
+    // `force` replaces a ready shared result for every install: operator only.
+    if (
+      body.force &&
+      !adminTokenMatches(adminToken, req.headers[ADMIN_TOKEN_HEADER])
+    )
+      return reply
+        .code(403)
+        .send(problem(403, "force requires the admin token", req.url));
     if (!body.force) {
       const cached = await repo.get(body.videoId);
       // A client transcript supersedes degraded/unanalyzable results only.
@@ -150,6 +177,8 @@ export function registerSegmentRoutes(
   });
 
   app.post("/v1/segments/:videoId/corrections", async (req, reply) => {
+    const refused = refuseUnlessAdmin(req, reply, adminToken);
+    if (refused) return refused;
     const { videoId } = zParams(req.params);
     const body = correctionRequestSchema.parse(req.body);
     const existing = await repo.get(videoId);
@@ -171,6 +200,8 @@ export function registerSegmentRoutes(
   });
 
   app.delete("/v1/segments/:videoId", async (req, reply) => {
+    const refused = refuseUnlessAdmin(req, reply, adminToken);
+    if (refused) return refused;
     const { videoId } = zParams(req.params);
     const existing = await repo.get(videoId);
     if (!existing)

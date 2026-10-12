@@ -70,6 +70,11 @@ export const config = {
   trustProxy: flag("TRUST_PROXY"),
   /** HMAC key for install tokens. Required in production (≥32 chars). */
   installTokenSecret: env["INSTALL_TOKEN_SECRET"] ?? "",
+  /**
+   * Operator token for DELETE /v1/segments/:id, corrections and `force`
+   * analyses (header `x-admin-token`). Empty: those routes answer 404.
+   */
+  adminToken: env["ADMIN_API_TOKEN"] ?? "",
   /** Fresh (uncached) LLM analyses one install may trigger per UTC day. */
   dailyAnalysesPerInstall: num("DAILY_ANALYSES_PER_INSTALL", 25),
   /** Global LLM spend cap per UTC day in USD. 0 = LLM disabled (kill switch). */
@@ -97,6 +102,10 @@ export function checkProductionConfig(c: AppConfig): {
   if (c.installTokenSecret.length < 32)
     errors.push(
       "INSTALL_TOKEN_SECRET must be set to at least 32 characters (e.g. `openssl rand -base64 48`).",
+    );
+  if (c.adminToken.length > 0 && c.adminToken.length < 32)
+    errors.push(
+      "ADMIN_API_TOKEN must be at least 32 characters when set (e.g. `openssl rand -base64 48`), or unset to disable the operator routes.",
     );
   if (c.persistence === "memory" && !c.persistenceExplicit)
     errors.push(

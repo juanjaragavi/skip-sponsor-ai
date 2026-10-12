@@ -296,10 +296,16 @@ describe("no-captions fallback (GET without any transcript)", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
     vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(30, 90)]);
-    const app = buildServer();
+    const adminToken = "t".repeat(48);
+    const app = buildServer({ adminToken });
     const url = "/v1/segments/kkkkkkkkkkk";
     await app.inject({ method: "GET", url });
-    expect((await app.inject({ method: "DELETE", url })).statusCode).toBe(204);
+    const deleted = await app.inject({
+      method: "DELETE",
+      url,
+      headers: { "x-admin-token": adminToken },
+    });
+    expect(deleted.statusCode).toBe(204);
 
     vi.setSystemTime(new Date("2026-10-03T00:00:00Z"));
     const after = (await app.inject({ method: "GET", url })).json();
