@@ -22,6 +22,7 @@ import {
   setChannelAllowed,
   updatePolicy,
 } from "./settings";
+import { USER_MESSAGES } from "./user-messages";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T =>
   document.querySelector<T>(sel)!;
@@ -208,7 +209,7 @@ function renderTimeline(list: SegmentRow[], activeId: string | null): void {
  * content script until it reloads: say so instead of "open a video".
  */
 function reloadRow(): HTMLDivElement {
-  const row = emptyRow("SkipSponsor AI isn’t running in this tab yet.");
+  const row = emptyRow(USER_MESSAGES.popup.notRunning);
   row.id = "reload-row";
   const button = document.createElement("button");
   button.type = "button";
@@ -234,15 +235,15 @@ function renderMonitor(): void {
     if (needsReload && els.edits.querySelector("#reload-row")) return;
     els.edits.replaceChildren(
       !watching
-        ? emptyRow("Open a YouTube video to see its sponsor reads here.")
+        ? emptyRow(USER_MESSAGES.popup.openVideo)
         : needsReload
           ? reloadRow()
-          : emptyRow("Reading captions…", true),
+          : emptyRow(USER_MESSAGES.popup.readingCaptions, true),
     );
     return;
   }
   els.tc.textContent = s.adPlaying
-    ? "YouTube ad playing"
+    ? USER_MESSAGES.popup.adPlaying
     : s.duration > 0
       ? `${formatTimecode(s.currentTime)} / ${formatTimecode(s.duration)}`
       : "";
@@ -252,17 +253,17 @@ function renderMonitor(): void {
   if (!els.timeline.hidden) renderTimeline(list, activeId);
 
   if (s.phase === "analyzing" || s.phase === "idle") {
-    els.edits.replaceChildren(emptyRow("Reading captions…", true));
-  } else if (s.phase === "unavailable") {
     els.edits.replaceChildren(
-      emptyRow("Couldn’t analyze this video — it plays normally."),
+      emptyRow(USER_MESSAGES.popup.readingCaptions, true),
     );
+  } else if (s.phase === "unavailable") {
+    els.edits.replaceChildren(emptyRow(USER_MESSAGES.popup.analyzeFailed));
   } else if (list.length === 0) {
     els.edits.replaceChildren(
       emptyRow(
         s.fallback
-          ? "No captions, and no community-labelled sponsors — nothing to skip."
-          : "No sponsor reads found in this video.",
+          ? USER_MESSAGES.popup.nothingToSkip
+          : USER_MESSAGES.popup.noSponsorReads,
       ),
     );
   } else {

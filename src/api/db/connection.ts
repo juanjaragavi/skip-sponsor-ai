@@ -1,5 +1,30 @@
 /**
- * Managed Postgres hosts (InstaCloud among them) hand out URLs with
+ * The database adapter (portfolio platform standard): the only module that
+ * imports the Postgres driver. Everything else asks it for a pool
+ * (`createPool`) and types against `DbPool`. Locally it talks to the compose
+ * Postgres (`npm run dev:tunnel` / infra/docker-compose.yml); in production
+ * to the managed Postgres on DevSpeak Labs Cloud (the box).
+ */
+import pg from "pg";
+
+export type DbPool = pg.Pool;
+
+export interface PoolOptions {
+  max: number;
+  idleTimeoutMillis?: number;
+  connectionTimeoutMillis?: number;
+}
+
+/** A pool on `databaseUrl`, with verified TLS pinned (pinVerifiedTls). */
+export function createPool(databaseUrl: string, options: PoolOptions): DbPool {
+  return new pg.Pool({
+    connectionString: pinVerifiedTls(databaseUrl),
+    ...options,
+  });
+}
+
+/**
+ * Managed Postgres hosts hand out URLs with
  * `sslmode=require`. pg 8 already treats prefer/require/verify-ca as
  * verify-full (certificate and hostname checked) and prints a SECURITY
  * WARNING on every boot; pg 9 will switch them to libpq semantics, where

@@ -2,16 +2,15 @@
  * `npm run db:migrate` (dev) / `node dist/api/migrate.mjs` (container).
  * Applies infra/db/migrations/*.sql to DATABASE_URL.
  */
-import pg from "pg";
 import { runMigrations } from "./migrate";
-import { pinVerifiedTls } from "./connection";
+import { createPool } from "./connection";
 
 const url = process.env["DATABASE_URL"];
 if (!url) {
   console.error("DATABASE_URL is not set.");
   process.exit(1);
 }
-const pool = new pg.Pool({ connectionString: pinVerifiedTls(url), max: 1 });
+const pool = createPool(url, { max: 1 });
 try {
   const applied = await runMigrations(pool);
   console.log(

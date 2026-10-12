@@ -5,6 +5,7 @@ import type {
 } from "../shared/types";
 import type { AnalysisLimit } from "../shared/messages";
 import { decideSkip } from "./policy";
+import { USER_MESSAGES } from "./user-messages";
 
 export type Tag = "CUT" | "ASK" | "KEEP";
 
@@ -181,38 +182,15 @@ export function limitCopy(limit: AnalysisLimit): {
   const at = resetTime(limit.resetAt);
   switch (limit.reason) {
     case "install_quota":
-      return {
-        title: "Daily AI analysis limit reached",
-        sub: `Analyzed videos still skip · more at ${at}`,
-        popup: `You’ve used today’s free AI analyses. Videos already analyzed and community-labelled sponsors still skip. More analyses at ${at}.`,
-      };
+      return { ...USER_MESSAGES.limits.installQuota(at) };
     case "global_budget":
-      return {
-        title: "AI analysis is busy today",
-        sub: `Analyzed videos still skip · resumes ${at}`,
-        popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed and community-labelled sponsors still skip. New analyses resume at ${at}.`,
-      };
+      return { ...USER_MESSAGES.limits.globalBudget(at) };
     case "llm_not_configured":
-      return {
-        title: "AI analysis is unavailable",
-        sub: "Community segments still skip",
-        popup:
-          "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed and community-labelled sponsors still skip.",
-      };
+      return { ...USER_MESSAGES.limits.llmNotConfigured };
     case "llm_disabled":
-      return {
-        title: "AI analysis is paused",
-        sub: "Analyzed videos still skip",
-        popup:
-          "AI analysis is paused for now. Videos already analyzed and community-labelled sponsors still skip.",
-      };
+      return { ...USER_MESSAGES.limits.llmDisabled };
     default:
-      return {
-        title: "Couldn’t reach SkipSponsor AI",
-        sub: "Using community segments for now",
-        popup:
-          "This browser couldn’t be verified with the SkipSponsor AI server. Community-labelled sponsors still skip.",
-      };
+      return { ...USER_MESSAGES.limits.unreachable };
   }
 }
 

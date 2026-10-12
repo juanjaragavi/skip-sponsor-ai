@@ -21,6 +21,7 @@ import {
   updatePolicy,
   type ChannelLabels,
 } from "./settings";
+import { USER_MESSAGES } from "./user-messages";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T =>
   document.querySelector<T>(sel)!;
@@ -46,7 +47,7 @@ const els = {
 
 const TABS = ["general", "channels", "privacy", "about"] as const;
 type Tab = (typeof TABS)[number];
-const CHANNEL_HINT = "Paste a channel link, or type its @handle.";
+const CHANNEL_HINT = USER_MESSAGES.options.channelHint;
 
 let policy: UserPolicy;
 let labels: ChannelLabels = {};
@@ -168,11 +169,7 @@ async function addChannel(): Promise<void> {
   const raw = els.channelInput.value;
   if (!raw.trim()) return channelHint(CHANNEL_HINT);
   const id = parseChannelInput(raw);
-  if (!id)
-    return channelHint(
-      "That doesn’t look like a YouTube channel. Try @creator or a link like youtube.com/@creator.",
-      "error",
-    );
+  if (!id) return channelHint(USER_MESSAGES.options.invalidChannel, "error");
   if (policy.blockedChannels.some((c) => sameChannel(c, id)))
     return channelHint(
       `${displayChannelId(id)} is already in the list.`,
@@ -204,7 +201,7 @@ async function onReset(): Promise<void> {
   if (!els.reset.classList.contains("is-armed")) {
     // Two-step confirm: no modal, no accidental wipe.
     els.reset.classList.add("is-armed");
-    els.reset.lastChild!.textContent = "Click again to reset";
+    els.reset.lastChild!.textContent = USER_MESSAGES.options.resetConfirm;
     resetTimer = window.setTimeout(disarmReset, 4000);
     return;
   }
@@ -216,7 +213,7 @@ async function onReset(): Promise<void> {
     loadTelemetryEnabled(),
   ]);
   render();
-  els.reset.lastChild!.textContent = "Done — reset";
+  els.reset.lastChild!.textContent = USER_MESSAGES.options.resetDone;
   window.setTimeout(() => (els.reset.lastChild!.textContent = "Reset"), 2500);
 }
 
@@ -230,17 +227,19 @@ function disarmReset(): void {
 
 async function checkService(): Promise<void> {
   els.serviceStatus.dataset["state"] = "checking";
-  els.serviceStatus.textContent = "Checking…";
+  els.serviceStatus.textContent = USER_MESSAGES.options.statusChecking;
   const res = (await chrome.runtime
     .sendMessage({ type: "HEALTH_GET" })
     .catch(() => null)) as { ok: boolean; host: string } | null;
   els.serviceStatus.dataset["state"] = res?.ok ? "online" : "offline";
-  els.serviceStatus.textContent = res?.ok ? "Online" : "Unreachable";
+  els.serviceStatus.textContent = res?.ok
+    ? USER_MESSAGES.options.statusOnline
+    : USER_MESSAGES.options.statusUnreachable;
   els.serviceHost.textContent = res?.host
     ? res.ok
-      ? `Connected to ${res.host}`
-      : `Can’t reach ${res.host}. Videos will play normally until it’s back.`
-    : "Status unavailable";
+      ? USER_MESSAGES.options.connectedTo(res.host)
+      : USER_MESSAGES.options.cantReach(res.host)
+    : USER_MESSAGES.options.statusUnavailable;
 }
 
 /* ---------- Render + bind ---------- */

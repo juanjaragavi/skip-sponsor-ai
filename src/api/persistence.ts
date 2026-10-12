@@ -1,5 +1,3 @@
-import pg from "pg";
-import { Redis } from "ioredis";
 import type { FastifyBaseLogger } from "fastify";
 import type { AppConfig } from "./config";
 import {
@@ -10,8 +8,12 @@ import {
   PostgresSegmentRepository,
   purgeExpired,
 } from "./repositories/postgres-segment-repository";
-import { CachedSegmentRepository } from "./repositories/redis-cache";
-import { pinVerifiedTls } from "./db/connection";
+import {
+  CachedSegmentRepository,
+  createRedisClient,
+  type RedisClient,
+} from "./repositories/redis-cache";
+import { createPool, type DbPool } from "./db/connection";
 import {
   MemoryUsageStore,
   PostgresUsageStore,
@@ -25,7 +27,7 @@ export interface Persistence {
   repo: SegmentRepository;
   /** Quota and spend counters for the cost guard. */
   usage: UsageStore;
-  pool: pg.Pool | null;
+  pool: DbPool | null;
   /** Readiness: can the store answer queries? */
   ping(): Promise<boolean>;
   /** Optional Redis cache: "disabled" when REDIS_URL is unset. Never gates readiness. */
@@ -63,8 +65,7 @@ export function createPersistence(
   if (!c.databaseUrl)
     throw new Error("PERSISTENCE=postgres needs DATABASE_URL to be set.");
 
-  const pool = new pg.Pool({
-    connectionString: pinVerifiedTls(c.databaseUrl),
+  const pool = createPool(c.databaseUrl, {
     max: c.pgPoolMax,
     // Below managed-Postgres idle/suspend windows (scale-to-zero databases).
     idleTimeoutMillis: 10_000,
@@ -76,19 +77,9 @@ export function createPersistence(
     pool,
     c.cacheTtlSeconds,
   );
-  let redis: Redis | null = null;
+  let redis: RedisClient | null = null;
   if (c.redisUrl) {
-    const url = new URL(c.redisUrl);
-    redis = new Redis(c.redisUrl, {
-      // Fail fast and fall through to Postgres instead of queueing.
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      connectTimeout: 3_000,
-      // Shared TLS endpoints route on SNI; ioredis sends none from a bare URL.
-      ...(url.protocol === "rediss:" && {
-        tls: { servername: url.hostname },
-      }),
-    });
+    redis = createRedisClient(c.redisUrl);
     let lastLog = 0;
     redis.on("error", (err) => {
       if (Date.now() - lastLog < 60_000) return;

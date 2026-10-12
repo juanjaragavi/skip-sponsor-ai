@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import type { Pool } from "pg";
+import type { DbPool as Pool } from "./connection";
 
 /** Arbitrary constant: serializes concurrent migrators (two instances booting). */
 const MIGRATION_LOCK_ID = 7_340_201;

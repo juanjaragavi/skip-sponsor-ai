@@ -1,3 +1,4 @@
+import { Redis } from "ioredis";
 import type { VideoAnalysis } from "../../shared/types";
 import type { SegmentRepository } from "./segment-repository";
 
@@ -11,6 +12,27 @@ export interface RedisLike {
     seconds: number,
   ): Promise<unknown>;
   del(key: string): Promise<number>;
+}
+
+/**
+ * The cache adapter (portfolio platform standard): the only module that
+ * imports the Redis client. Locally the compose Redis; in production the
+ * managed Redis on DevSpeak Labs Cloud (the box).
+ */
+export type RedisClient = Redis;
+
+export function createRedisClient(redisUrl: string): RedisClient {
+  const url = new URL(redisUrl);
+  return new Redis(redisUrl, {
+    // Fail fast and fall through to Postgres instead of queueing.
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    connectTimeout: 3_000,
+    // Shared TLS endpoints route on SNI; ioredis sends none from a bare URL.
+    ...(url.protocol === "rediss:" && {
+      tls: { servername: url.hostname },
+    }),
+  });
 }
 
 /** Hot-cache lifetime; Postgres stays the source of truth. */

@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { DbPool as Pool } from "../db/connection";
 import type { VideoAnalysis } from "../../shared/types";
 import type { SegmentRepository } from "./segment-repository";
 

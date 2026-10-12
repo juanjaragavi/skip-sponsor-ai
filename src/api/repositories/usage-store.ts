@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { DbPool as Pool } from "../db/connection";
 
 /** Counters behind the cost guard. Days are UTC `YYYY-MM-DD`. */
 export interface UsageStore {
