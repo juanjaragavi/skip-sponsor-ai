@@ -21,7 +21,7 @@ const databaseUrl = env["DATABASE_URL"] ?? "";
 
 /**
  * Env vars that may carry the deployed commit, checked in this order: our
- * own (container builds, InstaCloud), Vercel's, then the generic name some
+ * own (container builds, DevSpeak Labs Cloud), the frontend host's, then the generic name some
  * hosts (Coolify, Dokku) inject. `/healthz` echoes it so a deploy can be
  * verified against git, not just against a 200.
  */
@@ -66,7 +66,7 @@ export const config = {
    * chrome-extension:// origin in production.
    */
   corsOrigin: env["CORS_ORIGIN"] ?? "",
-  /** Behind a reverse proxy (InstaCloud router, Caddy): use X-Forwarded-For for req.ip. */
+  /** Behind a reverse proxy (the DevSpeak Labs Cloud edge, Caddy): use X-Forwarded-For for req.ip. */
   trustProxy: flag("TRUST_PROXY"),
   /** HMAC key for install tokens. Required in production (≥32 chars). */
   installTokenSecret: env["INSTALL_TOKEN_SECRET"] ?? "",

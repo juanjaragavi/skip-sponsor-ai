@@ -2,7 +2,7 @@
 /**
  * Stages a minimal, self-contained build context for the API image, with the
  * Dockerfile at its root, for hosts that build "the directory's Dockerfile"
- * (InstaCloud `insta deploy <dir>`, Oracle VM `docker build <dir>`).
+ * (`insta deploy <dir>` on DevSpeak Labs Cloud, or `docker build <dir>`).
  *
  *   node scripts/stage-api-context.mjs [outDir]   # default: dist/deploy-api
  *

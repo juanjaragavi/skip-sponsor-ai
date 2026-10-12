@@ -41,7 +41,8 @@
     "verify": "npm run lint && npm run typecheck && npm run test",
     "package:extension": "npm run build:extension && node scripts/zip-extension.mjs",
     "icons": "node scripts/build-icons.mjs",
-    "stage:api": "node scripts/stage-api-context.mjs"
+    "stage:api": "node scripts/stage-api-context.mjs",
+    "package:store": "VITE_API_BASE_URL=https://api-skipsponsor-main.cloud.devspeak.dev npm run package:extension"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
