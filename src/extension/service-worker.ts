@@ -17,6 +17,13 @@ let mintFailedAt = 0;
 
 const version = (): string => chrome.runtime.getManifest().version;
 
+/**
+ * One correlation id per user action (a video lookup, an analysis, a status
+ * check), sent as `x-correlation-id` so the API's logs tie the call together.
+ */
+const CORRELATION_HEADER = "x-correlation-id";
+const newCorrelationId = (): string => crypto.randomUUID();
+
 async function storedToken(): Promise<string | null> {
   const s = await chrome.storage.local.get(["installToken"]);
   return typeof s["installToken"] === "string" ? s["installToken"] : null;
@@ -36,7 +43,10 @@ async function getInstallToken(renew = false): Promise<string> {
     try {
       const res = await fetch(`${API_BASE}/installs`, {
         method: "POST",
-        headers: { "x-extension-version": version() },
+        headers: {
+          "x-extension-version": version(),
+          [CORRELATION_HEADER]: newCorrelationId(),
+        },
       });
       const body = res.ok
         ? ((await res.json()) as { installToken?: unknown })
@@ -63,11 +73,14 @@ async function authedFetch(
   url: string,
   init: RequestInit = {},
 ): Promise<Response> {
+  // The token renewal retry is the same user action: same correlation id.
+  const correlationId = newCorrelationId();
   const send = (token: string) =>
     fetch(url, {
       ...init,
       headers: {
         ...(init.headers as Record<string, string> | undefined),
+        [CORRELATION_HEADER]: correlationId,
         Authorization: `Bearer ${token}`,
         "x-extension-version": version(),
       },
@@ -243,7 +256,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "HEALTH_GET") {
     // About › Service status.
     const host = new URL(API_ORIGIN).host;
-    fetch(`${API_ORIGIN}/healthz`, { signal: AbortSignal.timeout(5000) })
+    fetch(`${API_ORIGIN}/healthz`, {
+      headers: { [CORRELATION_HEADER]: newCorrelationId() },
+      signal: AbortSignal.timeout(5000),
+    })
       .then((r) => sendResponse({ ok: r.ok, host }))
       .catch(() => sendResponse({ ok: false, host }));
     return true;

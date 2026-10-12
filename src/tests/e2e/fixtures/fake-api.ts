@@ -38,7 +38,7 @@ export class FakeApi {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Headers":
-            "authorization, content-type, x-extension-version",
+            "authorization, content-type, x-extension-version, x-correlation-id",
           "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         });
         res.end(body === undefined ? "" : JSON.stringify(body));
