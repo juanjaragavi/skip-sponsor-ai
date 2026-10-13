@@ -1,11 +1,28 @@
 import { fetchWithRetry } from "../lib/retry";
 
-const YT_ALLOW = /^https:\/\/[\w.-]*youtube\.com\/api\/timedtext/;
-const SB_ALLOW = "https://sponsor.ajay.app";
+const SB_HOST = "sponsor.ajay.app";
 
+/** youtube.com or a subdomain of it (not look-alikes such as evilyoutube.com). */
+function isYouTubeHost(host: string): boolean {
+  return host === "youtube.com" || host.endsWith(".youtube.com");
+}
+
+/**
+ * Server-side fetches go only to YouTube's timedtext API and SponsorBlock.
+ * Compare the parsed host exactly: a string prefix/suffix match let through
+ * look-alikes such as `sponsor.ajay.app.evil.example` and `evilyoutube.com`.
+ */
 export function assertFetchAllowed(url: string): void {
-  if (YT_ALLOW.test(url)) return;
-  if (url.startsWith(SB_ALLOW)) return;
+  let u: URL | null = null;
+  try {
+    u = new URL(url);
+  } catch {
+    // not a URL: blocked below
+  }
+  if (u && u.protocol === "https:" && !u.username && !u.password) {
+    if (isYouTubeHost(u.hostname) && u.pathname === "/api/timedtext") return;
+    if (u.hostname === SB_HOST) return;
+  }
   throw new Error("SSRF blocked: URL not allowlisted");
 }
 
