@@ -20,6 +20,7 @@ import {
 } from "./toast";
 import { limitCopy } from "./view-model";
 import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
+import { readTranscriptViaPanelApi } from "./innertube-transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 import { SkipGuard } from "./skip-guard";
 
@@ -123,18 +124,20 @@ function contentDuration(): number {
 
 /**
  * Cached "ready" results are used as-is. Otherwise upload the transcript read
- * from the page for Claude analysis, keeping the degraded (SponsorBlock)
+ * from the page (innertube-transcript.ts, else transcript.ts) for Claude analysis, keeping the degraded (SponsorBlock)
  * result when no transcript is available or the upload fails.
  */
 async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
   const initial = await fetchSegments(videoId);
   if (initial?.status === "ready") return initial;
   const stillCurrent = () => lastVideoId === videoId;
-  const transcript = await readTranscriptFromPage(
-    videoId,
-    contentDuration,
-    stillCurrent,
-  );
+  // The transcript panel API first (no UI, works where YouTube's legacy
+  // panel fails), then the rendered panel as a fallback.
+  const transcript =
+    (await readTranscriptViaPanelApi(videoId, contentDuration, stillCurrent)) ??
+    (stillCurrent()
+      ? await readTranscriptFromPage(videoId, contentDuration, stillCurrent)
+      : null);
   if (!transcript || !stillCurrent()) return initial;
   try {
     const res = (await chrome.runtime.sendMessage({
