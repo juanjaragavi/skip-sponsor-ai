@@ -17,6 +17,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 import {
+  acceptsTemperature,
   classifyChunks,
   llmBreaker,
   setLlmUsageListener,
@@ -199,6 +200,18 @@ describe("classifyChunks (Claude call path)", () => {
       MODEL_POLICY.primary,
       MODEL_POLICY.fallback,
     ]);
+    // Claude 5.x answers 400 to `temperature` (live 2026-10-13): the re-ask
+    // must not send it, while the 4.5 primary keeps temperature 0.
+    expect(create.mock.calls[0]![0]).toHaveProperty("temperature", 0);
+    expect(create.mock.calls[1]![0]).not.toHaveProperty("temperature");
+  });
+
+  it("sends temperature only to models that accept it", () => {
+    expect(acceptsTemperature("claude-haiku-4-5-20251001")).toBe(true);
+    expect(acceptsTemperature("claude-sonnet-4-5")).toBe(true);
+    expect(acceptsTemperature("claude-sonnet-5-5")).toBe(false);
+    expect(acceptsTemperature("claude-haiku-5-5")).toBe(false);
+    expect(acceptsTemperature("claude-opus-5-5")).toBe(false);
   });
 
   it("never runs more than three Claude calls at once", async () => {

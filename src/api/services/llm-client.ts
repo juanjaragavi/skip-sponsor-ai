@@ -65,6 +65,16 @@ export function stripJsonFence(text: string): string {
   return start >= 0 && end > start ? body.slice(start, end + 1) : body;
 }
 
+/**
+ * Claude 5.x models reject `temperature` (400 "`temperature` is deprecated
+ * for this model", verified live 2026-10-13 for claude-sonnet-5-5 and
+ * claude-haiku-5-5). Before this check the Sonnet re-ask always failed and
+ * the Haiku answer was kept silently.
+ */
+export function acceptsTemperature(model: string): boolean {
+  return !/^claude-(haiku|sonnet|opus)-5\b/.test(model);
+}
+
 /** Token usage of one Claude call; feeds the daily budget (cost-guard.ts). */
 export type LlmUsageListener = (
   model: string,
@@ -108,7 +118,7 @@ async function callClaude(
           {
             model,
             max_tokens: MODEL_POLICY.maxTokens,
-            temperature: 0,
+            ...(acceptsTemperature(model) ? { temperature: 0 } : {}),
             system: SYSTEM_PROMPT,
             messages: [{ role: "user", content: formatCues(chunks) }],
           },
