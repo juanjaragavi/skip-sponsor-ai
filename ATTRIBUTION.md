@@ -50,11 +50,13 @@ need a machine-generated bill of materials.
   sent to the API. Anthropic is a trademark of Anthropic PBC; use of the API
   is governed by Anthropic's terms, not by this repo's MIT License.
   https://www.anthropic.com · https://docs.anthropic.com
-- **SponsorBlock** — read-only fallback for videos without captions
-  (lookup by video ID via `sponsor.ajay.app`). SponsorBlock data is
+- **SponsorBlock** — the backend contains an optional, **disabled by
+  default** read-only lookup (`SPONSORBLOCK_ENABLED`). No SponsorBlock data
+  is fetched, stored or shown while it is off. SponsorBlock data is
   community-contributed under
   [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/);
-  its canonical source is https://sponsor.ajay.app and https://sponsorblock.org.
+  it will not be enabled for a commercial release without the author's
+  written permission. https://sponsor.ajay.app · https://sponsorblock.org
 - **YouTube** — caption source and host site. YouTube is a trademark of
   Google LLC. SkipSponsor AI is an independent project, not affiliated with
   or endorsed by YouTube or Google.

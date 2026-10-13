@@ -1,6 +1,6 @@
 # SkipSponsor AI — Privacy Policy
 
-_Last updated: October 9, 2026 · Applies to SkipSponsor AI 1.0.0 and later_
+_Last updated: October 13, 2026 · Applies to SkipSponsor AI 1.0.0 and later_
 
 SkipSponsor AI is a browser extension that skips sponsor reads inside YouTube
 videos. To find a sponsor read, it analyzes the **caption text** of the video
@@ -47,9 +47,13 @@ queries, comments, and the content of any other website.
 2. **Anthropic (Claude API)** — the backend sends **caption text only** (no
    token, no IP address, no personal data) to Anthropic's API to classify
    sponsor segments.
-3. **SponsorBlock** (`sponsor.ajay.app`) — for videos without captions, the
-   backend looks up community-labelled segments by **video ID only**. Your
-   browser does not contact SponsorBlock directly.
+
+Videos without captions are not analyzed: nothing about them is sent to any
+third party, and the extension tells you the video wasn't analyzed.
+
+The backend has a SponsorBlock lookup that is switched off. It would only be
+turned on with SponsorBlock's written permission, and this policy would be
+updated before that happens.
 
 No other third parties receive data. No analytics or advertising SDKs are
 included in the extension.
