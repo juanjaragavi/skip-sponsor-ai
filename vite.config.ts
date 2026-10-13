@@ -11,7 +11,15 @@ export default defineConfig(({ command, mode }) => {
   });
   return {
     plugins: [crx({ manifest })],
-    define: { __API_ORIGIN__: JSON.stringify(apiOrigin) },
+    define: {
+      __API_ORIGIN__: JSON.stringify(apiOrigin),
+      // SponsorBlock data stays unused unless the build opts in (CC BY-NC-SA).
+      __SPONSORBLOCK_ENABLED__: JSON.stringify(
+        ["1", "true", "yes"].includes(
+          (env["VITE_SPONSORBLOCK_ENABLED"] ?? "").toLowerCase(),
+        ),
+      ),
+    },
     build: { outDir: "dist/extension" },
     // 5174, not Vite's default 5173 (interactive-cv's dev port), so both can run
     // at once. strictPort fails loudly instead of drifting to another port,

@@ -171,8 +171,23 @@ const resetTime = (iso: string): string =>
   new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 /**
+ * Empty list wording. `fallback`: no AI result for this video. With
+ * SponsorBlock off that means nothing was analyzed, and the popup says so
+ * instead of implying the video has no sponsors.
+ */
+export function emptyStateCopy(
+  fallback: boolean,
+  sponsorBlock: boolean,
+): string {
+  if (!fallback) return USER_MESSAGES.popup.noSponsorReads;
+  return sponsorBlock
+    ? USER_MESSAGES.popup.nothingToSkip
+    : USER_MESSAGES.popup.notAnalyzed;
+}
+
+/**
  * Wording for an analysis the API refused (daily allowance, global budget,
- * paused). Already-analyzed videos and community segments keep skipping.
+ * paused). Already-analyzed videos keep skipping.
  */
 export function limitCopy(limit: AnalysisLimit): {
   title: string;

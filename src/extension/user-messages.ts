@@ -11,6 +11,8 @@ export const USER_MESSAGES = {
     readingCaptions: "Reading captions…",
     adPlaying: "YouTube ad playing",
     analyzeFailed: "Couldn’t analyze this video — it plays normally.",
+    notAnalyzed:
+      "Couldn’t analyze this video — there are no captions to read, so it plays normally.",
     nothingToSkip:
       "No captions, and no community-labelled sponsors — nothing to skip.",
     noSponsorReads: "No sponsor reads found in this video.",
@@ -33,30 +35,30 @@ export const USER_MESSAGES = {
     installQuota: (at: string) => ({
       title: "Daily AI analysis limit reached",
       sub: `Analyzed videos still skip · more at ${at}`,
-      popup: `You’ve used today’s free AI analyses. Videos already analyzed and community-labelled sponsors still skip. More analyses at ${at}.`,
+      popup: `You’ve used today’s free AI analyses. Videos already analyzed still skip. More analyses at ${at}.`,
     }),
     globalBudget: (at: string) => ({
       title: "AI analysis is busy today",
       sub: `Analyzed videos still skip · resumes ${at}`,
-      popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed and community-labelled sponsors still skip. New analyses resume at ${at}.`,
+      popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed still skip. New analyses resume at ${at}.`,
     }),
     llmNotConfigured: {
       title: "AI analysis is unavailable",
-      sub: "Community segments still skip",
+      sub: "Analyzed videos still skip",
       popup:
-        "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed and community-labelled sponsors still skip.",
+        "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed still skip.",
     },
     llmDisabled: {
       title: "AI analysis is paused",
       sub: "Analyzed videos still skip",
       popup:
-        "AI analysis is paused for now. Videos already analyzed and community-labelled sponsors still skip.",
+        "AI analysis is paused for now. Videos already analyzed still skip.",
     },
     unreachable: {
       title: "Couldn’t reach SkipSponsor AI",
-      sub: "Using community segments for now",
+      sub: "Analyzed videos still skip",
       popup:
-        "This browser couldn’t be verified with the SkipSponsor AI server. Community-labelled sponsors still skip.",
+        "This browser couldn’t be verified with the SkipSponsor AI server. Videos already analyzed still skip.",
     },
   },
 } as const;

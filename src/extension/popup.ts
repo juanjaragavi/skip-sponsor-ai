@@ -15,6 +15,7 @@ import {
   thresholdSummary,
   type SegmentRow,
   limitCopy,
+  emptyStateCopy,
 } from "./view-model";
 import {
   loadPolicy,
@@ -23,6 +24,7 @@ import {
   updatePolicy,
 } from "./settings";
 import { USER_MESSAGES } from "./user-messages";
+import { SPONSORBLOCK_ENABLED } from "./sponsorblock-gate";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T =>
   document.querySelector<T>(sel)!;
@@ -260,11 +262,7 @@ function renderMonitor(): void {
     els.edits.replaceChildren(emptyRow(USER_MESSAGES.popup.analyzeFailed));
   } else if (list.length === 0) {
     els.edits.replaceChildren(
-      emptyRow(
-        s.fallback
-          ? USER_MESSAGES.popup.nothingToSkip
-          : USER_MESSAGES.popup.noSponsorReads,
-      ),
+      emptyRow(emptyStateCopy(s.fallback, SPONSORBLOCK_ENABLED)),
     );
   } else {
     els.edits.replaceChildren(

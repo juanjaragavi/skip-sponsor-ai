@@ -55,7 +55,7 @@ SEE WHAT IT FOUND
 Open the toolbar popup to see the current video's timeline and an edit list of every detected segment: what was cut, what was kept, and the AI's confidence for each.
 
 WORKS IN ANY LANGUAGE
-Reads the video's caption track, auto-generated or uploaded, in any language. For videos without captions, it uses community-labelled segments from SponsorBlock.
+Reads the video's caption track, auto-generated or uploaded, in any language. Videos without captions aren't analyzed: the extension says so and the video plays normally.
 
 PRIVATE BY DESIGN
 • Only caption text is analyzed, never audio.
@@ -64,7 +64,7 @@ PRIVATE BY DESIGN
 • Runs only on www.youtube.com, with a single extra permission (storage).
 
 FREE TO USE
-SkipSponsor AI is free, with no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed load instantly and don't count. If the allowance runs out, already-analyzed videos and community-labelled sponsor segments keep skipping until it resets.
+SkipSponsor AI is free, with no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed load instantly and don't count. If the allowance runs out, already-analyzed videos keep skipping until it resets.
 
 WHAT IT DOESN'T DO
 SkipSponsor AI skips sponsor segments inside videos. It doesn't block YouTube's own ads, and it doesn't skip intros, outros, or reminders to subscribe.
@@ -191,7 +191,7 @@ No login or account is needed.
 4. In the popup, choose "Notify" and play the segment again: a "Skip" button appears instead of an automatic jump.
 5. Control video with no sponsor read: https://www.youtube.com/watch?v=dQw4w9WgXcQ (nothing is skipped).
 
-The extension analyzes caption text only. Videos without captions use SponsorBlock community data.
+The extension analyzes caption text only. Videos without captions are not analyzed.
 ```
 
 ---

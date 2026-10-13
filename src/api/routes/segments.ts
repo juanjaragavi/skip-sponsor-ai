@@ -73,7 +73,7 @@ function sendLimited(
   }
   const detail =
     a.reason === "llm_not_configured"
-      ? "This server has no AI provider key configured, so it cannot analyze new videos. Cached results and community (SponsorBlock) segments keep working."
+      ? "This server has no AI provider key configured, so it cannot analyze new videos. Cached results keep working."
       : `${LIMIT_TITLES[a.reason]}. Cached results keep working; new analyses resume at ${a.resetAt}.`;
   return reply.code(status).send({
     type: `https://api.skipsponsor.example.com/problems/${a.reason}`,
@@ -101,6 +101,21 @@ function isStaleFallback(a: VideoAnalysis): boolean {
 }
 
 /**
+ * A cached result that must be computed again before it is served. With
+ * SponsorBlock off, a "degraded" result is SponsorBlock data (stored while the
+ * fallback was on): it is replaced by an honest "unanalyzable", never served.
+ */
+function needsRefresh(a: VideoAnalysis, sponsorBlock: boolean): boolean {
+  return sponsorBlock ? isStaleFallback(a) : a.status === "degraded";
+}
+
+/** Options of the segment routes. */
+export interface SegmentRouteOptions {
+  /** SPONSORBLOCK_ENABLED: fetch and serve SponsorBlock data. Default off. */
+  sponsorBlockEnabled?: boolean;
+}
+
+/**
  * Operator-only routes (security audit 2026-10-12): 404 while no
  * ADMIN_API_TOKEN is configured, 401 without the right `x-admin-token`.
  * Returns the refusal already sent, or null when the caller is the operator.
@@ -122,14 +137,17 @@ export function registerSegmentRoutes(
   repo: SegmentRepository,
   gate: AnalysisGate = OPEN_GATE,
   adminToken = "",
+  options: SegmentRouteOptions = {},
 ): void {
+  const sb = options.sponsorBlockEnabled ?? false;
+  const respond = (a: VideoAnalysis) => toResponse(a, sb);
   app.get("/v1/segments/:videoId", async (req, reply) => {
     const params = getSegmentsParamsSchema.parse(req.params);
     const cached = await repo.get(params.videoId);
-    if (cached && !isStaleFallback(cached))
-      return reply.send(toResponse(cached));
-    // Metered lazily, only once a transcript exists and the LLM would run;
-    // over the limit this falls back to SponsorBlock data (status degraded).
+    if (cached && !needsRefresh(cached, sb)) return reply.send(respond(cached));
+    // Metered lazily, only once a transcript exists and the LLM would run.
+    // Without one: SponsorBlock data (degraded) when enabled, otherwise an
+    // honest "unanalyzable".
     const analysis = await analyzeVideo(
       repo,
       req.log,
@@ -137,10 +155,11 @@ export function registerSegmentRoutes(
       null,
       "en",
       Boolean(cached),
+      sb,
       undefined,
       () => gate.reserve(req),
     );
-    return reply.send(toResponse(analysis));
+    return reply.send(respond(analysis));
   });
 
   app.post("/v1/segments:analyze", async (req, reply) => {
@@ -153,11 +172,15 @@ export function registerSegmentRoutes(
       return reply
         .code(403)
         .send(problem(403, "force requires the admin token", req.url));
+    let replaceCached = false;
     if (!body.force) {
       const cached = await repo.get(body.videoId);
       // A client transcript supersedes degraded/unanalyzable results only.
-      const usable = body.transcript ? cached?.status === "ready" : cached;
-      if (cached && usable) return reply.code(200).send(toResponse(cached));
+      const usable = body.transcript
+        ? cached?.status === "ready"
+        : cached && !needsRefresh(cached, sb);
+      if (cached && usable) return reply.code(200).send(respond(cached));
+      replaceCached = Boolean(cached);
     }
     // Joining an analysis already in flight costs nothing extra.
     if (!inflight.has(body.videoId)) {
@@ -170,10 +193,11 @@ export function registerSegmentRoutes(
       body.videoId,
       body.channelId ?? null,
       body.languageHint ?? "en",
-      body.force || Boolean(body.transcript),
+      body.force || Boolean(body.transcript) || replaceCached,
+      sb,
       body.transcript,
     );
-    return reply.send(toResponse(analysis));
+    return reply.send(respond(analysis));
   });
 
   app.post("/v1/segments/:videoId/corrections", async (req, reply) => {
@@ -217,13 +241,16 @@ function zParams(params: unknown): { videoId: string } {
   };
 }
 
-function toResponse(a: VideoAnalysis): unknown {
+/** With SponsorBlock off, SponsorBlock segments stored earlier are never served. */
+function toResponse(a: VideoAnalysis, sponsorBlock: boolean): unknown {
   return {
     videoId: a.videoId,
     status: a.status,
     duration: a.duration,
     language: a.language,
-    segments: a.segments,
+    segments: sponsorBlock
+      ? a.segments
+      : a.segments.filter((s) => s.source !== "sponsorblock"),
     analyzedAt: a.analyzedAt,
   };
 }
@@ -245,6 +272,7 @@ async function analyzeVideo(
   channelId: string | null,
   lang: string,
   force: boolean,
+  sponsorBlock: boolean,
   transcript?: LlmChunk[],
   reserve: Reserve = ALLOW,
 ): Promise<VideoAnalysis> {
@@ -261,6 +289,7 @@ async function analyzeVideo(
     lang,
     transcript,
     reserve,
+    sponsorBlock,
   );
   inflight.set(videoId, p);
   try {
@@ -306,6 +335,7 @@ async function runAnalysis(
   lang: string,
   transcript: LlmChunk[] | undefined,
   reserve: Reserve,
+  sponsorBlock: boolean,
 ): Promise<VideoAnalysis> {
   let status: VideoAnalysis["status"] = "ready";
   let segments: VideoAnalysis["segments"] = [];
@@ -331,27 +361,40 @@ async function runAnalysis(
         candidates,
       ),
     );
-    segments = await addGapCorroborated(log, videoId, chunks, segments);
+    if (sponsorBlock)
+      segments = await addGapCorroborated(log, videoId, chunks, segments);
   } catch (err) {
     log.warn(
       { err, videoId, clientTranscript: Boolean(transcript) },
-      "analysis failed; falling back to SponsorBlock",
+      sponsorBlock
+        ? "analysis failed; falling back to SponsorBlock"
+        : "analysis failed; not analyzed (SponsorBlock off)",
     );
-    // Fallback: SponsorBlock read-only (FR-07). Without any transcript the
-    // captions cover nothing, so the whole video is one caption gap and the
-    // community labels are the only evidence. With a transcript (LLM
-    // failure) only labels inside real caption gaps are trusted.
-    try {
-      const gaps = chunks.length > 0 ? findCaptionGaps(chunks) : [WHOLE_VIDEO];
-      segments = dedupeOverlapping(
-        corroborateSegments(await fetchSponsorBlock(videoId), gaps),
-      );
-      status = "degraded";
-      await repo.logTelemetry(videoId, "fallback_used");
-    } catch {
-      status = "unanalyzable";
-      await repo.logTelemetry(videoId, "no_captions");
+    segments = [];
+    status = "unanalyzable";
+    // No silent fallback while SponsorBlock is off: the result says the video
+    // was not analyzed, and the extension tells the viewer so.
+    // Fallback: SponsorBlock read-only (FR-07), only when enabled. Without
+    // any transcript the captions cover nothing, so the whole video is one
+    // caption gap and the community labels are the only evidence. With a
+    // transcript (LLM failure) only labels inside real caption gaps are
+    // trusted.
+    if (sponsorBlock) {
+      try {
+        const gaps =
+          chunks.length > 0 ? findCaptionGaps(chunks) : [WHOLE_VIDEO];
+        segments = dedupeOverlapping(
+          corroborateSegments(await fetchSponsorBlock(videoId), gaps),
+        );
+        status = "degraded";
+      } catch {
+        // no SponsorBlock data either: unanalyzable
+      }
     }
+    await repo.logTelemetry(
+      videoId,
+      status === "degraded" ? "fallback_used" : "no_captions",
+    );
   }
   const analysis: VideoAnalysis = {
     videoId,

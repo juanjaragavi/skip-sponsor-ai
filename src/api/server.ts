@@ -57,6 +57,8 @@ export interface ServerDeps {
   trustProxy: boolean;
   /** ADMIN_API_TOKEN: operator-only cache mutations; empty disables them (404). */
   adminToken: string;
+  /** SPONSORBLOCK_ENABLED: SponsorBlock fallback and gap filling (default off). */
+  sponsorBlockEnabled: boolean;
   /** An AI provider key is set. Defaults to ANTHROPIC_API_KEY presence (true under Vitest, where the LLM is mocked). */
   llmConfigured: boolean;
 }
@@ -174,8 +176,11 @@ export function buildServer(
     });
     return reply.code(code).send(body);
   });
+  const sponsorBlockEnabled =
+    deps.sponsorBlockEnabled ?? config.sponsorBlockEnabled;
   // Redis is optional and reported, not gated on; `ai` says whether fresh
-  // analyses can run at all (no key: cached and SponsorBlock results only).
+  // analyses can run at all (no key: cached results only); `sponsorblock`
+  // whether SponsorBlock data may be fetched and served.
   app.get("/readyz", async (_req, reply) => {
     const [ok, redis] = await Promise.all([
       persistence.ping(),
@@ -186,6 +191,7 @@ export function buildServer(
       persistence: persistence.mode,
       redis,
       ai: llmConfigured ? "configured" : "not_configured",
+      sponsorblock: sponsorBlockEnabled ? "on" : "off",
     });
   });
   // Cost guard: per-install daily quota + global daily LLM budget.
@@ -201,7 +207,7 @@ export function buildServer(
     onBudgetReached: (spentUsd) =>
       app.log.warn(
         { spentUsd },
-        "LLM daily budget reached; serving cached and SponsorBlock results until 00:00 UTC",
+        "LLM daily budget reached; serving cached results until 00:00 UTC",
       ),
   });
   setLlmUsageListener((model, input, output) => {
@@ -228,6 +234,7 @@ export function buildServer(
       persistence.repo,
       gate,
       deps.adminToken ?? config.adminToken,
+      { sponsorBlockEnabled },
     );
     registerTelemetryRoutes(api, persistence.repo);
     registerInstallRoutes(api, {

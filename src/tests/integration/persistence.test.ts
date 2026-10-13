@@ -213,6 +213,7 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
       persistence: "postgres",
       redis: redis ? "ok" : "disabled",
       ai: "configured",
+      sponsorblock: "off",
     });
     await one.close();
     await two.close();

@@ -49,7 +49,12 @@ async function seeded(adminToken?: string) {
   n += 1;
   VIDEO_ID = `adm${String(n).padStart(8, "0")}`;
   VIDEO = `/v1/segments/${VIDEO_ID}`;
-  const app = buildServer(adminToken === undefined ? {} : { adminToken });
+  // The seed segment comes from the SponsorBlock fallback (switch on here).
+  const app = buildServer(
+    adminToken === undefined
+      ? { sponsorBlockEnabled: true }
+      : { adminToken, sponsorBlockEnabled: true },
+  );
   const first = await app.inject({ method: "GET", url: VIDEO });
   expect(first.json().segments).toHaveLength(1);
   return app;

@@ -170,6 +170,7 @@ describe("health endpoints", () => {
       persistence: "memory",
       redis: "disabled",
       ai: "configured",
+      sponsorblock: "off",
     });
     await app.close();
   });

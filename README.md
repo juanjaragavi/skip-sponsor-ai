@@ -22,7 +22,7 @@
 - 🧠 **AI-powered** — Claude Haiku 4.5 analyzes captions; Claude Sonnet 5.5 fallback for ambiguous cases
 - ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back
 - 🎛️ **You're in control** — Auto / Notify / Off per video, confidence threshold (50–95%), per-channel opt-out
-- 🌍 **Any language** — works with auto or uploaded captions; SponsorBlock fallback when captions are missing
+- 🌍 **Any language** — works with auto or uploaded captions; a video without captions is reported as not analyzed and plays normally
 - 🔒 **Private by design** — caption text only (never audio), no account, 30-day result retention
 - ⚡ **Fast & cheap** — p95 analysis <4.0s, skip trigger <300ms, ~$0.004/video with 65%+ cache hits
 
@@ -128,7 +128,7 @@ The API container (`infra/Dockerfile.api`) still listens on 3000 when `PORT` is 
 
 `npm run dev:tunnel` opens a Cloudflare tunnel to `http://localhost:3040` and runs the local stack behind it: Postgres and Redis (`docker compose -f infra/docker-compose.yml up -d --wait`), `npm run db:migrate`, then `npm run dev:api` against the Docker Postgres (5434) and Redis (6380). It needs `cloudflared` (`brew install cloudflared`). Ctrl+C stops the API and the tunnel; the containers keep running (`docker compose -f infra/docker-compose.yml down` stops them, data stays in the `pgdata` volume).
 
-- It also builds `dist/extension-tunnel/` with `VITE_API_BASE_URL=<tunnel URL>`: load it unpacked or zip it for testers. Their extension then calls your local API. Real analyses need `ANTHROPIC_API_KEY` in `.env`; without it the API serves cached and SponsorBlock results only.
+- It also builds `dist/extension-tunnel/` with `VITE_API_BASE_URL=<tunnel URL>`: load it unpacked or zip it for testers. Their extension then calls your local API. Real analyses need `ANTHROPIC_API_KEY` in `.env`; without it the API serves cached results only.
 - There are no inbound webhooks. Check the public URL with `curl <tunnel URL>/healthz` and `/readyz`.
 - A quick tunnel gets a new `*.trycloudflare.com` URL on every run, so rebuild and re-share the extension each time, or run with `DEV_TUNNEL_NAME=<name> DEV_TUNNEL_HOSTNAME=<hostname>` for a named tunnel (`cloudflared tunnel create`, `cloudflared tunnel route dns`).
 - `npm run dev:extension` (HMR on :5174) keeps targeting `http://localhost:3040`. The URL is written to `.env.tunnel.local` (gitignored, removed on exit).
@@ -213,7 +213,7 @@ src/
 │   └── manifest.json
 ├── api/                    # Fastify backend
 │   ├── routes/            # API endpoints
-│   ├── services/          # business logic (LLM, chunking, SponsorBlock)
+│   ├── services/          # business logic (LLM, chunking, optional SponsorBlock fallback, off by default)
 │   ├── repositories/      # Postgres + optional Redis; in-memory for dev/tests
 │   ├── config.ts          # config loader
 │   └── server.ts          # Fastify setup
@@ -361,6 +361,6 @@ document it there.
 ## Acknowledgments
 
 - Built with [Anthropic Claude](https://www.anthropic.com)
-- [SponsorBlock](https://sponsorblock.org) fallback integration
+- [SponsorBlock](https://sponsorblock.org) fallback integration (off by default behind `SPONSORBLOCK_ENABLED`; its data is CC BY-NC-SA)
 - YouTube caption API
 - Chrome Web Store review team

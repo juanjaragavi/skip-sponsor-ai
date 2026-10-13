@@ -39,7 +39,7 @@ Backend API endpoint used by the extension content script to fetch sponsor segme
 - **Staging:** `https://staging-api.skipsponsor.ai`
 - **Production:** `https://api.skipsponsor.ai`
 
-**Impact:** If misconfigured, the extension cannot fetch segments and falls back to SponsorBlock read-only API.
+**Impact:** If misconfigured, the extension cannot fetch segments and videos play normally.
 
 **Setting Up:**
 
@@ -158,7 +158,7 @@ ANTHROPIC_API_KEY=sk-ant-abc123xyz789...
 **Format:** Starts with `sk-ant-`, followed by base64 characters.
 
 **Description:**  
-API key for Anthropic Claude integration. Required for LLM-based sponsor segment classification. Without this, the backend cannot perform inference and falls back to SponsorBlock read-only API.
+API key for Anthropic Claude integration. Required for LLM-based sponsor segment classification. Without this, the backend cannot perform inference: fresh analyses answer 503 `llm_not_configured` and lookups serve cached results only.
 
 **Obtaining Your Key:**
 
@@ -204,6 +204,22 @@ curl -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
 
 # Should return: {"id": "msg_...", "type": "message", ...}
 ```
+
+---
+
+### SPONSORBLOCK_ENABLED
+
+**Required:** No
+**Default:** off (`0`)
+**Example:** `SPONSORBLOCK_ENABLED=0`
+
+**Description:**
+SponsorBlock data: the no-captions fallback and the filling of caption gaps in an AI result. **Off by default.** SponsorBlock's database and API are licensed CC BY-NC-SA 4.0, so commercial use needs the author's written permission before this is turned on.
+
+- **Off (`0`, unset):** the API never contacts `sponsor.ajay.app`. A video without a transcript (or whose AI analysis fails) is answered `status: "unanalyzable"` with no segments, and the extension says it couldn't analyze the video. SponsorBlock segments stored while the switch was on are not served: cached `degraded` results are re-answered as `unanalyzable`, and `source: "sponsorblock"` segments are stripped from `ready` results. `/readyz` reports `sponsorblock: "off"`.
+- **On (`1`, `true`, `yes`):** the previous behaviour (SponsorBlock fallback at `degraded`, gap corroboration at 0.85). The production config check logs a licence warning.
+
+The extension has its own build-time switch, `VITE_SPONSORBLOCK_ENABLED` (default off): with it off the extension drops SponsorBlock segments and treats a `degraded` answer as "not analyzed", whatever the server sends.
 
 ---
 
@@ -451,7 +467,7 @@ Minimum logging level for pino structured logger. Controls verbosity of JSON log
 {"level":30,"time":"2026-10-06T...","pid":1234,"msg":"LLM classification","model":"claude-haiku-4-5-20251001","latencyMs":820,"confidence":0.91}
 
 // LOG_LEVEL=warn
-{"level":40,"time":"2026-10-06T...","pid":1234,"msg":"Fallback to SponsorBlock","reason":"no_captions"}
+{"level":40,"time":"2026-10-06T...","pid":1234,"msg":"analysis failed; not analyzed (SponsorBlock off)","videoId":"..."}
 ```
 
 **Setting Up:**
@@ -534,14 +550,14 @@ Maximum time the backend waits for Anthropic Claude to return a classification r
 **When to Adjust:**
 
 - **Increase (e.g., 15000):** If experiencing frequent timeouts, network is slow, or during high API load
-- **Decrease (e.g., 5000):** If you want faster fallbacks to SponsorBlock
+- **Decrease (e.g., 5000):** If you want failed analyses to give up sooner
 
 **Behavior on Timeout:**
 
 1. LLM call exceeds threshold
 2. Retry once with Haiku (if `LLM_MAX_RETRIES=1`)
 3. If retry fails, escalate to Sonnet (slower but more reliable)
-4. If Sonnet times out, fall back to SponsorBlock read-only API
+4. If Sonnet times out, the video is answered `unanalyzable` (SponsorBlock read-only fallback only with `SPONSORBLOCK_ENABLED=1`)
 
 **Setting Up:**
 

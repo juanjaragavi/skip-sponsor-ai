@@ -44,7 +44,7 @@ Set these on the host. Never commit them. `.env.example` lists every name.
 | `NODE_ENV` | `production` | Turns on the startup checks below. |
 | `DATABASE_URL` | Postgres connection string (`?sslmode=require` when remote; pinned to `verify-full`) | Persistence. The API refuses to start in production without it, unless `PERSISTENCE=memory` is set. |
 | `INSTALL_TOKEN_SECRET` | 32+ random characters (`openssl rand -base64 48`) | Signs install tokens. Required in production. Rotating it invalidates every token; extensions fetch a new one on the next 401. |
-| `ANTHROPIC_API_KEY` | Your key | Without it `POST /v1/segments:analyze` answers 503 `llm_not_configured` and lookups serve only cached and SponsorBlock data (`status: "degraded"`). No Claude call is attempted. |
+| `ANTHROPIC_API_KEY` | Your key | Without it `POST /v1/segments:analyze` answers 503 `llm_not_configured` and lookups serve only cached results (uncached videos answer `status: "unanalyzable"`). No Claude call is attempted. |
 | `LLM_DAILY_BUDGET_USD` | e.g. `2` | Global daily LLM spend cap (estimated from token usage × list price). `0` turns the LLM off. |
 | `DAILY_ANALYSES_PER_INSTALL` | e.g. `25` | Fresh analyses one browser may trigger per UTC day. Cached videos never count. |
 | `TRUST_PROXY` | `1` | Both hosts below put a proxy in front: rate limits must see the client IP. |
@@ -167,9 +167,12 @@ After the first store upload, copy the item ID and set
 - **Spend.** `SELECT * FROM llm_spend_daily ORDER BY day DESC LIMIT 7;` shows
   estimated spend, calls and tokens per UTC day. The Anthropic console stays
   the billing source of truth; set a monthly spend limit there too.
-- **Emergency stop.** `LLM_DAILY_BUDGET_USD=0` stops all LLM calls (cached and
-  SponsorBlock results keep working). `GLOBAL_KILL=1` is advertised to clients
+- **Emergency stop.** `LLM_DAILY_BUDGET_USD=0` stops all LLM calls (cached
+  results keep working). `GLOBAL_KILL=1` is advertised to clients
   in `GET /v1/config`, but the content script does not act on it yet.
+- **SponsorBlock.** Off by default (`SPONSORBLOCK_ENABLED` unset). Its data is
+  CC BY-NC-SA 4.0: leave it off unless the author has given written
+  permission for commercial use. `/readyz` reports `sponsorblock: "off"`.
 - **Retention.** The API hard-deletes expired analyses, telemetry older than
   30 days and quota counters older than 2 days every hour. Request logs are
   the host's: keep them for 7 days or less to match `PRIVACY.md`.

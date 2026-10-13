@@ -81,6 +81,13 @@ export const config = {
   llmDailyBudgetUsd: num("LLM_DAILY_BUDGET_USD", 2),
   /** New install tokens one IP may mint per hour. */
   installsPerIpPerHour: num("INSTALLS_PER_IP_PER_HOUR", 20),
+  /**
+   * SponsorBlock lookups (no-captions fallback, caption-gap filling). Off by
+   * default: SponsorBlock data is CC BY-NC-SA, so a commercial product needs
+   * the author's written permission first. Off, no request goes to
+   * sponsor.ajay.app and no SponsorBlock segment is served.
+   */
+  sponsorBlockEnabled: flag("SPONSORBLOCK_ENABLED"),
   version: "1.0.0",
   /** Deployed commit for `/healthz` (see COMMIT_ENV_VARS). */
   commit: resolveCommit(env),
@@ -113,7 +120,11 @@ export function checkProductionConfig(c: AppConfig): {
     );
   if (!c.anthropicKey)
     warnings.push(
-      "ANTHROPIC_API_KEY is not set: fresh analyses are refused (503 llm_not_configured); lookups serve cached and SponsorBlock data only.",
+      "ANTHROPIC_API_KEY is not set: fresh analyses are refused (503 llm_not_configured); lookups serve cached results only.",
+    );
+  if (c.sponsorBlockEnabled)
+    warnings.push(
+      "SPONSORBLOCK_ENABLED is on: SponsorBlock data is licensed CC BY-NC-SA 4.0; commercial use needs the author's written permission.",
     );
   if (!c.corsOrigin)
     warnings.push(

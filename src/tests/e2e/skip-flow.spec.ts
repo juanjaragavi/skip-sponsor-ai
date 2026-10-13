@@ -149,9 +149,11 @@ test("videos without captions are left alone", async ({ h }) => {
   await expectPanelRestored(page);
 });
 
-test("videos without captions skip the SponsorBlock fallback sponsor", async ({
+test("videos without captions ignore SponsorBlock data (switch off by default)", async ({
   h,
 }) => {
+  // An older server (or one with SPONSORBLOCK_ENABLED on) still answers the
+  // lookup with a SponsorBlock fallback; this build must not skip on it.
   h.api.fallbackSegments.set(VIDEO_NO_CAPTIONS.id, [
     {
       id: "22222222-2222-4222-8222-222222222222",
@@ -166,7 +168,8 @@ test("videos without captions skip the SponsorBlock fallback sponsor", async ({
     },
   ]);
   const page = await h.open(VIDEO_NO_CAPTIONS.id);
-  await expectSkip(page, 41, 70.25);
+  await page.waitForTimeout(8000);
+  await expectNoSkip(page, 41);
   expect(h.api.analyzeCalls).toHaveLength(0);
 });
 
@@ -226,7 +229,7 @@ test("settings changes apply to the playing video without a reload", async ({
   expect(await tick(page, 31)).toBeCloseTo(60.25, 2);
 });
 
-test("over the daily limit: community segments still skip and a notice shows once", async ({
+test("over the daily limit: a notice shows once and SponsorBlock segments do not skip", async ({
   h,
 }) => {
   h.api.analyzeLimit = {
@@ -256,7 +259,8 @@ test("over the daily limit: community segments still skip and a notice shows onc
   expect(h.api.installs).toBeGreaterThanOrEqual(1);
   expect(h.api.analyzeAuth.at(-1)).toMatch(/^Bearer v1\.a+1\.e2e-signature$/);
   await notice.locator("button.ok").click();
-  await expectSkip(page, 31, 60.25);
+  await page.waitForTimeout(1000); // the analysis is applied by now
+  await expectNoSkip(page, 31);
 
   // Same limit on the next video: no second notice.
   await page.evaluate((id) => window.__fx.navigate(id), VIDEO_B.id);

@@ -123,14 +123,14 @@ describe("cost guard on the API", () => {
     await app.close();
   });
 
-  it("falls back to SponsorBlock on a GET cache miss when over the limit", async () => {
+  it("answers a metered-out GET cache miss as not analyzed (SponsorBlock off)", async () => {
     const app = server();
     const res = await app.inject({
       method: "GET",
       url: "/v1/segments/qa000000004",
     });
     expect(res.statusCode).toBe(200);
-    expect(res.json().status).toBe("degraded");
+    expect(res.json().status).toBe("unanalyzable");
     expect(classifyChunks).not.toHaveBeenCalled();
 
     const tok = await token(app);
@@ -175,13 +175,13 @@ describe("cost guard on the API", () => {
       title: "AI analysis is not configured",
     });
     expect(res.json().detail).toMatch(/no AI provider key/);
-    // Lookups still answer, honestly labelled as the community fallback.
+    // Lookups still answer, honestly labelled as not analyzed.
     const get = await app.inject({
       method: "GET",
       url: "/v1/segments/qa000000012",
     });
     expect(get.statusCode).toBe(200);
-    expect(get.json().status).toBe("degraded");
+    expect(get.json().status).toBe("unanalyzable");
     expect(classifyChunks).not.toHaveBeenCalled();
     expect(
       (await app.inject({ method: "GET", url: "/readyz" })).json(),

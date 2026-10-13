@@ -7,7 +7,7 @@
 - **AI-Powered Detection:** Uses Claude Haiku 4.5 (Sonnet 5.5 fallback; see `MODEL_POLICY` in `src/shared/constants.ts`) to analyze video captions and identify sponsor segments
 - **Auto-Skip:** Automatically seeks past detected sponsor reads with a 4-second undo window
 - **Per-Channel Control:** Enable/disable detection on specific channels via allowlist/blocklist
-- **Smart Fallback:** Falls back to SponsorBlock API when captions unavailable or LLM fails
+- **Honest fallback:** When captions are unavailable or the LLM fails, the video is reported as not analyzed. (A SponsorBlock fallback exists behind `SPONSORBLOCK_ENABLED`, off by default since 2026-10-13: its data is CC BY-NC-SA.)
 - **Privacy-First:** Zero audio upload; transcript text only with 30-day retention
 - **High Performance:** p95 analysis latency <4.0s, skip trigger <300ms
 - **Low Cost:** ~$0.004 per video with 65%+ cache hit rate

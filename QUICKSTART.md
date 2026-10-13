@@ -487,7 +487,7 @@ A: Not in v1. Spec covers youtube.com/watch only. Shorts out-of-scope.
 A: The design target is ≥93% precision and ≥90% recall on a 500-video labeled set (spec FR-03). That evaluation has not been run yet, so treat these numbers as goals, not measurements.
 
 **Q: What if there are no captions?**  
-A: Falls back to SponsorBlock read-only API (no write). If neither works, manual marking only.
+A: The video isn't analyzed: the API answers `unanalyzable` and the extension says so; the video plays normally. (A SponsorBlock read-only fallback exists behind `SPONSORBLOCK_ENABLED`, off by default: its data is CC BY-NC-SA.)
 
 **Q: How much does this cost?**  
 A: ~$0.004 per video analyzed using Haiku. Free tier includes $5/month. Cache hit rate ~65%.

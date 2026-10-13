@@ -137,7 +137,7 @@ const gappedCues = Array.from({ length: 24 }, (_, i) => i * 15)
   .filter((t) => t < 255 || t >= 330)
   .map((t) => ({ t0: t, t1: t + 15, text: `line ${t}` }));
 
-describe("caption-gap corroboration of SponsorBlock", () => {
+describe("caption-gap corroboration of SponsorBlock (SPONSORBLOCK_ENABLED on)", () => {
   beforeEach(() => {
     vi.mocked(fetchSponsorBlock).mockReset();
     vi.mocked(fetchSponsorBlock).mockRejectedValue(new Error("no data"));
@@ -150,7 +150,7 @@ describe("caption-gap corroboration of SponsorBlock", () => {
       model: "claude-haiku",
     });
     vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(259, 321.4)]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const res = await app.inject({
       method: "POST",
       url: "/v1/segments:analyze",
@@ -169,7 +169,7 @@ describe("caption-gap corroboration of SponsorBlock", () => {
       candidates: [],
       model: "claude-haiku",
     });
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const res = await app.inject({
       method: "POST",
       url: "/v1/segments:analyze",
@@ -194,7 +194,7 @@ describe("caption-gap corroboration of SponsorBlock", () => {
       model: "claude-haiku",
     });
     vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(259, 321.4)]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const res = await app.inject({
       method: "POST",
       url: "/v1/segments:analyze",
@@ -212,7 +212,7 @@ describe("caption-gap corroboration of SponsorBlock", () => {
       sbSegment(259, 321.4),
       sbSegment(30, 90),
     ]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const res = await app.inject({
       method: "POST",
       url: "/v1/segments:analyze",
@@ -232,7 +232,7 @@ describe("caption-gap corroboration of SponsorBlock", () => {
   });
 });
 
-describe("no-captions fallback (GET without any transcript)", () => {
+describe("no-captions fallback (GET without any transcript, SPONSORBLOCK_ENABLED on)", () => {
   beforeEach(() => {
     vi.mocked(fetchSponsorBlock).mockReset();
     vi.useRealTimers();
@@ -243,7 +243,7 @@ describe("no-captions fallback (GET without any transcript)", () => {
       sbSegment(30, 90),
       { ...sbSegment(0, 10), category: "intro" },
     ]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const body = (
       await app.inject({ method: "GET", url: "/v1/segments/hhhhhhhhhhh" })
     ).json();
@@ -261,7 +261,7 @@ describe("no-captions fallback (GET without any transcript)", () => {
 
   it("reports 'no sponsors' (degraded, empty) when SponsorBlock has no entry", async () => {
     vi.mocked(fetchSponsorBlock).mockResolvedValue([]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const body = (
       await app.inject({ method: "GET", url: "/v1/segments/iiiiiiiiiii" })
     ).json();
@@ -274,7 +274,7 @@ describe("no-captions fallback (GET without any transcript)", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
     vi.mocked(fetchSponsorBlock).mockResolvedValue([]);
-    const app = buildServer();
+    const app = buildServer({ sponsorBlockEnabled: true });
     const url = "/v1/segments/jjjjjjjjjjj";
     await app.inject({ method: "GET", url });
 
@@ -297,7 +297,7 @@ describe("no-captions fallback (GET without any transcript)", () => {
     vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
     vi.mocked(fetchSponsorBlock).mockResolvedValue([sbSegment(30, 90)]);
     const adminToken = "t".repeat(48);
-    const app = buildServer({ adminToken });
+    const app = buildServer({ adminToken, sponsorBlockEnabled: true });
     const url = "/v1/segments/kkkkkkkkkkk";
     await app.inject({ method: "GET", url });
     const deleted = await app.inject({

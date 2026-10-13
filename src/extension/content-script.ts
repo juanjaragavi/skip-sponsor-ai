@@ -23,6 +23,7 @@ import { markTranscriptStale, readTranscriptFromPage } from "./transcript";
 import { readTranscriptViaPanelApi } from "./innertube-transcript";
 import { SKIP_FORWARD_OFFSET, UNDO_REWIND_OFFSET } from "../shared/constants";
 import { SkipGuard } from "./skip-guard";
+import { applySponsorBlockSwitch } from "./sponsorblock-gate";
 
 const adapter = new DomVideoAdapter();
 let segments: SponsorSegment[] = [];
@@ -124,11 +125,20 @@ function contentDuration(): number {
 
 /**
  * Cached "ready" results are used as-is. Otherwise upload the transcript read
- * from the page (innertube-transcript.ts, else transcript.ts) for Claude analysis, keeping the degraded (SponsorBlock)
- * result when no transcript is available or the upload fails.
+ * from the page (innertube-transcript.ts, else transcript.ts) for Claude
+ * analysis, keeping the lookup's result when no transcript is available or
+ * the upload fails. With SponsorBlock off (default) that result is an honest
+ * "not analyzed", never SponsorBlock segments (sponsorblock-gate.ts).
  */
 async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
-  const initial = await fetchSegments(videoId);
+  const analysis = await resolveRawAnalysis(videoId);
+  return applySponsorBlockSwitch(analysis);
+}
+
+async function resolveRawAnalysis(
+  videoId: string,
+): Promise<VideoAnalysis | null> {
+  const initial = applySponsorBlockSwitch(await fetchSegments(videoId));
   if (initial?.status === "ready") return initial;
   const stillCurrent = () => lastVideoId === videoId;
   // The transcript panel API first (no UI, works where YouTube's legacy
@@ -148,7 +158,7 @@ async function resolveAnalysis(videoId: string): Promise<VideoAnalysis | null> {
       transcript,
     })) as AnalyzeReply | undefined;
     if (res?.limit && stillCurrent()) {
-      // Keep the cached / community (SponsorBlock) result; say why once a day.
+      // Keep the cached result; say why once a day.
       limit = res.limit;
       if (res.announce) {
         const copy = limitCopy(res.limit);

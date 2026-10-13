@@ -25,13 +25,14 @@ Decision record: [ADR 0002](../adr/0002-api-hosting-devspeak-labs-cloud.md). Age
 | `PG_POOL_MAX` | service secret | `3` |
 | `INSTALLS_PER_IP_PER_HOUR` | service secret | `20` |
 | `CORS_ORIGIN` | service secret | unset until the store item exists, then `chrome-extension://<item id>` |
+| `SPONSORBLOCK_ENABLED` | (unset) | must stay unset or `0`: SponsorBlock data is CC BY-NC-SA. `/readyz` must report `sponsorblock: "off"` |
 | `NODE_ENV`, `PORT`, `GIT_COMMIT_SHA` | image | `production`, `3000`, the build commit |
 
 ## Check
 
 ```bash
 curl -s https://api-skipsponsor-main.cloud.devspeak.dev/api/health   # {status, service, version, commit, checks, time}
-curl -s https://api-skipsponsor-main.cloud.devspeak.dev/readyz       # persistence, redis, ai
+curl -s https://api-skipsponsor-main.cloud.devspeak.dev/readyz       # persistence, redis, ai, sponsorblock
 ```
 
 `/api/health` is `degraded` while `llm` is `down` (no AI key) or the cache is down, `down` (503) when Postgres does not answer.
@@ -68,4 +69,4 @@ After the first upload, set `CORS_ORIGIN=chrome-extension://<item id>` on `compu
 
 ## Cost guard rails
 
-- `LLM_DAILY_BUDGET_USD=0` turns every Claude call off at once; `insta --agent compute stop api` takes the API offline (the extension keeps playing videos and skipping community segments).
+- `LLM_DAILY_BUDGET_USD=0` turns every Claude call off at once; `insta --agent compute stop api` takes the API offline (the extension keeps playing videos; already-loaded segments still skip).
