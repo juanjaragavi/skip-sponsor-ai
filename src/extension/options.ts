@@ -2,6 +2,7 @@ import "@fontsource-variable/roboto";
 import "./ui/tokens.css";
 import "./options.css";
 import type { UserPolicy } from "../shared/types";
+import { renderCompanyCopyright } from "./company-copyright";
 import { brandMark } from "./ui/brand";
 import { icon, type IconName } from "./ui/icons";
 import { sameChannel } from "./policy";
@@ -316,6 +317,7 @@ function bind(): void {
 
 async function init(): Promise<void> {
   hydrateIcons();
+  renderCompanyCopyright($("#about-copyright"));
   [policy, labels, telemetryOn] = await Promise.all([
     loadPolicy(),
     loadChannelLabels(),

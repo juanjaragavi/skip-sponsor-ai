@@ -502,6 +502,14 @@ body {
 .link:hover {
   color: #b9aaff;
 }
+.link-inline {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.link-inline:hover,
+.link-inline:focus-visible {
+  color: var(--violet-strong);
+}
 
 .is-off #general .card__row:not(.card__row--split) {
   opacity: 0.45;

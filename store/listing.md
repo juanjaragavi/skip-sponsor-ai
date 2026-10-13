@@ -74,7 +74,7 @@ Support: https://github.com/juanjaragavi/skip-sponsor-ai/issues
 
 SkipSponsor AI is an independent project. It is not affiliated with or endorsed by YouTube or Google.
 
-© 2026 DevSpeak Labs
+© 2026 Devspeak S.A.S. · DevSpeak Labs
 ```
 
 ### Category
