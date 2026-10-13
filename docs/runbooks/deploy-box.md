@@ -56,6 +56,7 @@ Pre-pull before every deploy: a deploy that has to pull on its own can leave the
 | --- | --- | --- |
 | 2026-10-12 | `59e4c41` | first deploy on the box |
 | 2026-10-13 | `3628a1b` | SSRF allowlist matches the parsed host (`b75fbc7`): https only, no credentials, `youtube.com`/`*.youtube.com` `/api/timedtext` or exactly `sponsor.ajay.app` |
+| 2026-10-13 | `20687a1` | First-party promos reported as self-promo, never auto-skipped (`fc55059`); no `temperature` for Claude 5.x / Opus 4.7+ / unknown ids, so the Sonnet re-ask works (`f0bc002`, `8ecbbde`); `SPONSORBLOCK_ENABLED` off by default (`20687a1`): no SponsorBlock lookups, no transcript → `unanalyzable`. Health gate also requires `/readyz` `ai: configured` and `sponsorblock: off` |
 
 Migrations: `DATABASE_URL=<project url, sslmode=verify-full> npx tsx src/api/db/migrate-cli.ts` from a laptop (advisory-locked, ledgered, safe to re-run). Rollback: deploy the previous image tag.
 
