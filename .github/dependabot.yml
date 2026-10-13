@@ -24,6 +24,10 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 0.x: a minor bump is a breaking one. 0.0.268 -> 0.3.5 broke the e2e harness types
+      # (PR #2, 2026-10-13); bump it by hand with `npm run typecheck`.
+      - dependency-name: "@types/chrome"
+        update-types: ["version-update:semver-minor"]
   # Actions are SHA- or tag-pinned; one weekly PR with every bump (majors too: an action major is
   # usually a runtime bump and CI on the PR proves it).
   - package-ecosystem: github-actions
