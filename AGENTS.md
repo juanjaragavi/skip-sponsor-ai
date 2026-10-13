@@ -13,7 +13,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 - **LLM:** Anthropic `claude-haiku-4-5-20251001` (primary) / `claude-sonnet-5-5` (fallback). Source of truth: `MODEL_POLICY` in `src/shared/constants.ts`
 - **Persistence:** in-memory `MemorySegmentRepository` today (`getRepository()` in `src/api/repositories/segment-repository.ts`). PostgreSQL 16 + Redis 7 are provisioned (`infra/docker-compose.yml`, `infra/db/migrations/001_init.sql`, Terraform) and `pg` / `ioredis` are installed, but no repository uses them yet
 - **Infrastructure:** Docker 24, Terraform 1.9, AWS ECS Fargate + ALB
-- **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`: lint, typecheck, test with coverage, extension build) + ESLint + Prettier + Vitest + Playwright
+- **CI/CD:** GitHub Actions (`.github/workflows/ci-main.yml`: lint, typecheck, test with coverage, extension build) + ESLint + Prettier + Vitest + Playwright
 
 ## Development Workflow
 
@@ -96,7 +96,8 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 │   │   ├── service-worker.ts      # API calls, in-flight dedupe, install token
 │   │   ├── policy.ts              # decideSkip() policy engine + DEFAULT_POLICY
 │   │   ├── segments.ts            # isInSegment(), mergeSegments(), thresholdFilter()
-│   │   ├── transcript.ts          # Reads YouTube's transcript panel
+│   │   ├── innertube-transcript.ts # Transcript via YouTube's modern transcript panel API (get_panel, page context)
+│   │   ├── transcript.ts          # Fallback: reads the rendered transcript panel; cue building
 │   │   ├── video-adapter.ts       # VideoAdapter interface + DomVideoAdapter
 │   │   ├── skip-guard.ts          # Skip loop guard
 │   │   ├── settings.ts            # Policy in chrome.storage.sync
@@ -143,7 +144,7 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 │   └── docker-compose.yml         # Local dev (postgres + redis)
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                 # lint, typecheck, test --coverage, build:extension
+│       └── ci-main.yml            # lint, typecheck, test --coverage, build:extension
 ├── scripts/                       # build-icons.mjs, zip-extension.mjs, build-store-assets.py
 ├── package.json
 ├── tsconfig.json / tsconfig.api.json
@@ -161,6 +162,7 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 - No `any` without `// eslint-disable + justification`
 - Path aliases: `@/` → `src/`
 - Import order: third party → local (no React or Next.js in this repo)
+- **Company facts** (legal entity, copyright, brand link, contact email, JSON-LD organization) come from the private `devspeak-labs-company` repo through the generated `src/shared/company.generated.ts`; never hardcode entity, copyright or contact strings. To change one, edit `company.json` there, run `node scripts/sync.mjs`, and commit the regenerated file here.
 
 ### Content Script Architecture
 
@@ -199,6 +201,7 @@ See `src/shared/types.ts` for domain types:
 - **Sampling params:** `acceptsTemperature()` (`llm-client.ts`) sends `temperature: 0` only to Claude ≤ 4.6; Claude 5.x, Opus 4.7/4.8 and unknown ids get none (they answer 400). First-party promotions are returned as `selfpromo` (shown, never auto-skipped).
 - **Batching:** `LLM_BATCH_CUES` (350) caption cues per call with `LLM_BATCH_OVERLAP_CUES` (25) overlap; `chunkTranscript()` windows are 60s with 10s overlap
 - **Confidence threshold:** 0.78 default (range 0.5–0.95)
+- **Production-only providers:** OpenRouter and Cerebras are production-only fallbacks for users: code guards block them unless `VERCEL_ENV=production` (or the box prod flag), their keys live only in Production env, and agents never use them for development, tests or deployment. This repo calls neither today; a new path must add the guard.
 - **System prompt:** `SYSTEM_PROMPT` in `src/shared/constants.ts` (spec §5.4)
 
 ### Cache & Persistence
@@ -217,6 +220,8 @@ See `src/shared/types.ts` for domain types:
 - LLM mock returns fixed JSON
 - `VideoAdapter` stubbed for content-script testing
 - Route tests run in-process with `app.inject()` (`src/tests/unit/analyze-route.test.ts`)
+- Coverage gate: lines/branches/functions ≥80% (`vitest.config.ts`). Vitest 4 counts only files a test imports. Claude calls are tested via a fake `@anthropic-ai/sdk` (`llm-classify.test.ts`), DOM code via a stubbed `document`/`location` (`dom-video-adapter.test.ts`; no jsdom dependency), and Postgres/Redis wiring via fake clients (`persistence-postgres-wiring.test.ts`).
+- CI: `.github/workflows/ci-main.yml` on main pushes, PRs and `gh workflow run ci-main.yml`. The file was renamed from `ci.yml` on 2026-10-13 because the old registration (from the billing lock) never received push events.
 
 ### Contract Tests (Pact + Schemathesis — spec target, not implemented)
 
@@ -228,7 +233,7 @@ See `src/shared/types.ts` for domain types:
 
 - Load extension, play 3 fixture videos (pre-roll sponsor, mid-roll, no sponsor) against the fixture page and fake API in `src/tests/e2e/fixtures/`
 - Assert skip execution + undo toast rendering
-- Precision/recall gate before promotion
+- Precision/recall gate before promotion: ≥ 95% second-level and ≥ 90% segment precision at IoU 0.5 on ≥ 150 labeled videos before a store release (2026-10-13 spike; eval scripts live in the CTO scratch `ss-precision/`: `probe.mjs`, `eval.mts`, `score.py`)
 - After a Playwright version bump run `npx playwright install chromium`, or every E2E test fails with "Executable doesn't exist".
 
 ### Manual QA Checklist
@@ -267,7 +272,7 @@ See `src/shared/types.ts` for domain types:
 - **A01 Broken Access Control:** Least-privilege extension permissions, install-token validation
 - **A03 Injection:** Zod input validation; there is no ORM — SQL added to a repository must use parameterized `pg` queries
 - **A07 Cross-Site Scripting:** textContent only (no HTML injection), Shadow DOM isolation
-- **A09 Components w/ Known Vulnerabilities:** Dependabot + `npm audit` gate (spec target; `ci.yml` does not run it and no Dependabot config exists yet)
+- **A09 Components w/ Known Vulnerabilities:** Dependabot + `npm audit` gate (spec target; `ci-main.yml` does not run `npm audit`; Dependabot runs weekly from `.github/dependabot.yml`)
 - **A10 SSRF:** Allowlist enforcement (`assertFetchAllowed()` in `src/api/services/transcript-fetcher.ts`) — server fetches only `*.youtube.com/api/timedtext*` and `sponsor.ajay.app`. `sponsor.ajay.app` is only contacted when `SPONSORBLOCK_ENABLED=1`.
 
 ## Performance Targets
@@ -307,6 +312,7 @@ Spec §7 targets. Only Fastify's pino request logging exists in code today; Prom
 ### Release & Rollback
 
 - Semantic versioning (major.minor.patch)
+- The box API is redeployed with a pre-pull and a health gate (`commit` and `status: ok`), with automatic rollback (`docs/runbooks/deploy-box.md`).
 - Staged rollout: 5% → 50% → 100% via Chrome Web Store
 - Kill-switch: `GET /v1/config` flag `globalKill` (env `GLOBAL_KILL=1`) disables auto-skip in <5min without extension update. `decideSkip()` honors it, but the content script still passes `globalKill: false`; wire the fetched flag through before relying on it
 
