@@ -4,7 +4,7 @@
   <p><strong>Skip sponsor reads inside YouTube videos. AI reads the captions, marks the sponsor segment, and jumps past it — with one-click Undo.</strong></p>
   <p>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
-    <a href="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci.yml"><img src="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+    <a href="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci-main.yml"><img src="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci-main.yml/badge.svg" alt="CI" /></a>
     <img src="https://img.shields.io/badge/Chrome-116%2B-blue?logo=googlechrome&logoColor=white" alt="Chrome 116+" />
     <img src="https://img.shields.io/badge/Manifest-V3-green" alt="Manifest V3" />
     <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome" /></a>

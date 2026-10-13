@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Manual re-runs: gh workflow run ci.yml -R juanjaragavi/skip-sponsor-ai
+  # Manual re-runs: gh workflow run ci-main.yml -R juanjaragavi/skip-sponsor-ai
   workflow_dispatch:
 permissions:
   contents: read
