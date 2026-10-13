@@ -66,13 +66,28 @@ export function stripJsonFence(text: string): string {
 }
 
 /**
- * Claude 5.x models reject `temperature` (400 "`temperature` is deprecated
- * for this model", verified live 2026-10-13 for claude-sonnet-5-5 and
- * claude-haiku-5-5). Before this check the Sonnet re-ask always failed and
- * the Haiku answer was kept silently.
+ * Newer Claude models reject `temperature` (400 "`temperature` is deprecated
+ * for this model"). Live probe 2026-10-13: Claude 5.x and Opus 4.7/4.8 reject
+ * it; 4.6 and older accept it. Before this check the Sonnet re-ask always
+ * failed and the Haiku answer was kept silently.
+ *
+ * Allowlist, not denylist: only ids known to be Claude 4.6 or older get
+ * temperature 0. Unknown ids get no sampling params, because a missing
+ * temperature only costs determinism while a rejected one fails the call.
  */
 export function acceptsTemperature(model: string): boolean {
-  return !/^claude-(haiku|sonnet|opus)-5\b/.test(model);
+  // claude-3-5-sonnet-20241022, claude-3-haiku-20240307, claude-2.1, …
+  if (/^claude-(?:[0-3](?:[-.]\d)?-[a-z]|[0-2](?:\.\d)?$|instant)/.test(model))
+    return true;
+  // claude-<family>-<major>[-<minor>][-<yyyymmdd>|@<date>|-latest]
+  const m = /^claude-(?:haiku|sonnet|opus)-(\d+)(?:-(\d+))?(?=$|[-@])/.exec(
+    model,
+  );
+  if (!m) return false;
+  const major = Number(m[1]);
+  // A long second number is a snapshot date (claude-sonnet-4-20250514), not a minor.
+  const minor = m[2] && m[2].length <= 2 ? Number(m[2]) : 0;
+  return major < 4 || (major === 4 && minor <= 6);
 }
 
 /** Token usage of one Claude call; feeds the daily budget (cost-guard.ts). */
@@ -183,10 +198,14 @@ export interface ClassifyResult {
   model: string;
 }
 
-type CallFn = (
+export type CallFn = (
   model: string,
   cues: LlmChunk[],
 ) => Promise<LlmSegmentCandidate[]>;
+
+/** The production call: concurrency limit → circuit breaker → retried Claude request. */
+export const liveCall: CallFn = (m, c) =>
+  limited(() => breaker.fire(m, c) as Promise<LlmSegmentCandidate[]>);
 
 /** Run every batch; tolerate partial failure, throw only if all batches fail. */
 async function runBatches(
@@ -212,8 +231,7 @@ async function runBatches(
  */
 export async function classifyChunks(
   chunks: LlmChunk[][],
-  call: CallFn = (m, c) =>
-    limited(() => breaker.fire(m, c) as Promise<LlmSegmentCandidate[]>),
+  call: CallFn = liveCall,
 ): Promise<ClassifyResult> {
   const cues = dedupeCues(chunks);
   const batches = batchCues(cues, LLM_BATCH_CUES, LLM_BATCH_OVERLAP_CUES);

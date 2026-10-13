@@ -214,6 +214,39 @@ describe("classifyChunks (Claude call path)", () => {
     expect(acceptsTemperature("claude-opus-5-5")).toBe(false);
   });
 
+  it("treats Opus 4.7/4.8 and unknown Claude ids as rejecting sampling params", () => {
+    // Live probe 2026-10-13: Claude 5.x and Opus 4.7/4.8 answer 400 to
+    // `temperature`; 4.6 and older accept it. Unknown ids get no sampling
+    // params: a missing temperature only costs determinism, a rejected one
+    // fails the whole call.
+    for (const id of [
+      "claude-haiku-4-5-20251001",
+      "claude-haiku-4-5",
+      "claude-sonnet-4-6",
+      "claude-opus-4-6",
+      "claude-opus-4-1-20250805",
+      "claude-sonnet-4-20250514",
+      "claude-opus-4-20250514",
+      "claude-sonnet-4-5@20250929",
+      "claude-3-5-sonnet-20241022",
+      "claude-3-7-sonnet-latest",
+      "claude-3-haiku-20240307",
+    ])
+      expect(acceptsTemperature(id), id).toBe(true);
+    for (const id of [
+      "claude-opus-4-7",
+      "claude-opus-4-8",
+      "claude-opus-4-7-20260115",
+      "claude-sonnet-4-7",
+      "claude-sonnet-5-5-20260901",
+      "claude-haiku-6",
+      "claude-mythos-1",
+      "claude-next",
+      "",
+    ])
+      expect(acceptsTemperature(id), id).toBe(false);
+  });
+
   it("never runs more than three Claude calls at once", async () => {
     // 1,700 distinct cues → 6 overlapping batches of 350.
     const long: LlmChunk[] = Array.from({ length: 1700 }, (_, i) => ({
