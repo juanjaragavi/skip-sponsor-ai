@@ -17,7 +17,7 @@ Decision record: [ADR 0002](../adr/0002-api-hosting-devspeak-labs-cloud.md). Age
 | --- | --- | --- |
 | `DATABASE_URL`, `REDIS_URL` | injected by the box | the project's Postgres and Redis |
 | `INSTALL_TOKEN_SECRET` | service secret | generated (`openssl rand -base64 48`) |
-| `ANTHROPIC_API_KEY` | service secret | **pending owner**: `notes/cto/runbooks/set-skipsponsor-anthropic-key-box.sh` |
+| `ANTHROPIC_API_KEY` | service secret | set by the owner (`notes/cto/runbooks/set-skipsponsor-anthropic-key-box.sh`); `/api/health` reports `llm: ok` |
 | `TRUST_PROXY` | service secret | `1` (the box edge is in front) |
 | `LLM_DAILY_BUDGET_USD` | service secret | `2` |
 | `DAILY_ANALYSES_PER_INSTALL` | service secret | `25` |
@@ -43,9 +43,18 @@ npm ci && npm run verify
 docker buildx build --platform linux/amd64 --build-arg GIT_COMMIT_SHA=$(git rev-parse --short=7 HEAD) \
   -f infra/Dockerfile.api -t <registry>/skipsponsor-api:<sha> --load .
 docker push <registry>/skipsponsor-api:<sha>
-# on the box host: docker pull <registry>/skipsponsor-api:<sha>
+# on the box host, as root over SSM (the box cannot log in to ECR by itself):
+#   aws ecr get-login-password | docker login --username AWS --password-stdin <registry>
+#   docker pull <registry>/skipsponsor-api:<sha>
 insta --agent deploy --image <registry>/skipsponsor-api:<sha> --group api --port 3000
 ```
+
+Pre-pull before every deploy: a deploy that has to pull on its own can leave the API down while the pull runs. After the deploy, `/api/health` must report the new `commit` with `status: ok`; otherwise deploy the previous tag again.
+
+| Date | Image | Change |
+| --- | --- | --- |
+| 2026-10-12 | `59e4c41` | first deploy on the box |
+| 2026-10-13 | `3628a1b` | SSRF allowlist matches the parsed host (`b75fbc7`): https only, no credentials, `youtube.com`/`*.youtube.com` `/api/timedtext` or exactly `sponsor.ajay.app` |
 
 Migrations: `DATABASE_URL=<project url, sslmode=verify-full> npx tsx src/api/db/migrate-cli.ts` from a laptop (advisory-locked, ledgered, safe to re-run). Rollback: deploy the previous image tag.
 
