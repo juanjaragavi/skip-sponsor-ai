@@ -11,7 +11,7 @@ export function candidatesToSegments(
   return candidates
     .filter(
       (c) =>
-        c.category === "sponsor" &&
+        (c.category === "sponsor" || c.category === "selfpromo") &&
         Number.isFinite(c.start) &&
         Number.isFinite(c.end) &&
         c.end > c.start &&

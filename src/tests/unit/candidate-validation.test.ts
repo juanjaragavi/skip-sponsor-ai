@@ -128,6 +128,23 @@ describe("validateCandidates", () => {
       ];
       expect(validateCandidates([first({})], withContent)).toHaveLength(1);
     });
+    it("reports first-party breaks as self-promo, third-party reads as sponsor", () => {
+      const withContent: LlmChunk[] = [
+        ...longCues,
+        ...Array.from({ length: 24 }, (_, i) => ({
+          t0: 80 + i * 10,
+          t1: 90 + i * 10,
+          text: `more content ${i}`,
+        })),
+      ];
+      const [own] = validateCandidates([first({})], withContent);
+      expect(own?.category).toBe("selfpromo");
+      const [paid] = validateCandidates(
+        [first({ relationship: "third_party_sponsor", advertiser: "Acme" })],
+        withContent,
+      );
+      expect(paid?.category).toBe("sponsor");
+    });
     it("rejects one that does not break from the content", () => {
       expect(
         validateCandidates([first({ breaksFromContent: false })], longCues),

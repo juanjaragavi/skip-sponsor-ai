@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { decideSkip, DEFAULT_POLICY } from "../../extension/policy";
 import {
   candidatesToSegments,
   dedupeOverlapping,
@@ -75,6 +76,22 @@ describe("candidatesToSegments", () => {
     ]);
     expect(segs).toHaveLength(1);
     expect(segs[0]!.startTime).toBe(10);
+  });
+
+  it("keeps validated self-promo (shown, never auto-skipped) and drops other categories", () => {
+    const segs = candidatesToSegments("dQw4w9WgXcQ", null, "claude-haiku", [
+      { start: 10, end: 70, category: "selfpromo", confidence: 0.9 },
+      { start: 100, end: 160, category: "intro", confidence: 0.9 },
+    ]);
+    expect(segs.map((s) => [s.category, s.startTime])).toEqual([
+      ["selfpromo", 10],
+    ]);
+    expect(
+      decideSkip(DEFAULT_POLICY, segs[0]!, null, {
+        globalKill: false,
+        userOverridden: false,
+      }),
+    ).toEqual({ shouldSkip: false, reason: "category-not-skippable" });
   });
 });
 

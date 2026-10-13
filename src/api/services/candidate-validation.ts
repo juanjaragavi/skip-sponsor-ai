@@ -126,6 +126,8 @@ export function trimEndToSpeech(
 /**
  * Accept only well-formed, evidence-backed sponsor segments and align them to
  * real cue boundaries. Guards against invented or oversized detections.
+ * Third-party reads come back as "sponsor"; first-party ad breaks as
+ * "selfpromo" (shown, not skipped).
  */
 export function validateCandidates(
   candidates: readonly LlmSegmentCandidate[],
@@ -177,7 +179,16 @@ export function validateCandidates(
         .join(" "),
     );
     if (!evidenceSupported(c.evidence, text)) continue;
-    out.push({ ...c, start: range.start, end: range.end });
+    // Creator self-promotion is reported but never auto-skipped: in the
+    // 2026-10-13 precision eval the only long real-content false skip came
+    // from a first-party candidate that stitched two separate plugs together.
+    // The extension skips "sponsor" only (decideSkip).
+    out.push({
+      ...c,
+      category: relationship === "first_party" ? "selfpromo" : "sponsor",
+      start: range.start,
+      end: range.end,
+    });
   }
   return out;
 }
