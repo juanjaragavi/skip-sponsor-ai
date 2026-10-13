@@ -100,6 +100,7 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 │   │   ├── video-adapter.ts       # VideoAdapter interface + DomVideoAdapter
 │   │   ├── skip-guard.ts          # Skip loop guard
 │   │   ├── settings.ts            # Policy in chrome.storage.sync
+│   │   ├── sponsorblock-gate.ts   # Extension SponsorBlock switch (default off)
 │   │   ├── view-model.ts          # UI view models
 │   │   ├── toast.ts               # Shadow DOM toast UI
 │   │   ├── popup.{html,ts,css}    # Toolbar popup
@@ -119,7 +120,7 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 │   │   │   ├── candidate-validation.ts
 │   │   │   ├── gap-corroboration.ts
 │   │   │   ├── segment-classifier.ts
-│   │   │   ├── sponsorblock.ts    # SponsorBlock fallback
+│   │   │   ├── sponsorblock.ts    # SponsorBlock fallback (off unless SPONSORBLOCK_ENABLED)
 │   │   │   └── transcript-fetcher.ts  # SSRF allowlist + timedtext fetch
 │   │   └── repositories/
 │   │       └── segment-repository.ts   # SegmentRepository interface + in-memory impl
@@ -195,6 +196,7 @@ See `src/shared/types.ts` for domain types:
 
 - **Model policy:** Haiku primary (0.8s, 1/5 cost), Sonnet fallback for ambiguous (0.55–0.78 confidence, `MODEL_POLICY.reviewBand`)
 - **Temperature:** 0 (deterministic JSON)
+- **Sampling params:** `acceptsTemperature()` (`llm-client.ts`) sends `temperature: 0` only to Claude ≤ 4.6; Claude 5.x, Opus 4.7/4.8 and unknown ids get none (they answer 400). First-party promotions are returned as `selfpromo` (shown, never auto-skipped).
 - **Batching:** `LLM_BATCH_CUES` (350) caption cues per call with `LLM_BATCH_OVERLAP_CUES` (25) overlap; `chunkTranscript()` windows are 60s with 10s overlap
 - **Confidence threshold:** 0.78 default (range 0.5–0.95)
 - **System prompt:** `SYSTEM_PROMPT` in `src/shared/constants.ts` (spec §5.4)
@@ -227,12 +229,13 @@ See `src/shared/types.ts` for domain types:
 - Load extension, play 3 fixture videos (pre-roll sponsor, mid-roll, no sponsor) against the fixture page and fake API in `src/tests/e2e/fixtures/`
 - Assert skip execution + undo toast rendering
 - Precision/recall gate before promotion
+- After a Playwright version bump run `npx playwright install chromium`, or every E2E test fails with "Executable doesn't exist".
 
 ### Manual QA Checklist
 
 - [ ] Per-channel allow/blocklist persistence
 - [ ] Notify-mode banner display
-- [ ] No-captions fallback (SponsorBlock API read-only)
+- [ ] No captions → popup says "Couldn't analyze this video" and nothing is skipped (`SPONSORBLOCK_ENABLED` / `VITE_SPONSORBLOCK_ENABLED` are off by default; turn on only with written permission from SponsorBlock)
 - [ ] Undo functionality (restores `startTime - 1.0s` within 100ms)
 - [ ] Settings propagation <500ms
 
@@ -265,7 +268,7 @@ See `src/shared/types.ts` for domain types:
 - **A03 Injection:** Zod input validation; there is no ORM — SQL added to a repository must use parameterized `pg` queries
 - **A07 Cross-Site Scripting:** textContent only (no HTML injection), Shadow DOM isolation
 - **A09 Components w/ Known Vulnerabilities:** Dependabot + `npm audit` gate (spec target; `ci.yml` does not run it and no Dependabot config exists yet)
-- **A10 SSRF:** Allowlist enforcement (`assertFetchAllowed()` in `src/api/services/transcript-fetcher.ts`) — server fetches only `*.youtube.com/api/timedtext*` and `sponsor.ajay.app`
+- **A10 SSRF:** Allowlist enforcement (`assertFetchAllowed()` in `src/api/services/transcript-fetcher.ts`) — server fetches only `*.youtube.com/api/timedtext*` and `sponsor.ajay.app`. `sponsor.ajay.app` is only contacted when `SPONSORBLOCK_ENABLED=1`.
 
 ## Performance Targets
 
