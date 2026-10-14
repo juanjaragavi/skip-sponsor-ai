@@ -439,7 +439,7 @@ test("options › About: version, links and live service status", async ({
   await h.openPath("/");
   const options = await openOptions(h);
   await options.locator(".nav__item", { hasText: "About" }).click();
-  await expect(options.locator("#version")).toHaveText("Version 1.0.0");
+  await expect(options.locator("#version")).toHaveText("Version 1.1.0");
   await expect(options.locator("#service-status")).toHaveText("Online");
   await expect(options.locator("#service-host")).toHaveText(
     "Connected to 127.0.0.1:39517",
