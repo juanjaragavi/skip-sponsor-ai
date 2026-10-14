@@ -4,6 +4,12 @@ SkipSponsor AI follows semantic versioning (major.minor.patch). The extension
 version lives in `package.json` and `src/extension/manifest.json`;
 `scripts/zip-extension.mjs` refuses a store package when they differ.
 
+## [Unreleased]
+
+- Popup and Options: every clickable control shows the pointer cursor, and
+  disabled controls (and their labels) show not-allowed (`src/extension/ui/tokens.css`,
+  engineering standard ES-6.6).
+
 ## 1.1.0 — 2026-10-14 (first Chrome Web Store submission)
 
 1.0.0 was never published. 1.1.0 is a minor bump because the extension gained

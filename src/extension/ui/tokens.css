@@ -46,6 +46,39 @@ button {
   cursor: pointer;
 }
 
+/*
+ * Pointer cursor on everything clickable (ES-6.6, 2026-10-14): native controls
+ * and ARIA widgets show the pointer, disabled ones show not-allowed. Guarded by
+ * src/tests/unit/cursor-pointer.test.ts and src/tests/e2e/cursor-pointer.spec.ts.
+ */
+[role="button"],
+[role="switch"],
+[role="radio"],
+[role="checkbox"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+summary,
+select,
+label[for],
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"],
+:disabled + label,
+[aria-disabled="true"] + label,
+label:has(+ :disabled),
+label:has(:disabled) {
+  cursor: not-allowed;
+}
+
 :focus-visible {
   outline: 2px solid var(--violet-strong);
   outline-offset: 2px;
