@@ -202,7 +202,7 @@ file in place with a link to the new page and update the dashboard field.
 | Payments | Free, no in-app purchases |
 | Visibility | Public (or Unlisted for a short closed beta first) |
 | Regions | All regions |
-| Trader status (EU Digital Services Act) | Owner's answer: Devspeak S.A.S. is a company offering the product commercially, so it is most likely a trader; the dashboard then asks for the company's address, phone and email, which are shown on the listing |
+| Trader status (EU Digital Services Act) | Owner's answer. Devspeak S.A.S. offers the product as a company, so "trader" is the likely answer; have the company's address, phone and email ready |
 
 ## 5. Test instructions tab
 
