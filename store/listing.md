@@ -1,12 +1,12 @@
-# Chrome Web Store submission — SkipSponsor AI 1.0.0
+# Chrome Web Store submission — SkipSponsor AI 1.1.0
 
 Everything the Developer Dashboard asks for, in dashboard order. Paste the
-fenced blocks as-is. Assets live next to this file in `store/`.
+fenced blocks as they are. Assets live next to this file in `store/`. The
+step-by-step walkthrough for the owner is in the CTO notes
+(`notes/cto/runbooks/2026-10-14-skipsponsor-cws-guide.md`).
 
-> **Before you submit:** work through the checklist in
-> [Release blockers](#release-blockers). Production builds fail without an
-> https `VITE_API_BASE_URL`, and the package script refuses a store ZIP that
-> points at a local or placeholder API.
+Requirements were checked live on developer.chrome.com on 2026-10-14 (sources
+at the end of this file).
 
 ---
 
@@ -14,34 +14,40 @@ fenced blocks as-is. Assets live next to this file in `store/`.
 
 | Field | Value |
 | --- | --- |
-| Upload | `release/skipsponsor-ai-1.0.0.zip` (built by `npm run package:extension`) |
+| Upload | `release/skipsponsor-ai-1.1.0.zip`, built by `npm run package:store` (production API, store checks in `scripts/zip-extension.mjs`) |
 | Manifest version | 3 |
-| Version | `1.0.0` |
+| Version | `1.1.0` |
 | Minimum Chrome | 116 |
+| Permissions | `storage` only |
+| Host permissions | `https://www.youtube.com/*` only |
+| Remote code | none (all JavaScript ships in the package; CSP `script-src 'self'; object-src 'self'`) |
 
-## 2. Store listing
+The ZIP is not committed (`release/` is gitignored). Rebuild it from the
+release commit with `npm ci && npm run package:store`.
 
-### Name (max 75)
+## 2. Store listing tab
+
+### Name (from the manifest, max 75)
 
 ```text
 SkipSponsor AI
 ```
 
-### Summary (max 132) — shown on the tile and in search
+### Summary (from the manifest `description`, max 132; not editable in the dashboard)
 
 ```text
-Skip sponsor reads inside YouTube videos. AI reads the captions, marks the sponsor segment, and jumps past it, with one-click Undo.
+Skip sponsor reads inside YouTube videos. Reads the captions, marks the sponsor segment, and jumps past it, with one-click Undo.
 ```
 
 ### Description (max 16,000)
 
 ```text
-SkipSponsor AI skips the sponsor reads inside YouTube videos, the "this video is sponsored by…" part, so you get straight back to the content.
+SkipSponsor AI skips the sponsor reads inside YouTube videos, the "this video is sponsored by…" part, so you get back to the content.
 
 HOW IT WORKS
-• When you open a video, SkipSponsor AI reads its captions and finds where a sponsor read starts and ends.
+• When you open a video, SkipSponsor AI reads its captions and an AI model finds where a sponsor read starts and ends.
 • When playback reaches that range, it jumps past it.
-• A small note appears in the player: "CUT 03:42 → 04:22 · Sponsor · 40s skipped". Press Undo to go back and watch it.
+• A small note appears in the player, for example "CUT 00:06 → 00:43 · Sponsor · 37s skipped". Press Undo to go back and watch it.
 
 YOU'RE IN CONTROL
 • Auto-skip: jumps past sponsor reads automatically.
@@ -49,76 +55,87 @@ YOU'RE IN CONTROL
 • Off: sponsor reads play normally.
 • Cut threshold: choose how sure the AI must be before it acts (50–95%). The slider shows this video's detected segments, so you can see what will be cut.
 • Don't skip this channel: support creators whose reads you want to hear. Manage the list in Settings.
-• Changes apply instantly to the video that's playing. No reload.
+• Changes apply to the video that's playing, without a reload.
 
 SEE WHAT IT FOUND
-Open the toolbar popup to see the current video's timeline and an edit list of every detected segment: what was cut, what was kept, and the AI's confidence for each.
+Open the toolbar popup to see the current video's timeline and a list of every detected segment: what was cut, what will be cut, and the AI's confidence for each.
 
-WORKS IN ANY LANGUAGE
-Reads the video's caption track, auto-generated or uploaded, in any language. Videos without captions aren't analyzed: the extension says so and the video plays normally.
+WHAT IT SKIPS, AND WHAT IT DOESN'T
+• It skips paid sponsor reads inside videos.
+• A creator's promotion of their own products or channels is not skipped.
+• It doesn't block YouTube's own ads, and it doesn't skip intros, outros, or reminders to subscribe.
+• Videos without captions aren't analyzed: the extension says so and the video plays normally.
+• It works with auto-generated and uploaded captions. It has been tested on English, Spanish, Portuguese, German and French videos.
+• The AI can be a few seconds off at the edges of a sponsor read. Undo is always one click away.
 
-PRIVATE BY DESIGN
-• Only caption text is analyzed, never audio.
-• No account, no sign-in, no personal data.
-• Results are cached per video for 30 days, then deleted.
-• Runs only on www.youtube.com, with a single extra permission (storage).
+WHAT IS SENT, AND WHERE
+• To find sponsor reads, the extension sends the YouTube video ID and, for videos that haven't been analyzed yet, the video's caption text to the SkipSponsor AI server. The server asks Anthropic's Claude API to classify the caption text.
+• It also sends an anonymous install token (for rate limiting and the daily allowance) and, unless you turn it off in Settings › Privacy, skip and undo events with the video ID.
+• Never audio or video. No account, no sign-in, no name or email. It runs only on www.youtube.com, with one extra permission (storage).
+• Results are stored per video, not per person, and deleted after 30 days. Data is never sold or used for advertising.
 
 FREE TO USE
-SkipSponsor AI is free, with no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed load instantly and don't count. If the allowance runs out, already-analyzed videos keep skipping until it resets.
-
-WHAT IT DOESN'T DO
-SkipSponsor AI skips sponsor segments inside videos. It doesn't block YouTube's own ads, and it doesn't skip intros, outros, or reminders to subscribe.
+SkipSponsor AI is free and needs no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed don't count toward it. If the allowance runs out, already-analyzed videos keep skipping until it resets.
 
 Privacy policy: https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md
-Support: https://github.com/juanjaragavi/skip-sponsor-ai/issues
+Support: info@devspeak.dev · https://github.com/juanjaragavi/skip-sponsor-ai/issues
 
-SkipSponsor AI is an independent project. It is not affiliated with or endorsed by YouTube or Google.
+SkipSponsor AI is an independent product of Devspeak S.A.S. It is not affiliated with or endorsed by YouTube or Google.
 
 © 2026 Devspeak S.A.S. · DevSpeak Labs
 ```
 
 ### Category
 
-`Productivity › Tools` (alternative: `Lifestyle › Entertainment`)
+`Productivity › Tools` (alternative: `Lifestyle › Entertainment`). Pick the
+closest match in the dashboard dropdown; the category list is not published in
+the docs.
 
 ### Language
 
-English (United States)
+English (United States). The extension UI is English only.
 
 ### Graphic assets
 
 | Dashboard slot | File | Size | Notes |
 | --- | --- | --- | --- |
-| Store icon | `store/store-icon-128.png` | 128×128 | 96px art + 16px transparent padding |
-| Screenshot 1 | `store/screenshots/01-skip-sponsor-reads.png` | 1280×800 | "Skip sponsor reads automatically" |
-| Screenshot 2 | `store/screenshots/02-undo.png` | 1280×800 | "Changed your mind? Undo." |
-| Screenshot 3 | `store/screenshots/03-auto-notify-off.png` | 1280×800 | "Auto, Notify, or Off" |
-| Screenshot 4 | `store/screenshots/04-any-language.png` | 1280×800 | "Works in any language" |
-| Screenshot 5 | `store/screenshots/05-private-by-design.png` | 1280×800 | "Private by design" |
-| Small promo tile | `store/promo/small-tile-440x280.png` | 440×280 | Required |
-| Marquee promo tile | `store/promo/marquee-1400x560.png` | 1400×560 | Optional (needed for featuring) |
+| Store icon | `store/store-icon-128.png` | 128×128 PNG | 96 px art + 16 px transparent padding (store guideline) |
+| Screenshot 1 | `store/screenshots/01-skips-sponsor-reads.png` | 1280×800 | The cut note with Undo, right after a real skip (JayzTwoCents video, sponsor read 00:06 → 00:43) |
+| Screenshot 2 | `store/screenshots/02-see-what-it-found.png` | 1280×800 | The toolbar popup for the same video: timeline, two detected segments, mode, threshold |
+| Screenshot 3 | `store/screenshots/03-notify-mode.png` | 1280×800 | Notify mode: the Skip button during a real sponsor read (Fireship video, 04:57 → 05:50) |
+| Screenshot 4 | `store/screenshots/04-settings.png` | 1280×800 | Settings › General |
+| Screenshot 5 | `store/screenshots/05-privacy.png` | 1280×800 | Settings › Privacy, including who is responsible for the data |
+| Small promo tile | `store/promo/small-tile-440x280.png` | 440×280 | Required. Brand art, no claims |
+| Marquee promo tile | _(do not upload yet)_ | 1400×560 | Optional. `store/promo/marquee-1400x560.png` shows a designed player mock and an "Any language" badge that is broader than what was tested; redraw it before using it |
 
-All screenshots and tiles are 24-bit PNG with no alpha channel, as the store
-requires. Extra brand files that are not uploaded to the store: 16:9 showcase
-images in `store/showcase/` (YouTube promo-video cover, README, social media)
-and logo files in `brand/`.
+**How the screenshots were made.** Real captures of the packaged extension
+(the exact `release/skipsponsor-ai-1.1.0.zip`, unzipped and loaded unpacked in
+Playwright's Chromium, logged out) on public YouTube watch pages, against the
+production API, on 2026-10-14. Nothing in them is drawn or edited.
+Screenshot 2 places the popup, rendered by the extension at its real size, at
+the top right of the page where Chrome opens it; the Chrome toolbar itself is
+not in the picture. All images are 24-bit RGB PNG without alpha. The pages are
+YouTube's own, so they show YouTube's own sidebar ads.
 
 ### Additional fields
 
 | Field | Value |
 | --- | --- |
-| Official URL | _(optional: needs a verified domain in Search Console)_ |
+| Official URL | _(leave empty: needs a domain verified in Google Search Console)_ |
 | Homepage URL | `https://github.com/juanjaragavi/skip-sponsor-ai` |
 | Support URL | `https://github.com/juanjaragavi/skip-sponsor-ai/issues` |
-| YouTube promo video | _(optional: use `store/showcase/showcase-1920x1080.png` as the cover)_ |
+| YouTube video | _(optional; none yet)_ |
 | Mature content | No |
+
+The support email shown on the listing is the account's verified contact
+email: set it to `info@devspeak.dev` on the Account page.
 
 ## 3. Privacy practices tab
 
 ### Single purpose description
 
 ```text
-SkipSponsor AI has a single purpose: skipping sponsor reads inside YouTube videos. It reads a video's caption text to find where a sponsor read starts and ends, then seeks the YouTube player past that range, or shows a Skip button in Notify mode.
+SkipSponsor AI has a single purpose: skipping paid sponsor reads inside YouTube videos. It reads the caption text of the video being watched to find where a sponsor read starts and ends, then seeks the YouTube player past that range, or shows a Skip button in Notify mode.
 ```
 
 ### Permission justifications
@@ -126,40 +143,36 @@ SkipSponsor AI has a single purpose: skipping sponsor reads inside YouTube video
 **`storage`**
 
 ```text
-Saves the user's settings (on/off, Auto-skip/Notify/Off mode, confidence threshold, and the channels where skipping is turned off), an anonymous install token used for rate limiting and the free daily analysis allowance, and a note of the last daily-limit notice shown so it appears only once. Nothing else is stored.
+Saves the user's settings (on/off, Auto-skip/Notify/Off mode, confidence threshold, the channels where skipping is turned off, and whether skip statistics are shared) with chrome.storage.sync, and an anonymous install token plus a note of the last daily-limit notice with chrome.storage.local. The token is used for rate limiting and the free daily allowance of new analyses. Nothing else is stored.
 ```
 
 **Host permission `https://www.youtube.com/*`**
 
 ```text
-The content script runs on YouTube pages to read the open video's caption text, track playback time, seek past detected sponsor segments, and show the Undo and Skip overlays in the player. It is injected on all www.youtube.com pages, not just /watch, because YouTube changes pages without reloading: a user who starts on the home page and clicks a video would otherwise get no skipping until they reload. No other sites are accessed.
+The content scripts run on YouTube pages to read the open video's captions (the same transcript YouTube shows under the video), track playback time, seek past detected sponsor segments, and show the Undo and Skip notes in the player. They are injected on all www.youtube.com pages, not only /watch, because YouTube changes pages without reloading: a user who starts on the home page and clicks a video would otherwise get no skipping until they reload. No other site is accessed. The popup reads the URL of the YouTube tab, which this host permission allows, so no tabs permission is requested.
 ```
 
 ### Remote code
 
+Select **"No, I am not using remote code."**
+
 ```text
-No, I am not using remote code.
+All JavaScript ships inside the package. The extension pages' Content Security Policy is script-src 'self'; object-src 'self'. The backend returns JSON data only (segment start and end times, category and confidence).
 ```
 
-All JavaScript ships inside the package. The extension pages' Content Security
-Policy is `script-src 'self'; object-src 'self'`. The backend returns JSON data
-(segment start and end times) only.
+### Data usage: what the extension collects
 
-### Data usage — what the extension collects
-
-Tick these boxes:
-
-| Category | Collected? | What and why |
+| Category | Tick? | What and why |
 | --- | --- | --- |
-| Personally identifiable information | **No** | |
+| Personally identifiable information | **No** | No name, email, address or account |
 | Health information | **No** | |
-| Financial and payment information | **No** | |
-| Authentication information | **No** | The install token is random, not a credential the user knows or chose |
+| Financial and payment information | **No** | Free, no payments |
+| Authentication information | **No** | The install token is a random value issued by the server, not a credential the user knows or chose |
 | Personal communications | **No** | |
-| Location | **No** | |
-| Web history | **Yes** | YouTube video IDs of watched videos are sent to the backend to fetch that video's segments |
-| User activity | **Yes** | Skip and Undo events (with video ID and latency) are sent to measure accuracy |
-| Website content | **Yes** | Caption text of the YouTube video being watched is sent for analysis |
+| Location | **No** | No location is derived; the IP address is used in memory for rate limiting only |
+| Web history | **Yes** | The YouTube video ID of each watched video is sent to fetch that video's segments |
+| User activity | **Yes** | Skip, undo and "player jumped back" events (with the video ID and latency) are sent to measure accuracy; the user can turn this off in Settings › Privacy |
+| Website content | **Yes** | The caption text of the YouTube video being watched is sent for analysis |
 
 ### Certifications (tick all three)
 
@@ -167,75 +180,68 @@ Tick these boxes:
 - [x] I do not use or transfer user data for purposes that are unrelated to my item's single purpose
 - [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
 
+These match `PRIVACY.md` (version 2026-10-14). The store requires the
+dashboard answers, the privacy policy and the extension's behaviour to agree.
+
 ### Privacy policy URL
 
 ```text
 https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md
 ```
 
-## 4. Distribution
+Why this URL: the repository is public, the file lives on `main` with its full
+version history, it needs no login, and it does not depend on our own hosting
+or DNS. The extension's Settings › Privacy and About pages link to the same
+URL. If the policy moves later (for example to labs.devspeak.dev), keep this
+file in place with a link to the new page and update the dashboard field.
+
+## 4. Distribution tab
 
 | Field | Recommendation |
 | --- | --- |
-| Visibility | Public (or Unlisted for a closed beta first) |
+| Payments | Free, no in-app purchases |
+| Visibility | Public (or Unlisted for a short closed beta first) |
 | Regions | All regions |
-| Pricing | Free |
-| Staged rollout | Start at 5%, then 50% and 100% (see "Release & Rollback" in `AGENTS.md`) |
+| Trader status (EU Digital Services Act) | Owner's answer: Devspeak S.A.S. is a company offering the product commercially, so it is most likely a trader; the dashboard then asks for the company's address, phone and email, which are shown on the listing |
 
-## 5. Test instructions for the reviewer
+## 5. Test instructions tab
 
 ```text
-No login or account is needed.
+No login or account is needed. The two videos below are already analyzed on our server, so the result appears within a few seconds.
 
-1. Install the extension and open https://www.youtube.com/watch?v=ybT8H6QdcDs
-2. Wait about 5 seconds while captions are analyzed. Click the toolbar icon: the popup's "This video" panel lists the detected segments (CUT rows).
-3. Play from 0:00. At about 0:06 the player jumps to about 0:46, and a "CUT … Sponsor · 40s skipped" note with an Undo button appears at the bottom-right of the player. Press Undo to jump back.
-4. In the popup, choose "Notify" and play the segment again: a "Skip" button appears instead of an automatic jump.
-5. Control video with no sponsor read: https://www.youtube.com/watch?v=dQw4w9WgXcQ (nothing is skipped).
+1. Install the extension and open https://www.youtube.com/watch?v=ybT8H6QdcDs (JayzTwoCents). Let any YouTube ad finish.
+2. Play from 0:00. At about 0:06 the player jumps to about 0:43, and a "CUT 00:06 → 00:43 · Sponsor · 37s skipped" note with an Undo button appears at the bottom right of the player. Press Undo to jump back.
+3. Click the toolbar icon: the popup lists the detected segments for this video.
+4. In the popup, choose "Notify", then open https://www.youtube.com/watch?v=wajoP_5Cpw8 (Fireship) and seek to 4:50. At 4:57 a "Skip" button appears instead of an automatic jump.
+5. A video with no sponsor read: https://www.youtube.com/watch?v=dQw4w9WgXcQ (nothing is skipped).
 
-The extension analyzes caption text only. Videos without captions are not analyzed.
+The extension analyzes caption text only. Videos without captions are not analyzed; the popup then says "Couldn't analyze this video".
 ```
 
 ---
 
-## Release blockers
+## Release status (2026-10-14)
 
-Status as of 2026-10-11 (branch `feat/launch-readiness`). Items marked
-**Owner** cannot be done from this repository.
+| Item | Status |
+| --- | --- |
+| Production API | Live at the API origin built into the package; `/api/health` ok, `/readyz` `ai: configured`, `sponsorblock: off` |
+| CORS | Allows any `chrome-extension://` origin until the store item exists. The item ID is assigned when the ZIP is first uploaded (before review): then set `CORS_ORIGIN=chrome-extension://<item id>` on the API and restart it, before clicking "Submit for review" |
+| Privacy policy | `PRIVACY.md` version 2026-10-14 names Devspeak S.A.S. as controller; open items for counsel: street address, phone and NIT (Decree 1377 of 2013 asks for them) |
+| Developer account | Owner: register (one-time US$5), verify `info@devspeak.dev` as the contact email |
+| Reviewer path | Both test videos are cached on the server (analyzed 2026-10-13/14; results expire after 30 days). Keep `ANTHROPIC_API_KEY` set and `LLM_DAILY_BUDGET_USD` above 0 during review |
 
-1. **Production API.** _Code: done. Owner: deploy, domain, build._
-   - The placeholder fallback in `service-worker.ts` is gone. The API origin is
-     fixed at build time from `VITE_API_BASE_URL`; production builds fail
-     without an https URL, and `npm run package:extension` still refuses
-     `localhost`, `127.0.0.1` and the old placeholder host.
-   - The API persists analyses in Postgres, meters fresh analyses per install
-     and caps daily LLM spend. Hosting steps: [`docs/DEPLOY.md`](../docs/DEPLOY.md)
-     (InstaCloud preferred, Oracle Always Free VM as the alternative).
-   - **Owner:** choose the host, buy the domain, deploy, then build with
-     `VITE_API_BASE_URL=https://api.<your-domain>` in `.env.production`.
-2. **CORS.** _Code: done. Owner: set the item ID._ The API reads
-   `CORS_ORIGIN` (comma-separated). Until it is set, production allows any
-   `chrome-extension://` origin. **Owner:** after the first upload, set
-   `CORS_ORIGIN=chrome-extension://<item id>`.
-3. **Privacy policy hosting and retention.** _Code: retention enforced.
-   Owner: legal wording, merge to `main`._
-   - The API hard-deletes analyses after `CACHE_TTL_DAYS` (30), telemetry
-     after 30 days and quota counters after 2 days, every hour. Caption text
-     is never stored by the API.
-   - **Owner (legal wording in `PRIVACY.md`, not changed here):** it says the
-     backend is "hosted on Amazon Web Services" and that secrets sit in "a
-     managed secrets service", so update both to the chosen host. It does not
-     say that Anthropic keeps API inputs and outputs for up to 30 days (longer
-     if flagged under its Usage Policy) unless a zero-retention agreement is
-     in place. It does not mention the per-install quota counter (a keyed hash
-     of the install token, kept 2 days). The "7-day request logs" promise
-     depends on the host's log retention setting.
-   - **Owner:** merge to `main` so the policy URL above serves the final text.
-4. **Developer account.** **Owner:** Chrome Web Store developer registration
-   (one-time $5 fee) with a verified contact email.
-5. **Trader status (EU).** **Owner:** the dashboard asks whether you are a
-   trader under the EU Digital Services Act. Answer it for your situation.
-6. **Reviewer path.** **Owner:** before submitting, open the two test videos
-   in section 5 once against the production API, so their analyses are cached
-   and the reviewer's run does not depend on that day's LLM budget. Keep
-   `ANTHROPIC_API_KEY` set and `LLM_DAILY_BUDGET_USD` above 0 during review.
+## Sources (accessed 2026-10-14)
+
+- Register: https://developer.chrome.com/docs/webstore/register
+- Account setup and contact email verification: https://developer.chrome.com/docs/webstore/set-up-account
+- Listing fields and graphic assets: https://developer.chrome.com/docs/webstore/cws-dashboard-listing
+- Image requirements (icon 128×128 with 96×96 art; screenshots 1280×800 or 640×400, full bleed, 1–5): https://developer.chrome.com/docs/webstore/images
+- Listing best practices (summary ≤132 characters; promo tile 440×280; marquee 1400×560): https://developer.chrome.com/docs/webstore/best-listing
+- Privacy tab (single purpose, permissions, remote code, data usage, policy URL): https://developer.chrome.com/docs/webstore/cws-dashboard-privacy
+- Limited Use: https://developer.chrome.com/docs/webstore/program-policies/limited-use
+- Disclosure requirements: https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements
+- MV3 remote code rules: https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements
+- Distribution: https://developer.chrome.com/docs/webstore/cws-dashboard-distribution
+- Publish and review: https://developer.chrome.com/docs/webstore/publish · https://developer.chrome.com/docs/webstore/review-process
+- Rejection reasons: https://developer.chrome.com/docs/webstore/troubleshooting
+- Manifest `key` (stable ID during development): https://developer.chrome.com/docs/extensions/reference/manifest/key

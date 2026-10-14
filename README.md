@@ -32,13 +32,13 @@
 
 | Skip automatically                                                               | Changed your mind? Undo                       | Auto, Notify, or Off                                     |
 | -------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
-| ![Skip sponsor reads automatically](store/screenshots/01-skip-sponsor-reads.png) | ![Undo a skip](store/screenshots/02-undo.png) | ![Three modes](store/screenshots/03-auto-notify-off.png) |
+| ![Skip sponsor reads automatically](store/design/01-skip-sponsor-reads.png) | ![Undo a skip](store/design/02-undo.png) | ![Three modes](store/design/03-auto-notify-off.png) |
 
 | Works in any language                                           | Private by design                                                |
 | --------------------------------------------------------------- | ---------------------------------------------------------------- |
-| ![Works in any language](store/screenshots/04-any-language.png) | ![Private by design](store/screenshots/05-private-by-design.png) |
+| ![Works in any language](store/design/04-any-language.png) | ![Private by design](store/design/05-private-by-design.png) |
 
-> All screenshots are 1280×800 Chrome Web Store assets in [`store/screenshots/`](store/screenshots/). Brand marks and lockups live in [`brand/`](brand/).
+> These are designed marketing images (`store/design/`, rendered from `design/SkipSponsorAI.pen`). The Chrome Web Store gets real captures of the packaged extension in [`store/screenshots/`](store/screenshots/) (see [`store/listing.md`](store/listing.md)). Brand marks and lockups live in [`brand/`](brand/).
 
 ## Contents
 

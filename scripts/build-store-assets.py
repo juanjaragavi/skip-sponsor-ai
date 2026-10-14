@@ -94,11 +94,11 @@ Print("MADE " + JSON.stringify(made));
 """
 
 TARGETS = {
-    "NKqQ0": "screenshots/01-skip-sponsor-reads.png",
-    "FhtK5": "screenshots/02-undo.png",
-    "Q6SjX": "screenshots/03-auto-notify-off.png",
-    "vTFaj": "screenshots/04-any-language.png",
-    "fvwNl": "screenshots/05-private-by-design.png",
+    "NKqQ0": "design/01-skip-sponsor-reads.png",
+    "FhtK5": "design/02-undo.png",
+    "Q6SjX": "design/03-auto-notify-off.png",
+    "vTFaj": "design/04-any-language.png",
+    "fvwNl": "design/05-private-by-design.png",
     "R3kuH3": "promo/small-tile-440x280.png",
     "AnWaE": "promo/marquee-1400x560.png",
     "UtuCa": "showcase/showcase-1920x1080.png",
