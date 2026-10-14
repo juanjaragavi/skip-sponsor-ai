@@ -4,6 +4,8 @@ import {
   BRAND_URL,
   COPYRIGHT_NOTICE,
   COPYRIGHT_SEPARATOR,
+  GENERAL_EMAIL,
+  LEGAL_NAME,
 } from "../shared/company.generated";
 
 /**
@@ -23,6 +25,27 @@ export function renderCompanyCopyright(
   link.textContent = BRAND_NAME;
   el.replaceChildren(
     doc.createTextNode(`${COPYRIGHT_NOTICE}${COPYRIGHT_SEPARATOR}`),
+    link,
+  );
+}
+
+/**
+ * Fills the Privacy page's controller line: the legal entity that provides the
+ * extension and is responsible for its data, then the contact email as a
+ * mailto link. Facts come from src/shared/company.generated.ts.
+ */
+export function renderPrivacyController(
+  el: HTMLElement,
+  doc: Pick<Document, "createElement" | "createTextNode"> = document,
+): void {
+  const link = doc.createElement("a");
+  link.href = `mailto:${GENERAL_EMAIL}`;
+  link.className = "link-inline";
+  link.textContent = GENERAL_EMAIL;
+  el.replaceChildren(
+    doc.createTextNode(
+      `${LEGAL_NAME} (${BRAND_NAME}) provides SkipSponsor AI and is responsible for the data it sends. Questions or requests: `,
+    ),
     link,
   );
 }
