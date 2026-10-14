@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import CircuitBreaker from "opossum";
 import { randomUUID } from "node:crypto";
-import { config } from "../config";
+import { config, llmStubActive } from "../config";
+import { stubClassify } from "./llm-stub";
 import {
   RETRYABLE_STATUS,
   parseRetryAfter,
@@ -229,9 +230,17 @@ async function runBatches(
  * cue is sent (batched, no truncation) and results are validated against the
  * transcript before they can become skippable segments.
  */
+/** Local stack (LLM_STUB on a loopback API): the deterministic stub, no Claude call. */
+export const stubCall: CallFn = async (_model, cues) => stubClassify(cues);
+
+/** The call classifyChunks uses by default: the stub only when config allows it. */
+export function defaultCall(): CallFn {
+  return llmStubActive(config) ? stubCall : liveCall;
+}
+
 export async function classifyChunks(
   chunks: LlmChunk[][],
-  call: CallFn = liveCall,
+  call: CallFn = defaultCall(),
 ): Promise<ClassifyResult> {
   const cues = dedupeCues(chunks);
   const batches = batchCues(cues, LLM_BATCH_CUES, LLM_BATCH_OVERLAP_CUES);

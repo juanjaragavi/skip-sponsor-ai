@@ -4,6 +4,31 @@ Complete step-by-step instructions for setting up, building, and testing the Ski
 
 > **Code status (verified 2026-10-11):** the API persists analyses in PostgreSQL when `DATABASE_URL` is set (in memory otherwise), with an optional Redis cache (`REDIS_URL`); `npm run db:migrate` applies `infra/db/migrations`. A cost guard meters fresh LLM analyses per install (`INSTALL_TOKEN_SECRET`, `DAILY_ANALYSES_PER_INSTALL`) and caps daily LLM spend (`LLM_DAILY_BUDGET_USD`). The extension's API URL comes from `VITE_API_BASE_URL` at build time: dev builds default to `http://localhost:3040`, production builds fail without an https URL. Health checks: `GET /healthz` (liveness) and `GET /readyz` (Postgres). `.env.example` marks the variables no code reads yet. Deployment: [DEPLOY.md](DEPLOY.md).
 
+## One command: the local stack (local-first standard, 2026-10-14)
+
+Everything SkipSponsor needs runs on this machine, with no online service:
+
+```bash
+npm run local -- up            # Postgres 5434 + Redis 6380 (Docker), migrations, API on 127.0.0.1:3040,
+                               # extension built into dist/extension-local/ against that API, synthetic seed
+npm run local -- up --prod     # same stack, production builds: build:api + node dist/api/server.mjs
+                               # (NODE_ENV=production) and a production extension build (LF-3)
+npm run local -- up --ext-dev  # also the extension HMR dev server on :5174
+npm run local -- status        # what runs, URLs
+npm run local -- doctor        # every check (Docker, ports, health, SponsorBlock off, extension target), one fix per failure
+npm run local -- smoke         # Playwright local-smoke (playwright.local.config.ts) against the running stack
+npm run local -- reset         # empty the local app tables (schema kept; safety dump first)
+npm run local -- reset --from-backup   # sanitized restore of the newest nightly backup (below)
+npm run local -- down [--stack]        # stop API (+ HMR); --stack also stops Postgres/Redis (data kept)
+```
+
+- **LLM:** a deterministic keyword stub (`LLM_STUB=1`, `src/api/services/llm-stub.ts`) answers analyses, so the whole analyze, validate, store and skip flow runs offline at $0. Its output goes through the same `validateCandidates()` as Claude's. It is active only when the API is bound to a loopback `HOST`; a production server on a public address refuses to start with it. Real Claude locally: `SS_LOCAL_ANTHROPIC_KEY_FILE=<0600 file with the Anthropic DEV key> npm run local -- up --llm haiku`.
+- **Isolation:** the API runs under `env -i` with only the variables `scripts/local.sh` sets (no `.env` file, no shell exports). Local-only `INSTALL_TOKEN_SECRET`/`ADMIN_API_TOKEN` are generated once into `.backups/local/local-secrets.env` (0600, gitignored).
+- **SponsorBlock** stays off on both sides (`SPONSORBLOCK_ENABLED=0`, `VITE_SPONSORBLOCK_ENABLED=0`); `doctor` checks it.
+- **No auth, email or payments** exist in SkipSponsor (anonymous install tokens), so there is no mail catcher or fake billing to run.
+- **Data (LF-4):** `reset --from-backup` takes the newest laptop backup set (`~/Backups/devspeak-labs/cloud-box/<stamp>/skipsponsor-main-pg-db/app.dump`, written by the nightly `backup-production.sh`), checks its sha256, restores it into a throwaway container, drops per-install data (telemetry events, install usage counters) and loads only public-video data (analyses, segments, daily LLM spend totals) into the local database in one transaction. `scripts/local/restore-backup.sh --check` proves the load against a second throwaway container without touching the local database. Nothing ever goes from local to production: code ships through git, schema through `infra/db/migrations`, config through the host's secrets.
+- **Offline:** with Wi-Fi off, `up` (after one `npm ci`), the API, the stub, the extension build and `smoke` all work; only `--llm haiku` needs the network.
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)

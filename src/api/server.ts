@@ -2,7 +2,7 @@ import Fastify, { LogController } from "fastify";
 import { ZodError } from "zod";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import { config, checkProductionConfig } from "./config";
+import { config, checkProductionConfig, llmStubActive } from "./config";
 import { corsOrigin } from "./cors";
 import { registerSegmentRoutes } from "./routes/segments";
 import { registerTelemetryRoutes } from "./routes/telemetry";
@@ -159,7 +159,9 @@ export function buildServer(
   // Readiness: the store answers. Liveness (/healthz) stays dependency-free.
   const llmConfigured =
     deps.llmConfigured ??
-    (process.env["VITEST"] === "true" || Boolean(config.anthropicKey));
+    (process.env["VITEST"] === "true" ||
+      Boolean(config.anthropicKey) ||
+      llmStubActive(config));
   // Platform-standard health for the portfolio monitor (health.ts).
   app.get("/api/health", async (_req, reply) => {
     const [database, redis] = await Promise.all([
@@ -287,7 +289,7 @@ async function main(): Promise<void> {
   }
   app.log.info({ persistence: persistence.mode }, "persistence ready");
   await app
-    .listen({ port: config.port, host: "0.0.0.0" })
+    .listen({ port: config.port, host: config.host })
     .catch((e: unknown) => {
       if ((e as { code?: string }).code === "EADDRINUSE")
         boot.error(

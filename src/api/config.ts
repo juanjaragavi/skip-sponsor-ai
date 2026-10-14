@@ -88,12 +88,35 @@ export const config = {
    * sponsor.ajay.app and no SponsorBlock segment is served.
    */
   sponsorBlockEnabled: flag("SPONSORBLOCK_ENABLED"),
+  /**
+   * Listen address. The container keeps 0.0.0.0; `npm run local` binds
+   * 127.0.0.1 so the local API is not reachable from the LAN.
+   */
+  host: env["HOST"]?.trim() || "0.0.0.0",
+  /**
+   * LLM_STUB=1 (local stack only, `npm run local`): analyses come from a
+   * deterministic keyword classifier instead of Claude, so the whole flow runs
+   * with no key, no network and no spend. A production server bound to a
+   * public address refuses to start with it (checkProductionConfig).
+   */
+  llmStub: flag("LLM_STUB"),
   version: "1.0.0",
   /** Deployed commit for `/healthz` (see COMMIT_ENV_VARS). */
   commit: resolveCommit(env),
 };
 
 export type AppConfig = typeof config;
+
+/** 127.0.0.0/8, ::1 and localhost: addresses no other machine can reach. */
+export function isLoopbackHost(host: string): boolean {
+  const h = host.trim().toLowerCase();
+  return h === "localhost" || h === "::1" || /^127(?:\.\d{1,3}){3}$/.test(h);
+}
+
+/** The stub answers only on a loopback-bound server (never a public one). */
+export function llmStubActive(c: Pick<AppConfig, "llmStub" | "host">): boolean {
+  return c.llmStub && isLoopbackHost(c.host);
+}
 
 /**
  * Settings a production instance must not run without. Returns fatal errors
@@ -118,7 +141,11 @@ export function checkProductionConfig(c: AppConfig): {
     errors.push(
       "DATABASE_URL is not set: results would live in memory only, so every restart or extra instance re-pays for LLM analyses. Set DATABASE_URL, or PERSISTENCE=memory to accept that.",
     );
-  if (!c.anthropicKey)
+  if (c.llmStub && !isLoopbackHost(c.host))
+    errors.push(
+      "LLM_STUB is for the local stack only: a production server on a public address must call the real model. Unset LLM_STUB.",
+    );
+  if (!c.anthropicKey && !c.llmStub)
     warnings.push(
       "ANTHROPIC_API_KEY is not set: fresh analyses are refused (503 llm_not_configured); lookups serve cached results only.",
     );

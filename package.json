@@ -34,6 +34,7 @@
     "dev:extension": "vite --mode development",
     "dev:api": "tsx watch --env-file-if-exists=.env src/api/server.ts",
     "dev:tunnel": "node scripts/dev-tunnel.mjs",
+    "local": "bash scripts/local.sh",
     "start:api": "node --enable-source-maps dist/api/server.mjs",
     "db:migrate": "tsx --env-file-if-exists=.env src/api/db/migrate-cli.ts",
     "db:dump:local": "bash scripts/db-local.sh dump",
