@@ -211,6 +211,7 @@ See `src/shared/types.ts` for domain types:
 - **PostgreSQL schema:** `video_analyses` table (indexed on `expires_at`, `channel_id`), `sponsor_segments` with GIST exclusion for overlapping segments, `telemetry_events` — in `infra/db/migrations/001_init.sql`, not yet read or written by the API
 - **In-flight deduplication:** the service worker's `inflight` map prevents duplicate API calls for the same `videoId`
 - **Chrome storage:** policy in `chrome.storage.sync`, install token in `chrome.storage.local`; not server-side
+- Pointer cursor (ES-6.6): src/extension/ui/tokens.css (popup + options) and the toast's shadow CSS; disabled → not-allowed. Guards: src/tests/unit/cursor-pointer.test.ts, src/tests/e2e/cursor-pointer.spec.ts.
 
 ## Testing Strategy
 
