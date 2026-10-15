@@ -1,12 +1,19 @@
-// GENERATED from devspeak-labs-company@8b70ddc2c89f; do not edit.
+// GENERATED from devspeak-labs-company@c92fcb6ca7e2; do not edit.
 // Edit company.json in github.com/juanjaragavi/devspeak-labs-company, run `node scripts/sync.mjs`, commit here.
-// facts-sha256: 13e5c6b6c257447009760989fab4eb94fd6e4c0e394032cd2b40d51a76698545
+// facts-sha256: aa523da87d4e587ee58019cea41ee9843524f37840b6d276e4058cb4ddd0e9d5
 
 /** Canonical company facts (public data only). */
 export const COMPANY = {
   legalEntity: {
     name: "Devspeak S.A.S.",
     country: "CO",
+    postalAddress: {
+      streetAddress: "Cll. 7D # 43A - 40, Piso 8",
+      addressLocality: "Medellín",
+      addressRegion: "Antioquia",
+      postalCode: "050022",
+      addressCountry: "CO",
+    },
     plannedEntities: [
       {
         name: "TBD Delaware LLC",
@@ -44,6 +51,17 @@ export const COPYRIGHT_SEPARATOR = " · ";
 export const COPYRIGHT_LINE = "© 2026 Devspeak S.A.S. · DevSpeak Labs";
 export const GENERAL_EMAIL = "info@devspeak.dev";
 export const SUPPORT_EMAIL = "info@devspeak.dev";
+/** Company postal address (schema.org PostalAddress fields; postalCode null until confirmed). */
+export const POSTAL_ADDRESS = {
+  streetAddress: "Cll. 7D # 43A - 40, Piso 8",
+  addressLocality: "Medellín",
+  addressRegion: "Antioquia",
+  postalCode: "050022",
+  addressCountry: "CO",
+} as const;
+/** One line for commercial-email footers (CAN-SPAM physical address). */
+export const POSTAL_ADDRESS_LINE =
+  "Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia";
 
 /** schema.org Organization for JSON-LD publisher/organization nodes (add "@context" at the top level). */
 export const ORGANIZATION_JSON_LD = {
