@@ -2,6 +2,95 @@
 
 Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others) working in this repository. `CLAUDE.md` imports this file; keep shared instructions here.
 
+## DevSpeak Labs core rules (generated)
+
+Generated from devspeak-labs-company/rules (version 1.0.0, 2026-10-16). Do not edit here; edit rules.json and run sync-rules.
+Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
+
+**Authority (AUTH)**
+
+- **AUTH-02** T1, act then report: doc-drift fixes (not AGENTS.md, CLAUDE.md or legal), branches, worktrees, drafts, explicit-path local commits.
+- **AUTH-03** T2, ask Juan first: push (Vercel deploys main on push), PRs, merges, deploys, releases, publishing, emailing others.
+- **AUTH-04** T2, ask Juan first: AGENTS.md or CLAUDE.md edits, mutating cloud or SaaS actions, any spend, price or plan change.
+- **AUTH-05** T3, never: move money, accept terms, or change passwords, 2FA, key scopes or IAM permissions.
+- **AUTH-06** T3, never delete cloud projects, resources, databases, buckets, repos, domains or user data; report strays to Juan.
+- **AUTH-07** T3, never send mass messages or run automated engagement (bulk follows, likes, DMs, email).
+- **AUTH-08** Non-CTO agents commit, push or deploy only when Juan asks; the CTO logs approved T2 actions in decision-log.md.
+
+**Git (GIT)**
+
+- **GIT-01** Never force-push (--force, -f, --force-with-lease) or rewrite shared history.
+- **GIT-02** Never run git reset --hard, filter-repo or filter-branch on main, dev or other shared branches.
+- **GIT-03** Stage explicit paths only (never git add -A, git add . or commit -a); Conventional Commits, narrow diffs.
+- **GIT-04** Work in a worktree under ~/GitHub/.worktrees/; leave changes you did not make in place.
+- **GIT-06** Never put HTML comments with ignore, system, secret or hidden in AGENTS.md; use plain headings as markers.
+
+**Secrets (SEC)**
+
+- **SEC-01** Never read, print, copy or commit .env* values or secrets, or dump the environment; use variable names.
+- **SEC-02** Never write tokens, keys, bypass secrets or DSNs into logs, test artifacts, transcripts, commits or docs.
+- **SEC-03** Move secrets only via Juan-run file-to-stdin runbooks (vercel-env-put.py); never vercel env add from a pipe or vercel env pull.
+- **SEC-04** Never put a secret in a client bundle (`NEXT_PUBLIC_*`, `VITE_*`) or import server-only modules client-side.
+
+**Gates (GATE)**
+
+- **GATE-01** Never raise a budget, baseline or threshold, add skip/only, or edit AGENTS.md to pass a failing gate.
+- **GATE-02** Only the CTO changes a test baseline or ratchet, with the reason logged in decision-log.md.
+- **GATE-03** Run the repo's local gates before pushing; shipped means green CI on the pushed head.
+- **GATE-05** Report the exact gate commands run and their results; fixing what you break is part of the task.
+- **GATE-06** Never disable email confirmation or other auth checks for a test; confirm the account via the admin API.
+
+**Models (LLM)**
+
+- **LLM-01** Default to Claude Haiku 5.5; the repo's AGENTS.md declares its fallback chain.
+- **LLM-02** OpenRouter and Cerebras are production-only user fallbacks, behind a guard on VERCEL_ENV=production or the box prod flag.
+- **LLM-03** Never use OpenRouter or Cerebras for development, tests, deploys or agent harnesses.
+- **LLM-04** Never send temperature, top_p or top_k to Claude Opus 4.7+ or any Claude 5.x model.
+- **LLM-05** Offer only models that answer live; word a supported but unfunded one 'supported; currently unavailable'.
+
+**Deploys (DEP)**
+
+- **DEP-01** Deploy previews only, unless Juan approved this release and its path.
+- **DEP-02** Run vercel --prod only inside an approved release script: push:prod, labs-investors-prod.sh, mig-ta/pipeline.sh.
+- **DEP-03** Never vercel --prod a project with no deployments yet; its first deployment becomes production.
+- **DEP-04** Before any deploy, link the worktree to the right Vercel project (vercel link --project <name>).
+- **DEP-05** After a deploy, verify live: health commit equals the pushed SHA and the changed flow works.
+- **DEP-06** Never npm publish or push a release tag without Juan's yes; publish from tags after a dry run.
+- **DEP-07** Register each production datastore in backup-production.sh; take a verified, restored dump before any data move.
+- **DEP-08** Before a box deploy, keep MemAvailable at least 600 MB and give each service a memory limit.
+
+**Web standard (WEB)**
+
+- **WEB-01** Every clickable shows cursor: pointer (disabled: not-allowed) via the base-layer :where() rule, with a guard test.
+- **WEB-02** Titles are brand-first: Brand · Slogan on landing and dashboard, Brand · Page elsewhere.
+- **WEB-03** Ship favicons, description, canonical, OG/Twitter 1200×630, robots, sitemap, app-route noindex and truthful JSON-LD.
+- **WEB-04** User copy never names Supabase, Firebase, Appwrite, InstaCloud, AWS or Vercel; say DevSpeak Labs Cloud.
+- **WEB-06** Every animation has a reduced-motion fallback; corporate sites add a visible Pause motion control.
+
+**Brand and copy (BRAND)**
+
+- **BRAND-07** Write Spanish natively (Colombian-neutral), never translated; usted on corporate surfaces and legal text.
+- **BRAND-08** AI-generated images are allowed; never present generated people as clients, staff or testimonials.
+- **BRAND-09** Never invent brand assets; derive them from the existing logo, design system or .pen files.
+
+**Truth and claims (TRUTH)**
+
+- **TRUTH-01** Never publish invented testimonials, clients, logos, ratings, metrics, versions, status, unbuilt features or legal entities.
+- **TRUTH-02** Re-read the source before quoting a price, version, model or metric; downloads are not users.
+- **TRUTH-03** Every figure has value, label, as-of date and linked source; industry figures are never our results.
+- **TRUTH-04** Never edit privacy, terms or legal text without escalating to Juan; agents draft only.
+- **TRUTH-05** Company facts come only from company.generated.ts (devspeak-labs-company); never hardcode entity, copyright or contact.
+
+**Ports (PORT)**
+
+- **PORT-01** Use only your repo's ports from the ~/GitHub/AGENTS.md table; reserve new ones there first.
+
+**Local work (LOCAL)**
+
+- **LOCAL-02** Use the repo's fixed package manager and committed lockfile; never switch or add a lockfile.
+
+## End of generated rules
+
 ## Project Overview
 
 **SkipSponsor AI** is an MV3 Chrome extension that detects in-video sponsor reads on YouTube via caption analysis using Anthropic Claude and auto-seeks past them. The complete technical specification is at [skip-sponsor-ai-technical-spec.md](./skip-sponsor-ai-technical-spec.md) — read this first for any implementation task.
@@ -162,7 +251,7 @@ SegmentRepository (in-memory today, TTL 30d; Postgres + Redis planned)
 - No `any` without `// eslint-disable + justification`
 - Path aliases: `@/` → `src/`
 - Import order: third party → local (no React or Next.js in this repo)
-- **Company facts** (legal entity, copyright, brand link, contact email, JSON-LD organization) come from the private `devspeak-labs-company` repo through the generated `src/shared/company.generated.ts`; never hardcode entity, copyright or contact strings. To change one, edit `company.json` there, run `node scripts/sync.mjs`, and commit the regenerated file here.
+- **Company facts** (TRUTH-05): `src/shared/company.generated.ts`.
 
 ### Content Script Architecture
 
@@ -201,7 +290,7 @@ See `src/shared/types.ts` for domain types:
 - **Sampling params:** `acceptsTemperature()` (`llm-client.ts`) sends `temperature: 0` only to Claude ≤ 4.6; Claude 5.x, Opus 4.7/4.8 and unknown ids get none (they answer 400). First-party promotions are returned as `selfpromo` (shown, never auto-skipped).
 - **Batching:** `LLM_BATCH_CUES` (350) caption cues per call with `LLM_BATCH_OVERLAP_CUES` (25) overlap; `chunkTranscript()` windows are 60s with 10s overlap
 - **Confidence threshold:** 0.78 default (range 0.5–0.95)
-- **Production-only providers:** OpenRouter and Cerebras are production-only fallbacks for users: code guards block them unless `VERCEL_ENV=production` (or the box prod flag), their keys live only in Production env, and agents never use them for development, tests or deployment. This repo calls neither today; a new path must add the guard.
+- **Production-only providers (LLM-02):** this repo calls neither today; a new path must add the guard.
 - **System prompt:** `SYSTEM_PROMPT` in `src/shared/constants.ts` (spec §5.4)
 
 ### Cache & Persistence
