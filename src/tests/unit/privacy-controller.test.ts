@@ -6,6 +6,7 @@ import {
   BRAND_NAME,
   GENERAL_EMAIL,
   LEGAL_NAME,
+  LEGAL_VERSIONS,
 } from "../../shared/company.generated";
 
 // Juan, 2026-10-14: legal pages name Devspeak S.A.S. as the provider and data
@@ -61,7 +62,10 @@ describe("privacy controller line", () => {
     expect(policy).toContain(`**${LEGAL_NAME}**`);
     expect(policy).toContain(GENERAL_EMAIL);
     expect(policy).toContain("Law 1581 of 2012");
-    expect(policy).toMatch(/Version 2026-10-14/);
+    expect(policy).toContain(
+      `Version ${LEGAL_VERSIONS.skipsponsor.privacyVersion}`,
+    );
+    expect(LEGAL_VERSIONS.skipsponsor.privacyVersion).toBe("2026-10-15");
     // SponsorBlock is off: the policy must not list it as a recipient.
     expect(policy).not.toMatch(/sponsor\.ajay\.app/);
   });

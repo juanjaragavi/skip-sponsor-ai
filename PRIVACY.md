@@ -1,6 +1,8 @@
+<!-- GENERATED from legal/PRIVACY.template.md by npm run legal:build; edit the template, not this file. -->
+
 # SkipSponsor AI — Privacy Policy
 
-_Effective date: October 14, 2026 · Version 2026-10-14 · Applies to SkipSponsor AI 1.1.0 and later_
+_Effective date: October 15, 2026 · Version 2026-10-15 · Applies to SkipSponsor AI 1.1.0 and later_
 
 SkipSponsor AI is a browser extension that skips sponsor reads inside YouTube
 videos. To find a sponsor read, it analyzes the **caption text** of the video
@@ -10,7 +12,7 @@ long, and how to exercise your rights.
 ## Who is responsible for your data
 
 SkipSponsor AI is provided by **Devspeak S.A.S.** (DevSpeak Labs, "we", "us"),
-a company based in Bogotá D.C., Colombia. Devspeak S.A.S. is the data
+a Colombian company (Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia). Devspeak S.A.S. is the data
 controller (_Responsable del Tratamiento_ under Colombian Law 1581 of 2012).
 
 - Email for privacy questions and requests: **info@devspeak.dev**
@@ -185,10 +187,15 @@ collect personal information from them.
 ## Changes
 
 If this policy changes, the effective date and version above change, and the
-previous versions stay available in this file's history on GitHub. Material
-changes are announced in the extension's release notes before they take
-effect.
+previous versions stay available in the history of `PRIVACY.md` on GitHub.
+Material changes are announced in the extension's release notes before they
+take effect.
+
+| Version | Change |
+| --- | --- |
+| 2026-10-15 | Published as a web page with the Terms of Use; the controller's address comes from the company facts. No change to what is processed, where, or for how long. |
+| 2026-10-14 | First published version. |
 
 ## Contact
 
-Devspeak S.A.S. · Bogotá D.C., Colombia · **info@devspeak.dev**
+Devspeak S.A.S. · Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia · **info@devspeak.dev**

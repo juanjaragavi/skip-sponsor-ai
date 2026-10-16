@@ -444,10 +444,21 @@ test("options › About: version, links and live service status", async ({
   await expect(options.locator("#service-host")).toHaveText(
     "Connected to 127.0.0.1:39517",
   );
-  for (const name of ["Support", "Privacy policy", "Source code"])
+  for (const name of ["Support", "Source code"])
     await expect(
       options.locator("#about a.link", { hasText: name }),
     ).toHaveAttribute("href", /^https:\/\/github\.com\/juanjaragavi\//);
+  // The legal pages (GitHub Pages, generated from legal/*.template.md).
+  for (const [name, path] of [
+    ["Privacy policy", "privacy"],
+    ["Terms of use", "terms"],
+  ] as const)
+    await expect(
+      options.locator("#about a.link", { hasText: name }),
+    ).toHaveAttribute(
+      "href",
+      `https://juanjaragavi.github.io/skip-sponsor-ai/${path}/`,
+    );
   await options.screenshot({ path: `${SHOTS}/options-about.png` });
 
   await h.api.stop();

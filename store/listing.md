@@ -77,7 +77,8 @@ WHAT IS SENT, AND WHERE
 FREE TO USE
 SkipSponsor AI is free and needs no account. Each browser gets a daily allowance of new AI analyses. Videos that have already been analyzed don't count toward it. If the allowance runs out, already-analyzed videos keep skipping until it resets.
 
-Privacy policy: https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md
+Privacy policy: https://juanjaragavi.github.io/skip-sponsor-ai/privacy/
+Terms of use: https://juanjaragavi.github.io/skip-sponsor-ai/terms/
 Support: info@devspeak.dev · https://github.com/juanjaragavi/skip-sponsor-ai/issues
 
 SkipSponsor AI is an independent product of Devspeak S.A.S. It is not affiliated with or endorsed by YouTube or Google.
@@ -180,20 +181,23 @@ All JavaScript ships inside the package. The extension pages' Content Security P
 - [x] I do not use or transfer user data for purposes that are unrelated to my item's single purpose
 - [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-These match `PRIVACY.md` (version 2026-10-14). The store requires the
+These match `PRIVACY.md` (version 2026-10-15). The store requires the
 dashboard answers, the privacy policy and the extension's behaviour to agree.
 
 ### Privacy policy URL
 
 ```text
-https://github.com/juanjaragavi/skip-sponsor-ai/blob/main/PRIVACY.md
+https://juanjaragavi.github.io/skip-sponsor-ai/privacy/
 ```
 
-Why this URL: the repository is public, the file lives on `main` with its full
-version history, it needs no login, and it does not depend on our own hosting
-or DNS. The extension's Settings › Privacy and About pages link to the same
-URL. If the policy moves later (for example to labs.devspeak.dev), keep this
-file in place with a link to the new page and update the dashboard field.
+Why this URL: a plain, indexable HTML page served by GitHub Pages from `site/`
+(`.github/workflows/pages.yml`), generated with `npm run legal:build` from
+`legal/PRIVACY.template.md`, the same source as `PRIVACY.md`. It needs no login
+and keeps its version history in the repository. The Terms of Use live next to
+it at `https://juanjaragavi.github.io/skip-sponsor-ai/terms/`. The extension's
+Settings › Privacy and About pages link to both. If the pages move later (for
+example to labs.devspeak.dev), keep these URLs redirecting and update the
+dashboard field.
 
 ## 4. Distribution tab
 

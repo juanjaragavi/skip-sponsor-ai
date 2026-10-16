@@ -40,6 +40,8 @@
     "db:dump:local": "bash scripts/db-local.sh dump",
     "db:restore:local": "bash scripts/db-local.sh restore",
     "verify": "npm run lint && npm run typecheck && npm run test",
+    "legal:build": "tsx scripts/build-legal.ts",
+    "legal:check": "tsx scripts/build-legal.ts --check",
     "package:extension": "npm run build:extension && node scripts/zip-extension.mjs",
     "icons": "node scripts/build-icons.mjs",
     "stage:api": "node scripts/stage-api-context.mjs",
