@@ -60,6 +60,8 @@ Pre-pull before every deploy: a deploy that has to pull on its own can leave the
 
 Migrations: `DATABASE_URL=<project url, sslmode=verify-full> npx tsx src/api/db/migrate-cli.ts` from a laptop (advisory-locked, ledgered, safe to re-run). Rollback: deploy the previous image tag.
 
+Usage counts (`POST /v1/usage`, from the 1.1.0 store build): apply `004_usage_pings.sql` **before** deploying the image that serves them. Without the table the route still answers 204 and logs `usage ping not recorded`, so the order is safe but counts are lost. Check after the deploy: `curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{"id":"00000000-0000-4000-8000-000000000000","event":"active","version":"0.0.0"}' https://api-skipsponsor-main.cloud.devspeak.dev/v1/usage` → `204` (records one test row for the all-zero id), and `GET /v1/usage/summary` with `x-admin-token` for the counts.
+
 ## Extension build for the Chrome Web Store
 
 ```bash
