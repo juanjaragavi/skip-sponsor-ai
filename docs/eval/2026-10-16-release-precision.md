@@ -1,6 +1,8 @@
 # Release precision test, 2026-10-16
 
-The only accuracy figure SkipSponsor AI publishes comes from this test.
+The first run of the 2026-10-16 release test, kept as measured. The published
+figure now comes from the second run on fresh videos after two detection
+fixes: [2026-10-16-release-precision-rerun.md](2026-10-16-release-precision-rerun.md).
 
 | Metric | Value |
 | --- | --- |
