@@ -19,6 +19,10 @@ export interface AnalyzeCall {
 export class FakeApi {
   readonly analyzeCalls: AnalyzeCall[] = [];
   readonly telemetry: { videoId: string; eventType: string }[] = [];
+  /** Raw bodies of POST /v1/usage (anonymous install/usage pings). */
+  readonly usage: Record<string, unknown>[] = [];
+  /** Headers seen on POST /v1/usage, lower-cased names. */
+  readonly usageHeaders: Record<string, unknown>[] = [];
   /** Segments the GET (SponsorBlock fallback) path returns per video. */
   readonly fallbackSegments = new Map<string, unknown[]>();
   /** Extra segments appended to the analyze result per video (e.g. low confidence). */
@@ -60,6 +64,8 @@ export class FakeApi {
   reset(): void {
     this.analyzeCalls.length = 0;
     this.telemetry.length = 0;
+    this.usage.length = 0;
+    this.usageHeaders.length = 0;
     this.analyzeAuth.length = 0;
     this.analyzeLimit = null;
   }
@@ -124,6 +130,11 @@ export class FakeApi {
           ...(this.extraSegments.get(parsed.data.videoId) ?? []),
         ]),
       };
+    }
+    if (req.method === "POST" && url.pathname === "/v1/usage") {
+      this.usage.push(JSON.parse(raw || "{}") as Record<string, unknown>);
+      this.usageHeaders.push({ ...req.headers });
+      return { status: 204 };
     }
     if (req.method === "POST" && url.pathname === "/v1/telemetry") {
       this.telemetry.push(

@@ -18,7 +18,7 @@ import {
   extensionId,
   type Harness,
 } from "./harness";
-import { VIDEO_A } from "./fixtures/youtube-fixture";
+import { VIDEO_A, VIDEO_B } from "./fixtures/youtube-fixture";
 
 const SHOTS = process.env["DESIGN_SHOTS"] ?? "artifacts/design-review";
 mkdirSync(SHOTS, { recursive: true });
@@ -431,6 +431,47 @@ test("options › Privacy: statistics switch stops telemetry; Reset clears every
     "true",
   );
   expect(await token()).toBeUndefined();
+});
+
+test("usage pings: anonymous install + one active ping a day; none once opted out", async ({
+  h,
+}) => {
+  const page = await h.open(VIDEO_A.id);
+  await expect
+    .poll(() => h.api.usage.map((u) => u["event"]).sort())
+    .toEqual(["active", "install"]);
+  for (const body of h.api.usage) {
+    // Only a random UUID, the event and the version: no URL, video or token.
+    expect(Object.keys(body).sort()).toEqual(["event", "id", "version"]);
+    expect(body["id"]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(JSON.stringify(body)).not.toContain(VIDEO_A.id);
+  }
+  for (const headers of h.api.usageHeaders)
+    expect(headers["authorization"]).toBeUndefined();
+  const sw = h.context().serviceWorkers()[0]!;
+  const ids = await sw.evaluate(async () => ({
+    usageId: (await chrome.storage.local.get(["usageId"]))["usageId"],
+    installToken: (await chrome.storage.local.get(["installToken"]))[
+      "installToken"
+    ],
+  }));
+  expect(ids.usageId).toBe(h.api.usage[0]!["id"]);
+  expect(ids.usageId).not.toBe(ids.installToken);
+
+  // A second video the same day sends no second "active" ping.
+  await page.goto(`https://www.youtube.com/watch?v=${VIDEO_B.id}`);
+  await page.waitForTimeout(1500);
+  expect(h.api.usage.filter((u) => u["event"] === "active")).toHaveLength(1);
+
+  // Opted out: a new day's first video sends nothing.
+  await sw.evaluate(async () => {
+    await chrome.storage.sync.set({ telemetryEnabled: false });
+    await chrome.storage.local.remove("usageLastActiveDay");
+  });
+  const before = h.api.usage.length;
+  await page.goto(`https://www.youtube.com/watch?v=${VIDEO_A.id}`);
+  await page.waitForTimeout(1500);
+  expect(h.api.usage).toHaveLength(before);
 });
 
 test("options › About: version, links and live service status", async ({
