@@ -17,7 +17,7 @@
 
 ---
 
-**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude, it targets ≥93% precision and ≥90% recall on a labeled evaluation set (a design target from the technical spec, not yet measured) while respecting user preferences and privacy.
+**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude. In our test on 169 captioned YouTube videos from 56 channels (2026-10-16), 95.4% of the seconds it skipped were sponsor reads ([method](docs/eval/2026-10-16-release-precision.md)). It does not block or skip YouTube's own ads.
 
 - 🧠 **AI-powered** — Claude Haiku 4.5 analyzes captions; Claude Sonnet 5.5 fallback for ambiguous cases
 - ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back
@@ -281,9 +281,10 @@ Full details: [`skip-sponsor-ai-technical-spec.md`](skip-sponsor-ai-technical-sp
 - **Zero audio upload:** transcript text only
 - **30-day retention:** automatic hard delete after TTL
 - **No tracking:** no cross-site tracking or profiling
+- **Anonymous usage counts:** installs, uninstalls and days used, with a random ID (no video or page); off with Settings › Privacy › Share usage statistics
 - **Install tokens:** opaque 256-bit auth per browser profile
-- **GDPR/CCPA compliant:** data-subject delete via API
-- **DPA:** zero-retention inference flag with Anthropic
+- **Deletion requests:** by email, as described in `PRIVACY.md`
+- **Anthropic:** caption text only; no zero-retention agreement (see `PRIVACY.md`)
 
 See [`PRIVACY.md`](PRIVACY.md) and the technical spec §6 for complete controls.
 To report a vulnerability, see [Security](#security) below — do not open public issues.
