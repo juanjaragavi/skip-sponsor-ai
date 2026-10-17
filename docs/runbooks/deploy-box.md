@@ -24,6 +24,7 @@ Decision record: [ADR 0002](../adr/0002-api-hosting-devspeak-labs-cloud.md). Age
 | `CACHE_TTL_DAYS` | service secret | `30` (must match `PRIVACY.md`) |
 | `PG_POOL_MAX` | service secret | `3` |
 | `INSTALLS_PER_IP_PER_HOUR` | service secret | `20` |
+| `ADMIN_API_TOKEN` | service secret | generated 2026-10-17 (`openssl rand -base64 48`), kept in the operator's secrets folder; enables the operator routes (`x-admin-token`: `GET /v1/usage/summary`, corrections, `force`, delete). Unset = those routes answer 404 |
 | `CORS_ORIGIN` | service secret | unset until the store item exists, then `chrome-extension://<item id>` |
 | `SPONSORBLOCK_ENABLED` | (unset) | must stay unset or `0`: SponsorBlock data is CC BY-NC-SA. `/readyz` must report `sponsorblock: "off"` |
 | `NODE_ENV`, `PORT`, `GIT_COMMIT_SHA` | image | `production`, `3000`, the build commit |
@@ -57,6 +58,7 @@ Pre-pull before every deploy: a deploy that has to pull on its own can leave the
 | 2026-10-12 | `59e4c41` | first deploy on the box |
 | 2026-10-13 | `3628a1b` | SSRF allowlist matches the parsed host (`b75fbc7`): https only, no credentials, `youtube.com`/`*.youtube.com` `/api/timedtext` or exactly `sponsor.ajay.app` |
 | 2026-10-13 | `20687a1` | First-party promos reported as self-promo, never auto-skipped (`fc55059`); no `temperature` for Claude 5.x / Opus 4.7+ / unknown ids, so the Sonnet re-ask works (`f0bc002`, `8ecbbde`); `SPONSORBLOCK_ENABLED` off by default (`20687a1`): no SponsorBlock lookups, no transcript → `unanalyzable`. Health gate also requires `/readyz` `ai: configured` and `sponsorblock: off` |
+| 2026-10-17 | `a7c3767` | 1.1.0 release (Juan's yes): anonymous usage counts (`POST /v1/usage`, `GET /v1/usage/uninstalled`, operator `GET /v1/usage/summary`) after migration `004_usage_pings.sql` (applied first; pre-migration dump restored and verified, 6 tables match); detection fixes `a92b276` (disclosure lines in fully sponsored videos and topic content after a one-line disclosure no longer skipped); `ADMIN_API_TOKEN` set. Pre-deploy MemAvailable 649 MB. Verified: health `commit a7c3767` `ok`, `/readyz` `ai: configured`, `sponsorblock: off`, `POST /v1/usage` 204 + row, summary 200 with the operator token (401 without), one live analysis `ready` in 2.7 s |
 
 Migrations: `DATABASE_URL=<project url, sslmode=verify-full> npx tsx src/api/db/migrate-cli.ts` from a laptop (advisory-locked, ledgered, safe to re-run). Rollback: deploy the previous image tag.
 
