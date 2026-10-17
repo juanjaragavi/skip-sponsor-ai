@@ -8,6 +8,11 @@ version lives in `package.json` and `src/extension/manifest.json`;
 
 ## 1.1.0 — first Chrome Web Store submission (package rebuilt 2026-10-16)
 
+- Detection (API): fewer false skips. Disclosure lines in fully sponsored
+  videos are no longer skipped, and a one-line "sponsored by" followed by the
+  video's topic is no longer skipped together with that content (`a92b276`).
+  Release test on 178 fresh videos: 96.8% second-level and 96.2% segment
+  precision (`docs/eval/2026-10-16-release-precision-rerun.md`).
 - Anonymous usage counts: one ping at install and per version update, at most
   one "active" ping per UTC day (first YouTube video), and an uninstall page.
   Each carries a random usage ID (not the install token), the event and the

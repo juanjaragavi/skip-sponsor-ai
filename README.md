@@ -17,7 +17,7 @@
 
 ---
 
-**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude. In our test on 169 captioned YouTube videos from 56 channels (2026-10-16), 95.4% of the seconds it skipped were sponsor reads ([method](docs/eval/2026-10-16-release-precision.md)). It does not block or skip YouTube's own ads.
+**SkipSponsor AI** is an open source MV3 Chrome extension that automatically detects and skips in-video sponsor reads on YouTube using AI-powered caption analysis. Powered by Anthropic Claude. In our test on 178 captioned YouTube videos from 75 channels (2026-10-16), 96.8% of the seconds it skipped were sponsor reads ([method](docs/eval/2026-10-16-release-precision-rerun.md)). It does not block or skip YouTube's own ads.
 
 - 🧠 **AI-powered** — Claude Haiku 4.5 analyzes captions; Claude Sonnet 5.5 fallback for ambiguous cases
 - ⏭️ **Auto-skip with Undo** — jumps past sponsor reads, 4-second window to go back

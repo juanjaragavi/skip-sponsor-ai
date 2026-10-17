@@ -75,7 +75,7 @@ WHAT IT SKIPS, AND WHAT IT DOESN'T
 • Videos without captions aren't analyzed: the extension says so and the video plays normally.
 • It works with auto-generated and uploaded captions. It has been tested on English, Spanish, Portuguese, German and French videos.
 • The AI can be a few seconds off at the edges of a sponsor read, and it misses some reads, which then play normally. Undo is always one click away.
-• In our test on 169 captioned YouTube videos from 56 channels (2026-10-16), 95.4% of the seconds SkipSponsor AI skipped were sponsor reads.
+• In our test on 178 captioned YouTube videos from 75 channels (2026-10-16), 96.8% of the seconds SkipSponsor AI skipped were sponsor reads.
 
 WHAT IS SENT, AND WHERE
 • To find sponsor reads, the extension sends the YouTube video ID and, for videos that haven't been analyzed yet, the video's caption text to the SkipSponsor AI server. The server asks Anthropic's Claude API to classify the caption text.
@@ -273,7 +273,7 @@ LO QUE NO HACE
 • No bloquea los anuncios de YouTube ni se salta intros, cierres o recordatorios para suscribirse.
 • Los videos sin subtítulos no se analizan: la extensión lo indica y el video se reproduce normal.
 • La IA puede fallar por unos segundos en los bordes de una mención y a veces no detecta alguna, que entonces se reproduce normal. Undo siempre está a un clic.
-• En nuestra prueba con 169 videos de YouTube con subtítulos, de 56 canales (2026-10-16), el 95,4 % de los segundos que SkipSponsor AI saltó eran menciones patrocinadas.
+• En nuestra prueba con 178 videos de YouTube con subtítulos, de 75 canales (2026-10-16), el 96,8 % de los segundos que SkipSponsor AI saltó eran menciones patrocinadas.
 • La interfaz de la extensión está en inglés.
 
 QUÉ SE ENVÍA Y A DÓNDE
@@ -300,7 +300,7 @@ SkipSponsor AI es un producto independiente de Devspeak S.A.S. No está afiliado
 | Item | Status |
 | --- | --- |
 | Package | `release/skipsponsor-ai-1.1.0.zip` from `npm run package:store` on branch `feat/cws-release-1.1.0` (SHA-256 and path in the owner checklist). Adds anonymous usage counts; the 2026-10-13 ZIP in the main checkout is stale, do not upload it |
-| Accuracy claim | Only the measured second-level precision above: 95.4% on 169 captioned videos, 56 channels, 2026-10-16 (public method: `docs/eval/2026-10-16-release-precision.md`; full data in `notes/cto/research/2026-10-17-skipsponsor-cws/precision-gate-169.md`). The release gate itself was **not met**: segment precision 89.6% < 90% (Juan decides: submit now or fix and re-run) |
+| Accuracy claim | Only the measured second-level precision above: 96.8% on 178 captioned videos, 75 channels, 2026-10-16, second run on fresh channels after the detection fixes in `a92b276` (public method: `docs/eval/2026-10-16-release-precision-rerun.md`; full data in `notes/cto/research/2026-10-17-skipsponsor-cws/precision-gate-178.md`). The release gate is **met**: segment precision 96.2% (125/130) ≥ 90%, second-level 96.8% ≥ 95%. The claim describes `a92b276`'s detection, so the production API must run this branch (the deploy below) before submitting. First run (95.4% / 89.6% on 169 videos) kept in `docs/eval/2026-10-16-release-precision.md` |
 | Privacy policy | Must be updated before submitting (usage counts). Draft for Juan: `notes/cto/research/2026-10-17-skipsponsor-cws/privacy-draft-usage-counts.md` |
 | Production API | Live at the API origin built into the package, commit `20687a1`, `/api/health` ok, `/readyz` `ai: configured`, `sponsorblock: off` (checked 2026-10-17 01:28 UTC). It does not have `POST /v1/usage` yet (404): deploy the release branch and apply migration `004_usage_pings.sql` before submitting, or usage counts are lost (the extension ignores the 404) |
 | CORS | Allows any `chrome-extension://` origin until the store item exists. The item ID is assigned when the ZIP is first uploaded (before review): then set `CORS_ORIGIN=chrome-extension://<item id>` on the API and restart it, before clicking "Submit for review" |
