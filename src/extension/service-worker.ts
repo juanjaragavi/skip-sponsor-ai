@@ -1,6 +1,13 @@
 import type { LlmChunk, UserPolicy } from "../shared/types";
 import type { AnalysisLimit, AnalyzeReply } from "../shared/messages";
 import { DEFAULT_POLICY } from "./policy";
+import {
+  USAGE_ID_KEY,
+  onInstalledUsage,
+  pingActiveOncePerDay,
+  syncUninstallUrl,
+  type UsageDeps,
+} from "./usage-ping";
 
 // Set at build time from VITE_API_BASE_URL (vite.config.ts); production
 // builds fail without it, so no placeholder host can ship.
@@ -16,6 +23,25 @@ let minting: Promise<string> | null = null;
 let mintFailedAt = 0;
 
 const version = (): string => chrome.runtime.getManifest().version;
+
+/** Anonymous install/usage counts (usage-ping.ts); off with the Privacy switch. */
+const usageDeps = (): UsageDeps => ({
+  local: chrome.storage.local,
+  sync: chrome.storage.sync,
+  fetch: (...args) => fetch(...args),
+  setUninstallURL: (url) => chrome.runtime.setUninstallURL(url),
+  apiOrigin: API_ORIGIN,
+  version: version(),
+});
+/** UTC day already pinged in this worker's lifetime (saves a storage read per video). */
+let activePingedDay = "";
+function noteActive(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (activePingedDay === today) return;
+  void pingActiveOncePerDay(usageDeps()).then((sent) => {
+    if (sent) activePingedDay = today;
+  });
+}
 
 /**
  * One correlation id per user action (a video lookup, an analysis, a status
@@ -162,7 +188,7 @@ async function postTelemetry(
   latencyMs?: number,
 ): Promise<void> {
   try {
-    // Privacy › "Share skip statistics" off: send nothing.
+    // Privacy › "Share usage statistics" off: send nothing.
     const s = await chrome.storage.sync.get(["telemetryEnabled"]);
     if (s["telemetryEnabled"] === false) return;
     await authedFetch(`${API_BASE}/telemetry`, {
@@ -200,6 +226,12 @@ async function syncActionIcon(p?: UserPolicy): Promise<void> {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
+  // Privacy switch flipped, or Reset created a new usage id: refresh (or clear) the uninstall page.
+  if (
+    (area === "sync" && changes["telemetryEnabled"]) ||
+    (area === "local" && changes[USAGE_ID_KEY])
+  )
+    void syncUninstallUrl(usageDeps());
   if (area === "sync" && changes["policy"]) {
     void syncActionIcon({
       ...DEFAULT_POLICY,
@@ -208,15 +240,20 @@ chrome.storage.onChanged.addListener((changes, area) => {
     });
   }
 });
-chrome.runtime.onStartup.addListener(() => void syncActionIcon());
+chrome.runtime.onStartup.addListener(() => {
+  void syncActionIcon();
+  void syncUninstallUrl(usageDeps());
+});
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   void ensurePolicy().then(syncActionIcon);
   void getInstallToken();
+  void onInstalledUsage(usageDeps(), details);
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "SEGMENTS_GET") {
+    noteActive();
     apiGetSegments(String(msg.videoId))
       .then((analysis) => sendResponse({ analysis }))
       .catch(() => sendResponse({ analysis: null }));

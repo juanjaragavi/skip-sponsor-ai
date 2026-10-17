@@ -30,7 +30,7 @@ export function onPolicyChange(cb: (p: UserPolicy) => void): void {
   });
 }
 
-/** Privacy › "Share skip statistics" (default on; off = no telemetry calls). */
+/** Privacy › "Share usage statistics" (default on; off = no skip events and no usage pings). */
 export async function loadTelemetryEnabled(): Promise<boolean> {
   const s = await chrome.storage.sync.get(["telemetryEnabled"]);
   return s["telemetryEnabled"] !== false;
