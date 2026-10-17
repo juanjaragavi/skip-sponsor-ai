@@ -65,7 +65,11 @@ describe("privacy controller line", () => {
     expect(policy).toContain(
       `Version ${LEGAL_VERSIONS.skipsponsor.privacyVersion}`,
     );
-    expect(LEGAL_VERSIONS.skipsponsor.privacyVersion).toBe("2026-10-15");
+    expect(LEGAL_VERSIONS.skipsponsor.privacyVersion).toBe("2026-10-17");
+    // 1.1.0 sends anonymous usage counts: the policy must disclose them.
+    expect(policy).toContain("Anonymous usage count");
+    expect(policy).toContain("Share usage");
+    expect(policy).not.toMatch(/contains no analytics/);
     // SponsorBlock is off: the policy must not list it as a recipient.
     expect(policy).not.toMatch(/sponsor\.ajay\.app/);
   });

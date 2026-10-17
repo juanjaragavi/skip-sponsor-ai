@@ -1,6 +1,6 @@
-// GENERATED from devspeak-labs-company@10098e849d99; do not edit.
+// GENERATED from devspeak-labs-company@b68e7a10b92a; do not edit.
 // Edit company.json in github.com/juanjaragavi/devspeak-labs-company, run `node scripts/sync.mjs`, commit here.
-// facts-sha256: b6bc6c256f52a0bb6a78d240ff1c38fe0c16655208d58b5c8c54887d1a39e8ab
+// facts-sha256: 3b86e9ba8bb8e1de7cbc2ce218395ef4c7ba797867004ab8a6914894cafe07cb
 
 /** Canonical company facts (public data only). */
 export const COMPANY = {
@@ -84,6 +84,6 @@ export const PRODUCTS = {
 export const LEGAL_VERSIONS = {
   skipsponsor: {
     termsVersion: "2026-10-15",
-    privacyVersion: "2026-10-15",
+    privacyVersion: "2026-10-17",
   },
 } as const;

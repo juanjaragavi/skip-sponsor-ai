@@ -20,6 +20,8 @@ version lives in `package.json` and `src/extension/manifest.json`;
   renamed skip-statistics switch). API: `POST /v1/usage`,
   `GET /v1/usage/uninstalled`, operator-only `GET /v1/usage/summary`;
   migration `004_usage_pings.sql` (12-month retention).
+- Privacy Policy 2026-10-17 discloses the anonymous usage counts (approved by
+  Juan 2026-10-17; `legal/PRIVACY.template.md`, published from `site/`).
 - Popup and Options: every clickable control shows the pointer cursor, and
   disabled controls (and their labels) show not-allowed (`src/extension/ui/tokens.css`,
   engineering standard ES-6.6).
