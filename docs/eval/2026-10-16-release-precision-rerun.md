@@ -6,30 +6,30 @@ replaces the first run of the same day
 measured) after two fixes in the detection pipeline, and uses a fresh set of
 videos from channels used in neither earlier test.
 
-| Metric | Value |
-| --- | --- |
-| Videos | 178 captioned YouTube videos from 75 channels (110 English, 32 Spanish, 14 Portuguese, 14 French, 6 German, 2 Greek), 4–35 min (mean 18), none used in the 2026-10-13 tuning sets or the first 2026-10-16 run |
-| **Second-level precision** (share of skipped seconds that were sponsor reads) | **96.8%** |
-| **Segment precision** (IoU ≥ 0.5) | **96.2%** (125 of 130 skipped segments) |
-| Recall (reported, not gated) | 75.0% of sponsor-read seconds, 70.6% of reads (125 of 177) |
-| Videos with no sponsor read that had any skip | 0 of 46 |
-| Date | 2026-10-16 (run 2026-10-17 01:50–02:30 UTC) |
-| Code | branch `feat/cws-release-1.1.0` at `a92b276` with `claude-haiku-4-5-20251001`, Sonnet 5.5 re-ask for ambiguous candidates (2 of 178 videos) |
+| Metric                                                                        | Value                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Videos                                                                        | 178 captioned YouTube videos from 75 channels (110 English, 32 Spanish, 14 Portuguese, 14 French, 6 German, 2 Greek), 4–35 min (mean 18), none used in the 2026-10-13 tuning sets or the first 2026-10-16 run |
+| **Second-level precision** (share of skipped seconds that were sponsor reads) | **96.8%**                                                                                                                                                                                                     |
+| **Segment precision** (IoU ≥ 0.5)                                             | **96.2%** (125 of 130 skipped segments)                                                                                                                                                                       |
+| Recall (reported, not gated)                                                  | 75.0% of sponsor-read seconds, 70.6% of reads (125 of 177)                                                                                                                                                    |
+| Videos with no sponsor read that had any skip                                 | 0 of 46                                                                                                                                                                                                       |
+| Date                                                                          | 2026-10-16 (run 2026-10-17 01:50–02:30 UTC)                                                                                                                                                                   |
+| Code                                                                          | branch `feat/cws-release-1.1.0` at `a92b276` with `claude-haiku-4-5-20251001`, Sonnet 5.5 re-ask for ambiguous candidates (2 of 178 videos)                                                                   |
 
 Release bar (set by the owner): second-level precision ≥ 95% **and** segment
 precision ≥ 90% on ≥ 150 held-out videos. **This run meets both.**
 
 ## Per language
 
-| Language | Videos (with a sponsor read) | Segment precision | Second-level precision | Second-level recall | Real-content false skips |
-| --- | --- | --- | --- | --- | --- |
-| English | 110 (95) | 95.8% (91/95) | 95.9% | 71.0% | 166 s |
-| Spanish | 32 (15) | 92.9% (13/14) | 98.7% | 82.6% | 12 s |
-| French | 14 (12) | 100% (12/12) | 99.5% | 92.5% | 5 s |
-| Portuguese | 14 (6) | 100% (5/5) | 99.3% | 95.8% | 2 s |
-| German | 6 (3) | 100% (3/3) | 97.0% | 99.5% | 8 s |
-| Greek | 2 (1) | 100% (1/1) | 100% | 51.4% | 0 s |
-| **All** | **178 (132)** | **96.2%** | **96.8%** | **75.0%** | **194 s** |
+| Language   | Videos (with a sponsor read) | Segment precision | Second-level precision | Second-level recall | Real-content false skips |
+| ---------- | ---------------------------- | ----------------- | ---------------------- | ------------------- | ------------------------ |
+| English    | 110 (95)                     | 95.8% (91/95)     | 95.9%                  | 71.0%               | 166 s                    |
+| Spanish    | 32 (15)                      | 92.9% (13/14)     | 98.7%                  | 82.6%               | 12 s                     |
+| French     | 14 (12)                      | 100% (12/12)      | 99.5%                  | 92.5%               | 5 s                      |
+| Portuguese | 14 (6)                       | 100% (5/5)        | 99.3%                  | 95.8%               | 2 s                      |
+| German     | 6 (3)                        | 100% (3/3)        | 97.0%                  | 99.5%               | 8 s                      |
+| Greek      | 2 (1)                        | 100% (1/1)        | 100%                   | 51.4%               | 0 s                      |
+| **All**    | **178 (132)**                | **96.2%**         | **96.8%**              | **75.0%**           | **194 s**                |
 
 The non-English samples are small (2–32 videos); their figures are indicative.
 A further 106 s of skips fell on creator self-promotion (shown in the
@@ -74,7 +74,7 @@ Same metric definitions as the first run, fixed before the run.
    every API call answered locally; all 178 captioned videos were read
    (upload p50 2.9 s).
 4. Detection: the API's own pipeline (`chunkTranscript → classifyChunks →
-   candidatesToSegments → mergeCandidates`), SponsorBlock off, always the live
+candidatesToSegments → mergeCandidates`), SponsorBlock off, always the live
    Claude call (LLM p50 1.8 s, about $0.009 per video). Only segments the
    extension auto-skips (category `sponsor`) are scored.
 5. Every skipped segment without a matching label, and every false skip over
@@ -85,11 +85,11 @@ Same metric definitions as the first run, fixed before the run.
    helped partially fund this video"), treated as sponsor content as in the
    first run.
 
-| Scoring | Segment precision | Second-level precision |
-| --- | --- | --- |
-| Labels only, no transcript reading | 90.8% (118/130) | 94.5% |
-| Adjudicated, disclosure lines **not** credited | 93.8% (122/130) | 96.4% |
-| **Adjudicated (headline, same rules as the first run)** | **96.2% (125/130)** | **96.8%** |
+| Scoring                                                 | Segment precision   | Second-level precision |
+| ------------------------------------------------------- | ------------------- | ---------------------- |
+| Labels only, no transcript reading                      | 90.8% (118/130)     | 94.5%                  |
+| Adjudicated, disclosure lines **not** credited          | 93.8% (122/130)     | 96.4%                  |
+| **Adjudicated (headline, same rules as the first run)** | **96.2% (125/130)** | **96.8%**              |
 
 ## Where it still errs
 
