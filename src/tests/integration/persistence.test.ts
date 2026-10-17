@@ -42,6 +42,7 @@ import { createPersistence } from "../../api/persistence";
 import { runMigrations } from "../../api/db/migrate";
 import { PostgresSegmentRepository } from "../../api/repositories/postgres-segment-repository";
 import { PostgresUsageStore } from "../../api/repositories/usage-store";
+import { PostgresUsageStatsStore } from "../../api/repositories/usage-stats";
 import { classifyChunks } from "../../api/services/llm-client";
 import type { VideoAnalysis } from "../../shared/types";
 
@@ -88,6 +89,7 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
         "001_init.sql",
         "002_launch_persistence.sql",
         "003_cost_guard.sql",
+        "004_usage_pings.sql",
       ]),
     );
     expect(await runMigrations(pool)).toEqual([]);
@@ -137,6 +139,32 @@ describe.skipIf(!baseUrl)("Postgres persistence (integration)", () => {
       "SELECT count(*)::int AS n FROM telemetry_events WHERE video_id = 'bbbbbbbbbbb'",
     );
     expect(rows[0].n).toBe(3);
+  });
+
+  it("counts anonymous usage pings and summarises them in SQL", async () => {
+    const s = new PostgresUsageStatsStore(pool);
+    await pool.query("DELETE FROM usage_pings");
+    await s.record("2026-10-01", "u:aaaaaaaaaaaaaaaa", "install", "1.1.0");
+    await s.record("2026-10-15", "u:bbbbbbbbbbbbbbbb", "install", "1.1.0");
+    await s.record("2026-10-16", "u:bbbbbbbbbbbbbbbb", "uninstall", "1.1.0");
+    await s.record("2026-10-17", "u:aaaaaaaaaaaaaaaa", "active", "1.1.0");
+    await s.record("2026-10-17", "u:aaaaaaaaaaaaaaaa", "active", "1.1.0"); // repeat: no-op
+    await s.record("2026-10-12", "u:cccccccccccccccc", "active", "1.0.0");
+    await s.record("2026-10-12", "u:aaaaaaaaaaaaaaaa", "active", "1.0.0");
+    await s.record("2026-10-01", "u:dddddddddddddddd", "active", "1.0.0");
+    await s.record("2026-10-18", "u:eeeeeeeeeeeeeeee", "active", "1.1.0");
+    expect(await s.summary("2026-10-17")).toEqual({
+      asOf: "2026-10-17",
+      installs: { last7: 1, last28: 2, total: 2 },
+      uninstalls: { last7: 1, last28: 1, total: 1 },
+      dailyActive: 1,
+      weeklyActive: 2,
+      monthlyActive: 3,
+      weeklyActiveByVersion: { "1.1.0": 1, "1.0.0": 1 },
+    });
+    await expect(
+      s.record("2026-10-17", "u:x", "install", "1.1.0"),
+    ).rejects.toThrow(); // key length check
   });
 
   it("enforces the per-install quota atomically under concurrency", async () => {

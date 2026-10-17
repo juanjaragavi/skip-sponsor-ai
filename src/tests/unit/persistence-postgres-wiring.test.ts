@@ -133,6 +133,7 @@ describe("createPersistence (Postgres + Redis wiring)", () => {
       video_analyses: 3,
       telemetry_events: 3,
       install_usage_daily: 3,
+      usage_pings: 3,
     });
   });
 
