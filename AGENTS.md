@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.0.0, 2026-10-16). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.1.0, 2026-10-17). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -88,6 +88,11 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 **Local work (LOCAL)**
 
 - **LOCAL-02** Use the repo's fixed package manager and committed lockfile; never switch or add a lockfile.
+
+**Assets (ASSET)**
+
+- **ASSET-01** Create Proton Drive Proyectos/<Project>/ (numbered layout, pinned offline) for every new project before its first non-code asset.
+- **ASSET-02** File finished non-code assets there: copy from repos, move from Downloads or scratch, log each action, never delete, never secrets.
 
 ## End of generated rules
 
