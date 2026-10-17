@@ -7,6 +7,12 @@ import { corsOrigin } from "./cors";
 import { registerSegmentRoutes } from "./routes/segments";
 import { registerTelemetryRoutes } from "./routes/telemetry";
 import { registerInstallRoutes } from "./routes/installs";
+import { registerUsageRoutes } from "./routes/usage";
+import {
+  MemoryUsageStatsStore,
+  PostgresUsageStatsStore,
+  type UsageStatsStore,
+} from "./repositories/usage-stats";
 import {
   createPersistence,
   memoryPersistence,
@@ -57,6 +63,8 @@ export interface ServerDeps {
   trustProxy: boolean;
   /** ADMIN_API_TOKEN: operator-only cache mutations; empty disables them (404). */
   adminToken: string;
+  /** Anonymous install/usage counts; defaults to the persistence's database (memory without one). */
+  usageStats: UsageStatsStore;
   /** SPONSORBLOCK_ENABLED: SponsorBlock fallback and gap filling (default off). */
   sponsorBlockEnabled: boolean;
   /** An AI provider key is set. Defaults to ANTHROPIC_API_KEY presence (true under Vitest, where the LLM is mocked). */
@@ -243,6 +251,15 @@ export function buildServer(
       tokens,
       dailyAnalysesPerInstall,
       installsPerHour: deps.installsPerIpPerHour ?? config.installsPerIpPerHour,
+    });
+    registerUsageRoutes(api, {
+      store:
+        deps.usageStats ??
+        (persistence.pool
+          ? new PostgresUsageStatsStore(persistence.pool)
+          : new MemoryUsageStatsStore()),
+      tokens,
+      adminToken: deps.adminToken ?? config.adminToken,
     });
   });
   return app;

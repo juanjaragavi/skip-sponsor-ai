@@ -118,7 +118,11 @@ describe("purgeExpired", () => {
       return { rows: [], rowCount: 3 };
     });
     const out = await purgeExpired(pool);
-    expect(out).toEqual({ video_analyses: 3, install_usage_daily: 3 });
+    expect(out).toEqual({
+      video_analyses: 3,
+      install_usage_daily: 3,
+      usage_pings: 3,
+    });
     expect(
       calls.some((c) => c.sql.includes("DELETE FROM telemetry_events")),
     ).toBe(false);

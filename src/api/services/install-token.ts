@@ -46,6 +46,16 @@ export class InstallTokens {
     return `i:${this.mac(`quota:${id}`).slice(0, 32)}`;
   }
 
+  /**
+   * Storage key for an anonymous usage ping: a keyed one-way hash of the
+   * extension's random usage id (never stored raw). Unrelated to the install
+   * token and its quota key, so usage rows cannot be joined to analyses.
+   */
+  usageKey(usageId: string): string {
+    if (!this.signing) return `u:${sha(`usage:${usageId}`)}`;
+    return `u:${this.mac(`usage:${usageId}`).slice(0, 32)}`;
+  }
+
   private mac(data: string): string {
     return createHmac("sha256", this.secret).update(data).digest("base64url");
   }

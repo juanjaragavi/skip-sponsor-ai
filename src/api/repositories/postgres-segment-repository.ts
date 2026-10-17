@@ -97,6 +97,8 @@ export class PostgresSegmentRepository implements SegmentRepository {
 export const RETENTION = {
   telemetryDays: 30,
   installUsageDays: 2,
+  /** Anonymous usage pings (migration 004): 12 months for retention cohorts. */
+  usagePingDays: 365,
 } as const;
 
 /**
@@ -112,6 +114,8 @@ export async function purgeExpired(
        WHERE created_at < now() - make_interval(days => ${RETENTION.telemetryDays})`,
     install_usage_daily: `DELETE FROM install_usage_daily
        WHERE day < (now() AT TIME ZONE 'UTC')::date - ${RETENTION.installUsageDays}`,
+    usage_pings: `DELETE FROM usage_pings
+       WHERE day < (now() AT TIME ZONE 'UTC')::date - ${RETENTION.usagePingDays}`,
   };
   const out: Record<string, number> = {};
   for (const [table, sql] of Object.entries(statements)) {

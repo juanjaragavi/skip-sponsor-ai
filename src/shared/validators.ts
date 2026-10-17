@@ -100,5 +100,28 @@ export const correctionRequestSchema = z
     path: ["endTime"],
   });
 
+/** Extension version as sent in usage pings ("1.1.0"). */
+export const extensionVersionSchema = z
+  .string()
+  .max(20)
+  .regex(/^\d+(\.\d+){1,3}$/);
+
+/**
+ * POST /v1/usage: anonymous install/usage ping. `id` is the extension's
+ * random usage id (not the install token); no URL, video or channel.
+ */
+export const usagePingSchema = z.object({
+  id: z.string().uuid(),
+  event: z.enum(["install", "update", "active"]),
+  version: extensionVersionSchema,
+});
+
+/** GET /v1/usage/uninstalled query (the page Chrome opens after an uninstall). */
+export const uninstallQuerySchema = z.object({
+  id: z.string().uuid().optional(),
+  v: extensionVersionSchema.optional(),
+});
+
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
+export type UsagePing = z.infer<typeof usagePingSchema>;
 export type TelemetryRequest = z.infer<typeof telemetryRequestSchema>;
