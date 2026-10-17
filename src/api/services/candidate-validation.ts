@@ -1,10 +1,13 @@
 import type { LlmChunk, LlmSegmentCandidate } from "../../shared/types";
 import {
+  DISCLOSURE_TAIL_SECONDS,
   MAX_SPONSOR_SEGMENT_SECONDS,
   MIN_CONTENT_AFTER_FIRST_PARTY_SECONDS,
   MIN_FIRST_PARTY_SECONDS,
   MAX_SPONSOR_VIDEO_FRACTION,
   MIN_VIDEO_FOR_FRACTION_CAP,
+  TOPIC_SPONSOR_MIN_MINUTES,
+  TOPIC_SPONSOR_PAD_SECONDS,
 } from "../../shared/constants";
 import { maxSpeechSeconds } from "../../shared/speech";
 
@@ -40,6 +43,191 @@ export function evidenceSupported(
   const have = new Set(normalizedHaystack.split(" "));
   const hits = tokens.filter((t) => have.has(t)).length;
   return hits / tokens.length >= MIN_TOKEN_MATCH;
+}
+
+/** Words that join two sponsors in one name ("NBC and YouTube", "X y Z"). */
+const ALIAS_SPLIT = /\s*(?:&|\+|\/|,|\band\b|\by\b|\be\b|\bet\b|\bund\b)\s*/giu;
+const MIN_ALIAS_CHARS = 3;
+
+/**
+ * Normalized names a cue may use for the advertiser: the name without its
+ * parenthesised part, the parenthesised short name, and each sponsor of a
+ * joint name. Matched as whole phrases, so a common word inside a longer name
+ * ("Festival des X") does not count on its own.
+ */
+export function advertiserAliases(advertiser: string | undefined): string[] {
+  const raw = advertiser ?? "";
+  const inner = [...raw.matchAll(/\(([^)]*)\)/g)].map((m) => m[1] ?? "");
+  const outer = raw.replace(/\([^)]*\)/g, " ");
+  const out: string[] = [];
+  for (const part of [outer, ...inner].flatMap((p) => p.split(ALIAS_SPLIT))) {
+    const n = normalizeText(part);
+    if (n.replace(/ /g, "").length >= MIN_ALIAS_CHARS && !out.includes(n))
+      out.push(n);
+  }
+  return out;
+}
+
+function mentionsAny(text: string, aliases: readonly string[]): boolean {
+  const hay = ` ${normalizeText(text)} `;
+  return aliases.some((a) => hay.includes(` ${a} `));
+}
+
+/** URLs, discounts and percentages, checked on the raw text. */
+const RAW_CTA =
+  /%|www\.|https?:|\b[a-z0-9-]+\.(?:com|tv|io|co|net|org|app|gg|ly|dev|me|ai|news)\b/i;
+/**
+ * Calls to action in the languages seen in the tests, on normalized text
+ * (lowercase, no diacritics). Erring towards a match only keeps a segment
+ * as the model returned it.
+ */
+const WORD_CTA = new RegExp(
+  "\\b(?:" +
+    [
+      // en
+      "links?",
+      "description",
+      "codes?",
+      "coupons?",
+      "discounts?",
+      "percent",
+      "free trial",
+      "for free",
+      "sign up",
+      "signup",
+      "dot com",
+      "slash",
+      "check (?:it|them|out)",
+      "go to",
+      "head (?:to|over)",
+      "visit",
+      "offers?",
+      "below",
+      "download",
+      "promo",
+      // es
+      "enlace",
+      "descripcion",
+      "codigo",
+      "cupon",
+      "descuentos?",
+      "por ciento",
+      "gratis",
+      "prueba gratuita",
+      "registrate",
+      "punto com",
+      "visita",
+      "entra a",
+      "ofertas?",
+      "abajo",
+      "descarga",
+      // pt
+      "descricao",
+      "cupom",
+      "desconto",
+      "por cento",
+      "gratuito",
+      "cadastre",
+      "ponto com",
+      "acesse",
+      "abaixo",
+      "baixe",
+      // fr
+      "lien",
+      "reduction",
+      "remise",
+      "pour cent",
+      "gratuit",
+      "gratuitement",
+      "inscrivez",
+      "point com",
+      "rendez vous",
+      "offre",
+      "dessous",
+      "telecharge",
+      // de
+      "beschreibung",
+      "gutschein",
+      "rabatt",
+      "prozent",
+      "kostenlos",
+      "anmelden",
+      "angebot",
+      "unten",
+      // it
+      "descrizione",
+      "codice",
+      "sconto",
+      "iscriviti",
+      "offerta",
+    ].join("|") +
+    ")\\b",
+);
+
+/** Does this text ask the viewer to act on an offer (link, code, discount, sign-up)? */
+export function hasCallToAction(text: string): boolean {
+  return RAW_CTA.test(text) || WORD_CTA.test(normalizeText(text));
+}
+
+/**
+ * Fully sponsored videos (release test 2026-10-16: dw6U6GROEpY, HmJYxPLgFds):
+ * the advertiser is named all through the video, outside every candidate for
+ * it, because its product or trip is the topic. Skipping the disclosure there
+ * skips content and nothing else.
+ */
+function sponsorIsTopic(
+  aliases: readonly string[],
+  candidates: readonly LlmSegmentCandidate[],
+  cues: readonly LlmChunk[],
+): boolean {
+  if (aliases.length === 0) return false;
+  const own = candidates.filter((d) =>
+    advertiserAliases(d.advertiser).some((a) => aliases.includes(a)),
+  );
+  const minutes = new Set<number>();
+  for (const q of cues) {
+    const nearOwn = own.some(
+      (d) =>
+        q.t0 >= d.start - TOPIC_SPONSOR_PAD_SECONDS &&
+        q.t0 < d.end + TOPIC_SPONSOR_PAD_SECONDS,
+    );
+    if (!nearOwn && mentionsAny(q.text, aliases))
+      minutes.add(Math.floor(q.t0 / 60));
+  }
+  return minutes.size >= TOPIC_SPONSOR_MIN_MINUTES;
+}
+
+/**
+ * One-line disclosures followed by content (release test 2026-10-16:
+ * gK-7TKC7kvY, "This video is sponsored by Nebula." then 66 s of topic):
+ * when a segment runs on for DISCLOSURE_TAIL_SECONDS or more after its last
+ * sponsor mention with no call to action, end it at the cue after that
+ * mention. The next DISCLOSURE_TAIL_SECONDS after the segment are checked
+ * too: a closing "link in the description" often shares a caption row with
+ * the next topic, or the model split the read and the offer sits in the
+ * second part (TnE7QoaH74U). Segments whose cues never name the sponsor are
+ * left alone.
+ */
+export function trimDisclosureTail(
+  range: { start: number; end: number },
+  aliases: readonly string[],
+  cues: readonly LlmChunk[],
+): number {
+  const inside = cues.filter((c) => c.t0 >= range.start && c.t0 < range.end);
+  let last = -1;
+  inside.forEach((c, i) => {
+    if (mentionsAny(c.text, aliases)) last = i;
+  });
+  const after = inside.slice(last + 1);
+  if (last < 0 || after.length === 0) return range.end;
+  if (range.end - after[0]!.t0 < DISCLOSURE_TAIL_SECONDS) return range.end;
+  const next = cues.filter(
+    (c) => c.t0 >= range.end && c.t0 < range.end + DISCLOSURE_TAIL_SECONDS,
+  );
+  if (next.some((c) => mentionsAny(c.text, aliases))) return range.end;
+  const tail = [...after, ...next].map((c) => c.text).join(" ");
+  if (hasCallToAction(tail)) return range.end;
+  return after[0]!.t0;
 }
 
 type Relationship = "third_party_sponsor" | "first_party";
@@ -155,10 +343,20 @@ export function validateCandidates(
       c.end <= c.start
     )
       continue;
+    const aliases = advertiserAliases(c.advertiser);
+    if (
+      relationship === "third_party_sponsor" &&
+      sponsorIsTopic(aliases, candidates, sorted)
+    )
+      continue;
     const snapped = snap(c.start, c.end, sorted);
-    const range = snapped && {
+    const cut = snapped && {
       start: snapped.start,
-      end: trimEndToSpeech(snapped, sorted),
+      end: trimDisclosureTail(snapped, aliases, sorted),
+    };
+    const range = cut && {
+      start: cut.start,
+      end: trimEndToSpeech(cut, sorted),
     };
     if (!range || range.end - range.start > maxLength) continue;
     if (

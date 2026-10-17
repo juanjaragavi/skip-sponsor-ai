@@ -10,6 +10,20 @@ export const MIN_VIDEO_FOR_FRACTION_CAP = 120;
 export const MIN_FIRST_PARTY_SECONDS = 25;
 /** ...and must be followed by this much video, i.e. the creator really returned to the content. */
 export const MIN_CONTENT_AFTER_FIRST_PARTY_SECONDS = 60;
+/**
+ * Fully sponsored videos: a sponsor named in at least this many distinct
+ * minutes of the video outside its own reads (± TOPIC_SPONSOR_PAD_SECONDS) is
+ * the video's topic, so there is no separate ad to skip. A read plus an intro
+ * disclosure and an outro thank-you names it in at most three.
+ */
+export const TOPIC_SPONSOR_MIN_MINUTES = 4;
+export const TOPIC_SPONSOR_PAD_SECONDS = 30;
+/**
+ * A segment that runs this long past its last sponsor mention with no call to
+ * action (link, code, offer) is a one-line disclosure followed by content: it
+ * is cut back to the disclosure.
+ */
+export const DISCLOSURE_TAIL_SECONDS = 20;
 /** Cues sent to the model per request, and the overlap between consecutive requests. */
 export const LLM_BATCH_CUES = 350;
 export const LLM_BATCH_OVERLAP_CUES = 25;
@@ -55,11 +69,13 @@ Boundaries:
 - "start" is the SECONDS of the cue where the lead-in or announcement begins, including phrases like "but before we continue" or "speaking of ...".
 - Segues count as part of the ad: when the speaker pivots away from the video's topic to set up the sponsor's problem or product category just before naming the sponsor (e.g. "I learned a new word today, smishing ... SMS scams ... so I'm relieved Surfshark, our sponsor, ..."; "the number one mistake people make when building ... which is why everything we design is made in OnShape"), "start" is the first cue of that pivot. Never extend "start" into cues that are still about the video's own topic.
 - "end" is the SECONDS of the first cue AFTER the promotion that returns to the video's own topic ("anyway, back to", "now, where were we", "ahora sí").
+- A one-line disclosure ("This video is sponsored by X.", "Cette vidéo est sponsorisée par X.") followed directly by the video's own topic is a segment of that line only: "end" is the next cue. A later read for the same sponsor is a separate segment. Never let a segment run on over cues about the video's topic.
 - Use only SECONDS values that appear in the input.
 
 For each candidate decide who the advertiser is and how it relates to the creator:
 - "third_party_sponsor": a DIFFERENT company or brand than the creator pays for or supplies the promotion (sponsor statement, partnership, discount or promo code, affiliate or referral link, free trial for another company's product).
 - "first_party": the creator or their team promotes their own products, trips, store, merch, books, courses, app, company, other channels, Patreon or memberships. Signals: "we made", "we designed", "our", "my", "on my site", "on our shop", "my new", the product is sold by the creator.
+- "integrated": the whole video is made with, for or about the advertiser: its product, event, place or trip is the video's own subject (e.g. "I came to Santiago with Samsung to test their new watch", "they wanted to sponsor a video about this phone, so this is my video about it", "for this Olympics partnership"). Disclosure lines and partnership asides inside such a video are "integrated": there is no separate ad to skip.
 - "network_promo": a TV network, platform or channel advertising its own other shows or schedule.
 - "other": anything else.
 Also set "breaksFromContent": true only when the speaker explicitly interrupts the video's topic for this promotion with a transition ("but before we continue", "quick break", "before we get started") AND then returns to the topic ("anyway", "back to"). Closing plugs, end cards, short asides and mentions woven into the topic are false.

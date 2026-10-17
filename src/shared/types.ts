@@ -52,7 +52,7 @@ export interface LlmSegmentCandidate {
   confidence: number;
   /** Company paying for the promotion, as named by the model. */
   advertiser?: string | undefined;
-  /** "third_party_sponsor" | "first_party" | "network_promo" | "other" */
+  /** "third_party_sponsor" | "first_party" | "integrated" | "network_promo" | "other" */
   relationship?: string | undefined;
   /** True when the speaker interrupts the video's topic for the promo and later returns. */
   breaksFromContent?: boolean | undefined;
