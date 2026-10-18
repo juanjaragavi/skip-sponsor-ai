@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.1.1, 2026-10-17). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.2.0, 2026-10-18). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -16,6 +16,8 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **AUTH-06** T3, never delete cloud projects, resources, databases, buckets, repos, domains or user data; report strays to Juan.
 - **AUTH-07** T3, never send mass messages or run automated engagement (bulk follows, likes, DMs, email).
 - **AUTH-08** Non-CTO agents commit, push or deploy only when Juan asks; the CTO logs approved T2 actions in decision-log.md.
+- **AUTH-09** Only the CTO runs the elevated-operations allowlist end to end, within each class's guardrails, logging each run; every other action keeps its tier.
+- **AUTH-10** Before stopping a job, container or server, check in-use flags and port locks; never stop one Juan or another agent holds.
 
 **Git (GIT)**
 
@@ -93,6 +95,15 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 
 - **ASSET-01** Create Proton Drive DevSpeak Labs/<Project>/ with notes/cto/runbooks/new-project.sh (layout, tags, offline pin) before its first non-code asset.
 - **ASSET-02** File finished non-code assets there: copy from repos, move from Downloads or scratch, log each action, never delete, never secrets.
+
+**Product pipeline (PROD)**
+
+- **PROD-01** An idea enters the pipeline only with Juan's yes on a rubric score of at least 80/100, 5+ sourced pain signals and a fresh-context review.
+- **PROD-02** Give every idea a codename at intake (notes/cto/codenames.md); public and developer-facing ids always use the brand, never the codename.
+- **PROD-03** Clear every name (product, trademark, domain NS, ES/EN sound) before a plan or design uses it; counsel's trademark search precedes public launch.
+- **PROD-04** After Juan picks a brand, run no web, WHOIS, DNS or registrar lookups of it until he confirms the domain is registered.
+- **PROD-05** List a product on public surfaces only after its domain is secured and Juan says yes; internal and agentic docs may list it earlier.
+- **PROD-06** When an approved product reaches pre-production testing, update every internal and agentic catalog surface within one working day, using the pipeline checklist.
 
 ## End of generated rules
 
