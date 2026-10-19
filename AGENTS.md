@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.2.0, 2026-10-18). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.3.0, 2026-10-19). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -68,6 +68,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **WEB-03** Ship favicons, description, canonical, OG/Twitter 1200×630, robots, sitemap, app-route noindex and truthful JSON-LD.
 - **WEB-04** User copy never names Supabase, Firebase, Appwrite, InstaCloud, AWS or Vercel; say DevSpeak Labs Cloud.
 - **WEB-06** Every animation has a reduced-motion fallback; corporate sites add a visible Pause motion control.
+- **WEB-11** Shaders and glass never touch work surfaces; each ships a poster, reduced-motion, reduced-transparency and contrast fallbacks, pauses off-screen and keeps text AA.
 
 **Brand and copy (BRAND)**
 
