@@ -1,5 +1,12 @@
 # Chrome Web Store submission — SkipSponsor AI 1.1.0
 
+**Published (2026-10-23):** SkipSponsor AI 1.1.0 is live on the Chrome Web
+Store, publisher DevSpeak Labs:
+https://chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh.
+The rest of this file is the submission record; its pre-submission notes and
+"Release status (2026-10-16)" table are history. A new version needs a new
+package and a new review.
+
 Everything the Developer Dashboard asks for, in dashboard order. Paste the
 fenced blocks as they are. Assets live next to this file in `store/`. The
 step-by-step walkthrough for the owner is in the CTO notes
