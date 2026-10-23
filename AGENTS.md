@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.3.0, 2026-10-19). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.5.0, 2026-10-23). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -18,6 +18,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **AUTH-08** Non-CTO agents commit, push or deploy only when Juan asks; the CTO logs approved T2 actions in decision-log.md.
 - **AUTH-09** Only the CTO runs the elevated-operations allowlist end to end, within each class's guardrails, logging each run; every other action keeps its tier.
 - **AUTH-10** Before stopping a job, container or server, check in-use flags and port locks; never stop one Juan or another agent holds.
+- **AUTH-11** The CTO runs the 2026-10-21 go-live grant (DNS, tunnels, Resend, secret scripts, Vercel, Dodo catalog, release-script deploys), logging each; T3, payments, identity checks stay Juan's.
 
 **Git (GIT)**
 
@@ -31,7 +32,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 
 - **SEC-01** Never read, print, copy or commit .env* values or secrets, or dump the environment; use variable names.
 - **SEC-02** Never write tokens, keys, bypass secrets or DSNs into logs, test artifacts, transcripts, commits or docs.
-- **SEC-03** Move secrets only via Juan-run file-to-stdin runbooks (vercel-env-put.py); never vercel env add from a pipe or vercel env pull.
+- **SEC-03** Move secrets only via file-to-stdin runbooks (vercel-env-put.py, put-secrets.sh) run by Juan or the CTO; never vercel env add from a pipe or vercel env pull.
 - **SEC-04** Never put a secret in a client bundle (`NEXT_PUBLIC_*`, `VITE_*`) or import server-only modules client-side.
 
 **Gates (GATE)**
@@ -53,7 +54,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 **Deploys (DEP)**
 
 - **DEP-01** Deploy previews only, unless Juan approved this release and its path.
-- **DEP-02** Run vercel --prod only inside an approved release script: push:prod, labs-investors-prod.sh, mig-ta/pipeline.sh.
+- **DEP-02** Run vercel --prod only inside an approved release script: push:prod, mig-ta/pipeline.sh, havernor-deploy.sh, or the repo's committed scripts/release-prod.sh.
 - **DEP-03** Never vercel --prod a project with no deployments yet; its first deployment becomes production.
 - **DEP-04** Before any deploy, link the worktree to the right Vercel project (vercel link --project <name>).
 - **DEP-05** After a deploy, verify live: health commit equals the pushed SHA and the changed flow works.
