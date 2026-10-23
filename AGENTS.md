@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.5.0, 2026-10-23). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.6.0, 2026-10-23). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -106,6 +106,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **PROD-04** After Juan picks a brand, run no web, WHOIS, DNS or registrar lookups of it until he confirms the domain is registered.
 - **PROD-05** List a product on public surfaces only after its domain is secured and Juan says yes; internal and agentic docs may list it earlier.
 - **PROD-06** When an approved product reaches pre-production testing, update every internal and agentic catalog surface within one working day, using the pipeline checklist.
+- **PROD-07** Before build, an approved idea passes a market-validation test with real people (waitlist, pre-sale or design partners) against a threshold set in advance.
 
 ## End of generated rules
 
