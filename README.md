@@ -2,6 +2,7 @@
   <img src="brand/png/mark-512.png" alt="SkipSponsor AI logo" width="96" />
   <h1>SkipSponsor AI</h1>
   <p><strong>Skip sponsor reads inside YouTube videos. AI reads the captions, marks the sponsor segment, and jumps past it — with one-click Undo.</strong></p>
+  <p><a href="https://chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh"><strong>Add to Chrome — free on the Chrome Web Store</strong></a></p>
   <p>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
     <a href="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci-main.yml"><img src="https://github.com/juanjaragavi/skip-sponsor-ai/actions/workflows/ci-main.yml/badge.svg" alt="CI" /></a>
@@ -40,8 +41,13 @@
 
 > These are designed marketing images (`store/design/`, rendered from `design/SkipSponsorAI.pen`). The Chrome Web Store gets real captures of the packaged extension in [`store/screenshots/`](store/screenshots/) (see [`store/listing.md`](store/listing.md)). Brand marks and lockups live in [`brand/`](brand/).
 
+## Install
+
+Install SkipSponsor AI from the [Chrome Web Store](https://chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh) (free, Chrome 116+). To build it from source instead, follow the [Quick Start](#quick-start).
+
 ## Contents
 
+- [Install](#install)
 - [Quick Start](#quick-start)
 - [Environment Variables](#environment-variables)
 - [Development](#development)
@@ -234,6 +240,10 @@ Minimum **80% coverage** enforced in CI (lines, branches, functions).
 ## Deployment
 
 ### Chrome Web Store
+
+SkipSponsor AI is published on the Chrome Web Store: [chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh](https://chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh) (v1.1.0, live since 2026-10-23). That listing is the install path for users.
+
+To package a new release for the store:
 
 ```bash
 echo "VITE_API_BASE_URL=https://api.<your-domain>" > .env.production   # gitignored

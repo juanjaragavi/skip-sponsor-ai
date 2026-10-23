@@ -10,6 +10,7 @@ import {
   POSTAL_ADDRESS_LINE,
 } from "../company.generated";
 import {
+  CHROME_WEB_STORE_URL,
   PRIVACY_URL,
   TERMS_URL,
   buildLegalOutputs,
@@ -82,6 +83,15 @@ describe("SkipSponsor legal pages", () => {
       "not affiliated with, endorsed by or sponsored by YouTube",
     );
     expect(terms).toContain("MIT License");
+  });
+
+  it("the landing page offers the Chrome Web Store listing as the install path", () => {
+    expect(CHROME_WEB_STORE_URL).toMatch(
+      /^https:\/\/chromewebstore\.google\.com\/detail\/skipsponsor-ai\/[a-p]{32}$/,
+    );
+    expect(outputs["site/index.html"]).toContain(
+      `<a class="cta" href="${CHROME_WEB_STORE_URL}" rel="noopener">Add to Chrome</a>`,
+    );
   });
 
   it("serves indexable pages with canonical URLs and links to both documents", () => {

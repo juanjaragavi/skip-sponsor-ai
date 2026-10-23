@@ -28,6 +28,9 @@ import {
 export const LEGAL_SITE_URL = "https://juanjaragavi.github.io/skip-sponsor-ai";
 export const PRIVACY_URL = `${LEGAL_SITE_URL}/privacy/`;
 export const TERMS_URL = `${LEGAL_SITE_URL}/terms/`;
+/** The published Chrome Web Store listing (v1.1.0, live since 2026-10-23): the install path. */
+export const CHROME_WEB_STORE_URL =
+  "https://chromewebstore.google.com/detail/skipsponsor-ai/abeocdjmjjfjjoedafnhpfpdhdnliogh";
 
 export type LegalDoc = "privacy" | "terms";
 
@@ -246,7 +249,8 @@ main{max-width:760px;margin:0 auto;padding:40px 20px 64px}h1{font-size:2rem;line
 h2{font-size:1.25rem;margin:32px 0 8px}p,li{color:var(--fg)}a{color:var(--link);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.95rem;display:block;overflow-x:auto}
 th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}code{font-size:.9em}
-nav{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 24px;color:var(--muted)}footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}`;
+nav{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 24px;color:var(--muted)}footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.cta{display:inline-block;margin:8px 0 4px;padding:10px 18px;border-radius:8px;background:var(--link);color:var(--bg);font-weight:600;text-decoration:none}.cta:hover,.cta:focus-visible{text-decoration:underline}`;
 
 export interface LegalPage {
   readonly title: string;
@@ -305,7 +309,7 @@ export function buildLegalOutputs(
     title: "SkipSponsor AI · Legal",
     description: "Privacy Policy and Terms of Use of SkipSponsor AI.",
     canonical: `${LEGAL_SITE_URL}/`,
-    bodyHtml: `<h1>SkipSponsor AI</h1>\n<p>A browser extension that skips sponsor reads in YouTube videos, provided by ${escapeHtml(LEGAL_NAME)}.</p>\n<ul><li><a href="${PRIVACY_URL}">Privacy Policy</a> (version ${VERSIONS.privacy})</li><li><a href="${TERMS_URL}">Terms of Use</a> (version ${VERSIONS.terms})</li></ul>`,
+    bodyHtml: `<h1>SkipSponsor AI</h1>\n<p>A browser extension that skips sponsor reads in YouTube videos, provided by ${escapeHtml(LEGAL_NAME)}.</p>\n<p><a class="cta" href="${CHROME_WEB_STORE_URL}" rel="noopener">Add to Chrome</a><br>Free on the Chrome Web Store.</p>\n<ul><li><a href="${PRIVACY_URL}">Privacy Policy</a> (version ${VERSIONS.privacy})</li><li><a href="${TERMS_URL}">Terms of Use</a> (version ${VERSIONS.terms})</li></ul>`,
   });
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
