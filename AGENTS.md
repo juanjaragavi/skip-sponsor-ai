@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.6.0, 2026-10-23). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.7.0, 2026-10-26). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -64,7 +64,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 
 **Web standard (WEB)**
 
-- **WEB-01** Every clickable shows cursor: pointer (disabled: not-allowed) via the base-layer :where() rule, with a guard test.
+- **WEB-01** Every clickable in every app (web, macOS, iOS, extensions) shows the pointer cursor (macOS: pointing hand; disabled: not-allowed), set once centrally, with a guard test.
 - **WEB-02** Titles are brand-first: Brand · Slogan on landing and dashboard, Brand · Page elsewhere.
 - **WEB-03** Ship favicons, description, canonical, OG/Twitter 1200×630, robots, sitemap, app-route noindex and truthful JSON-LD.
 - **WEB-04** User copy never names Supabase, Firebase, Appwrite, InstaCloud, AWS or Vercel; say DevSpeak Labs Cloud.
