@@ -4,8 +4,14 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.9.0, 2026-10-27). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.10.0, 2026-10-27). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
+
+**Global distribution (GLOBAL)**
+
+- **GLOBAL-01** Build every product for global distribution (195+ countries); agents design, write, test and ship for users anywhere, never for one country or region.
+- **GLOBAL-02** No country gets preference: no country's laws, regulators, holidays, send windows, currency or examples in copy, defaults or behaviour; follow each user's locale.
+- **GLOBAL-03** Make formats, currencies, time zones, languages and schedules locale-aware; recipient-facing timing uses the recipient's own time zone.
 
 **Authority (AUTH)**
 
@@ -109,7 +115,6 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **PROD-05** List a product on public surfaces only after its domain is secured and Juan says yes; internal and agentic docs may list it earlier.
 - **PROD-06** When an approved product reaches pre-production testing, update every internal and agentic catalog surface within one working day, using the pipeline checklist.
 - **PROD-07** Before build, an approved idea passes a market-validation test with real people (waitlist, pre-sale or design partners) against a threshold set in advance.
-- **PROD-08** Build every product for global distribution (195+ countries): no country-specific laws or regulators in user copy; locale-aware formats, currencies, time zones and languages.
 
 ## End of generated rules
 
