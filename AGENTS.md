@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.7.0, 2026-10-26). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.8.0, 2026-10-26). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Authority (AUTH)**
@@ -50,6 +50,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **LLM-03** Never use OpenRouter or Cerebras for development, tests, deploys or agent harnesses.
 - **LLM-04** Never send temperature, top_p or top_k to Claude Opus 4.7+ or any Claude 5.x model.
 - **LLM-05** Offer only models that answer live; word a supported but unfunded one 'supported; currently unavailable'.
+- **LLM-08** Every product orchestrator agent is recursive: it plans, uses every enabled tool, tries alternatives until done, and refuses only for privacy, security or legal rules.
 
 **Deploys (DEP)**
 
@@ -61,6 +62,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **DEP-06** Never npm publish or push a release tag without Juan's yes; publish from tags after a dry run.
 - **DEP-07** Register each production datastore in backup-production.sh; take a verified, restored dump before any data move.
 - **DEP-08** Before a box deploy, keep MemAvailable at least 600 MB and give each service a memory limit.
+- **DEP-11** Present products to Juan only as end users get them: production URLs, full tooling, full auth, fully functional; no localhost, dev-server, preview or test builds.
 
 **Web standard (WEB)**
 
