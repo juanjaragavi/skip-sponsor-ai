@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.10.0, 2026-10-27). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.10.1, 2026-10-27). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Global distribution (GLOBAL)**
@@ -81,7 +81,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 
 **Brand and copy (BRAND)**
 
-- **BRAND-07** Write Spanish natively (Colombian-neutral), never translated; usted on corporate surfaces and legal text.
+- **BRAND-07** Write Spanish natively in neutral international Spanish (no country's idioms), never translated; usted on corporate surfaces and legal text.
 - **BRAND-08** AI-generated images are allowed; never present generated people as clients, staff or testimonials.
 - **BRAND-09** Never invent brand assets; derive them from the existing logo, design system or .pen files.
 
