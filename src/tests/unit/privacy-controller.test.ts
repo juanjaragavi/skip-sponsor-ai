@@ -61,11 +61,13 @@ describe("privacy controller line", () => {
     const policy = read("PRIVACY.md");
     expect(policy).toContain(`**${LEGAL_NAME}**`);
     expect(policy).toContain(GENERAL_EMAIL);
-    expect(policy).toContain("Law 1581 of 2012");
+    // Counsel pack 2026-10-28: the controller is named without statute citations (GLOBAL-02).
+    expect(policy).toContain("is the controller of the data described here");
+    expect(policy).not.toMatch(/Law 1581|Responsable del Tratamiento/);
     expect(policy).toContain(
       `Version ${LEGAL_VERSIONS.skipsponsor.privacyVersion}`,
     );
-    expect(LEGAL_VERSIONS.skipsponsor.privacyVersion).toBe("2026-10-17");
+    expect(LEGAL_VERSIONS.skipsponsor.privacyVersion).toBe("2026-10-28");
     // 1.1.0 sends anonymous usage counts: the policy must disclose them.
     expect(policy).toContain("Anonymous usage count");
     expect(policy).toContain("Share usage");

@@ -1,5 +1,5 @@
 /**
- * Writes PRIVACY.md, TERMS.md and site/ from legal/*.template.md
+ * Writes PRIVACY.md, TERMS.md, PRIVACY.es.md, TERMS.es.md and site/ from legal/*.template.md
  * (src/shared/legal/render-legal.ts). `--check` exits 1 when a committed file
  * differs from a fresh build.
  *
@@ -17,6 +17,8 @@ const read = (p: string) => readFileSync(join(root, p), "utf8");
 const outputs = buildLegalOutputs({
   privacy: read("legal/PRIVACY.template.md"),
   terms: read("legal/TERMS.template.md"),
+  privacyEs: read("legal/PRIVACY.es.template.md"),
+  termsEs: read("legal/TERMS.es.template.md"),
 });
 const check = process.argv.includes("--check");
 let drift = 0;

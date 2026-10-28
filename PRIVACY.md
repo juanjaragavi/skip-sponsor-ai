@@ -2,18 +2,21 @@
 
 # SkipSponsor AI — Privacy Policy
 
-_Effective date: October 17, 2026 · Version 2026-10-17 · Applies to SkipSponsor AI 1.1.0 and later_
+_Effective date: October 28, 2026 · Version 2026-10-28 · Applies to SkipSponsor AI 1.1.0 and later_
 
 SkipSponsor AI is a browser extension that skips sponsor reads inside YouTube
 videos. To find a sponsor read, it analyzes the **caption text** of the video
 you are watching. This policy explains what is processed, why, where, for how
-long, and how to exercise your rights.
+long, and how to exercise your rights. The English and Spanish versions of this
+policy have equal standing.
 
 ## Who is responsible for your data
 
-SkipSponsor AI is provided by **Devspeak S.A.S.** (DevSpeak Labs, "we", "us"),
-a Colombian company (Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia). Devspeak S.A.S. is the data
-controller (_Responsable del Tratamiento_ under Colombian Law 1581 of 2012).
+SkipSponsor AI is provided by **Devspeak S.A.S.** (DevSpeak Labs, "we", "us"), a
+simplified stock company (S.A.S.) incorporated in Colombia (Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia).
+Devspeak S.A.S. is the controller of the data described here: the company that
+decides why and how it is processed. We apply this policy together with the
+data protection laws that apply to you.
 
 - Email for privacy questions and requests: **info@devspeak.dev**
 - Website: <https://labs.devspeak.dev>
@@ -106,42 +109,55 @@ requests, as any web server does.
 
 ## Legal basis
 
-- **Colombia (Law 1581 of 2012 and Decree 1377 of 2013, compiled in Decree
-  1074 of 2015).** We process data with your authorization. You give it by
-  installing and using the extension after being informed by its Chrome Web
-  Store listing and this policy (authorization by unequivocal conduct, Decree
-  1377 of 2013, Article 7). You can withdraw it at any time by turning the
-  extension off or uninstalling it.
-- **European Economic Area, United Kingdom and similar laws.** We process the
-  data to provide the feature you installed the extension for (Article 6(1)(b)
-  GDPR) and, for skip statistics, anonymous usage counts and abuse
-  protection, on our legitimate interest in keeping the service accurate and
-  secure (Article 6(1)(f) GDPR).
-  You can object to both by turning them off (see "Your choices").
+We process the data described here to provide the feature you installed the
+extension for, and, for skip statistics, anonymous usage counts and abuse
+protection, on our legitimate interest in keeping the service accurate and
+secure. You can object to both by turning them off (see "Your choices").
+Where the law that applies to you requires your authorization or consent, you
+give it by installing and using the extension after being informed by its
+Chrome Web Store listing and this policy, and you can withdraw it at any time
+by turning the extension off or uninstalling it.
 
 ## International transfers
 
-Our server and Anthropic's API are in the United States. When you use the
-extension, the data described above is transferred to and processed in the
-United States, under the safeguards described in this policy and in our
-providers' terms.
+Our server and Anthropic's API process data mainly in the United States. This
+means your data may be processed outside the country where you live, under
+laws that may protect personal data differently. Each provider is bound by
+terms that require it to protect the data and to use it only to provide its
+service to us, and we give each one only what it needs. You can ask us for
+more information at info@devspeak.dev.
 
 ## Your rights
 
-Under Colombian law you have the right to know, update and rectify your
-personal data; to request proof of the authorization you gave; to be informed
-of how your data is used; to file complaints with the Superintendence of
-Industry and Commerce (_Superintendencia de Industria y Comercio_, SIC); to
-withdraw your authorization and request deletion; and to access your data free
-of charge. If the GDPR or a similar law applies to you, you also have the
-rights of access, rectification, erasure, restriction, objection and
-portability, and the right to complain to your data protection authority.
+Depending on the law that applies to you, you have the right to:
 
-**How to exercise them.** Email **info@devspeak.dev** with your request. We
-answer questions (_consultas_) within 10 business days, extendable once by 5
-business days, and complaints or requests to correct or delete data
-(_reclamos_) within 15 business days, extendable once by 8 business days, as
-Law 1581 requires. Requests under the GDPR are answered within one month.
+- know whether we process your personal data, and access it free of charge;
+- correct or update data that is inaccurate or incomplete;
+- have your data deleted when we have no legal or contractual duty to keep it;
+- receive your data in a portable, commonly used format, or have it sent to
+  another provider;
+- object to, or ask us to restrict, certain processing, including processing
+  based on our legitimate interests;
+- withdraw your consent or authorization at any time, and ask for proof of the
+  authorization you gave;
+- be told how we have used your data;
+- not be treated differently for exercising these rights.
+
+We do not sell personal data or share it for cross-context behavioral
+advertising, and we do not take decisions about you based solely on automated
+processing that have legal or similarly significant effects.
+
+**How to exercise them.** Email **info@devspeak.dev** with your request. We answer
+questions about your data within 10 business days and requests to correct,
+update or delete data or to withdraw your authorization within
+15 business days. If we need more time, we tell you why before the deadline and answer
+within 5 more business days for questions or 8 more for other requests. If the
+law that applies to you sets a shorter period, we follow it.
+
+**Complaints.** If you are not satisfied with our answer, you can complain to
+the data protection authority of the country where you live or work, or of the
+country where we are established. Please contact us first, so we can try to
+solve it.
 
 Because we do not link stored data to a person, we usually cannot find data
 "about you" on our server: results are stored per video, and skip events carry
@@ -191,7 +207,7 @@ extension and the backend is public at
 
 ## Children
 
-SkipSponsor AI is not directed at children under 13 and does not knowingly
+SkipSponsor AI is not directed at children under 16 and does not knowingly
 collect personal information from them.
 
 ## Changes
@@ -203,6 +219,7 @@ take effect.
 
 | Version | Change |
 | --- | --- |
+| 2026-10-28 | Controller, legal basis, transfers, rights and complaints worded for users in any country; not directed at children under 16; Spanish version. No change to what is processed, where, or for how long. |
 | 2026-10-17 | Adds anonymous usage counts (installs, updates, days used, uninstalls) with a random ID, retained 12 months, off with "Share usage statistics". |
 | 2026-10-15 | Published as a web page with the Terms of Use; the controller's address comes from the company facts. No change to what is processed, where, or for how long. |
 | 2026-10-14 | First published version. |

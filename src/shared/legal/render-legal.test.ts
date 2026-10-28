@@ -12,7 +12,9 @@ import {
 import {
   CHROME_WEB_STORE_URL,
   PRIVACY_URL,
+  PRIVACY_URL_ES,
   TERMS_URL,
+  TERMS_URL_ES,
   buildLegalOutputs,
   fillTemplate,
   formatLegalDate,
@@ -26,6 +28,8 @@ const read = (p: string) => readFileSync(join(root, p), "utf8");
 const templates = {
   privacy: read("legal/PRIVACY.template.md"),
   terms: read("legal/TERMS.template.md"),
+  privacyEs: read("legal/PRIVACY.es.template.md"),
+  termsEs: read("legal/TERMS.es.template.md"),
 };
 const outputs = buildLegalOutputs(templates);
 
@@ -37,7 +41,12 @@ describe("SkipSponsor legal pages", () => {
   });
 
   it("names the controller, address, contact and version from the company facts", () => {
-    for (const md of [outputs["PRIVACY.md"], outputs["TERMS.md"]]) {
+    for (const md of [
+      outputs["PRIVACY.md"],
+      outputs["TERMS.md"],
+      outputs["PRIVACY.es.md"],
+      outputs["TERMS.es.md"],
+    ]) {
       expect(md).toContain(LEGAL_NAME);
       expect(md).toContain(POSTAL_ADDRESS_LINE);
       expect(md).toContain(GENERAL_EMAIL);
@@ -49,7 +58,61 @@ describe("SkipSponsor legal pages", () => {
     expect(outputs["TERMS.md"]).toContain(
       `Version ${LEGAL_VERSIONS.skipsponsor.termsVersion}`,
     );
+    expect(outputs["PRIVACY.es.md"]).toContain(
+      `Versión ${LEGAL_VERSIONS.skipsponsor.privacyVersion}`,
+    );
     expect(formatLegalDate("2026-10-15")).toBe("October 15, 2026");
+    expect(formatLegalDate("2026-10-28", "es")).toBe("28 de octubre de 2026");
+  });
+
+  it("names no country's statute, regulator or Habeas Data procedure (GLOBAL-02)", () => {
+    for (const content of Object.values(outputs)) {
+      expect(content).not.toMatch(
+        /Ley 1581|Law 1581|1377|1480|Habeas Data|Superintendencia|Superintendence|\bSIC\b|GDPR/,
+      );
+    }
+  });
+
+  it("chooses the courts of the company's domicile with the consumer carve-out, in both languages", () => {
+    const flat = (md: string | undefined) => (md ?? "").replace(/\s+/g, " ");
+    expect(flat(outputs["TERMS.md"])).toContain(
+      "competent courts of Medellín, Colombia",
+    );
+    expect(flat(outputs["TERMS.md"])).toContain(
+      "mandatory laws of your country of residence",
+    );
+    expect(flat(outputs["TERMS.es.md"])).toContain(
+      "jueces competentes de Medellín, Colombia",
+    );
+  });
+
+  it("is not directed at children under 16, and promises no analytics forwarding", () => {
+    expect(outputs["PRIVACY.md"]).toContain(
+      "not directed at children under 16",
+    );
+    expect((outputs["PRIVACY.es.md"] ?? "").replace(/\s+/g, " ")).toContain(
+      "no está dirigida a menores de 16",
+    );
+    for (const md of [outputs["PRIVACY.md"], outputs["PRIVACY.es.md"]]) {
+      expect(md).not.toMatch(/Google Analytics|Measurement Protocol/);
+    }
+  });
+
+  it("publishes the Spanish pages next to the English ones, linked both ways", () => {
+    const es = outputs["site/es/privacy/index.html"] ?? "";
+    expect(es).toContain('<html lang="es">');
+    expect(es).toContain(`<link rel="canonical" href="${PRIVACY_URL_ES}">`);
+    expect(es).toContain(`href="${PRIVACY_URL}" hreflang="en"`);
+    expect(outputs["site/privacy/index.html"]).toContain(
+      `href="${PRIVACY_URL_ES}" hreflang="es"`,
+    );
+    expect(outputs["site/es/terms/index.html"]).toContain(
+      `<link rel="canonical" href="${TERMS_URL_ES}">`,
+    );
+    expect(outputs["site/sitemap.xml"]).toContain(
+      `<loc>${PRIVACY_URL_ES}</loc>`,
+    );
+    expect(outputs["site/sitemap.xml"]).toContain(`<loc>${TERMS_URL_ES}</loc>`);
   });
 
   it("keeps entity and contact literals out of the templates", () => {

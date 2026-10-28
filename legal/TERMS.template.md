@@ -4,14 +4,15 @@ _Effective date: {effectiveDate} · Version {version} · Applies to SkipSponsor 
 
 These terms cover the SkipSponsor AI browser extension and the backend it
 calls (together, "SkipSponsor AI"). The [Privacy Policy]({privacyUrl})
-explains what data is processed and why.
+explains what data is processed and why. The English and Spanish versions of
+these terms have equal standing.
 
 ## 1. Who we are
 
 <!-- COUNSEL-REVIEW ss-terms-1: acceptance by installing or using a free extension (no account); capacity. -->
 
 SkipSponsor AI is provided by **{entity}** (DevSpeak Labs, "we", "us"), a
-Colombian company ({address}). Contact: **{email}**. By installing or using
+company incorporated in Colombia ({address}). Contact: **{email}**. By installing or using
 SkipSponsor AI you accept these terms. If you do not accept them, uninstall
 the extension.
 
@@ -55,24 +56,28 @@ unavailable, videos still play; they are just not skipped.
 
 ## 6. No warranty and limitation of liability
 
-<!-- COUNSEL-REVIEW ss-terms-6: disclaimer and liability limit for a free service under Colombian law (Ley 1480; dolo and culpa grave carve-out, C.C. art. 1522). -->
+<!-- COUNSEL-REVIEW ss-terms-6: disclaimer and liability limit for a free service; fraud and gross negligence carve-out; consumer rights (counsel pack CORE-T2, CORE-T3). -->
 
 SkipSponsor AI is provided free of charge, as it is and as available, without
 warranties of any kind, to the extent the law allows. To the extent the law
 allows, {entity} is not liable for indirect or consequential damages arising
-from the use of SkipSponsor AI. Nothing in these terms limits liability that
-cannot be limited under Colombian law, including for fraud (_dolo_) or gross
-negligence, or the mandatory rights you have as a consumer under Colombian law
-(Ley 1480 de 2011) or the law of your country.
+from the use of SkipSponsor AI. Nothing in these terms excludes or limits
+liability for fraud or gross negligence, or any liability that the applicable
+law does not allow to be excluded or limited, and nothing limits the rights
+you have as a consumer under the mandatory consumer protection laws of your
+country.
 
-## 7. Governing law
+## 7. Governing law and disputes
 
-<!-- COUNSEL-REVIEW ss-terms-7: forum (Bogotá D.C.) vs the domicile in the postal address. -->
+<!-- COUNSEL-REVIEW ss-terms-7: governing law with consumer carve-out; one venue for every product (the company's domicile). -->
 
-These terms are governed by the laws of the Republic of Colombia. Disputes go
-to the competent courts of Bogotá D.C., Colombia, without prejudice to any
-mandatory forum or law that protects you as a consumer; in Colombia you may
-also complain to the Superintendencia de Industria y Comercio (SIC).
+These terms are governed by the laws of Colombia, where {entity} is
+established. Before any claim, please write to {email} so we can try to solve
+it together within 30 days. If we cannot, disputes will be heard by the
+competent courts of {venueCity}, Colombia. If you are a consumer, this choice does
+not take away the protection that the mandatory laws of your country of
+residence give you, including your right to bring a claim before the courts or
+authorities of that country where those laws allow it.
 
 ## 8. Changes and contact
 
@@ -83,6 +88,7 @@ take effect.
 
 | Version | Change |
 | --- | --- |
+| 2026-10-28 | Liability and governing-law wording for users anywhere (courts of {venueCity}, Colombia, with a consumer carve-out); Spanish version. |
 | 2026-10-15 | First published version. |
 
 {entity} · {address} · **{email}**

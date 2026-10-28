@@ -2,16 +2,17 @@
 
 # SkipSponsor AI — Terms of Use
 
-_Effective date: October 15, 2026 · Version 2026-10-15 · Applies to SkipSponsor AI 1.1.0 and later_
+_Effective date: October 28, 2026 · Version 2026-10-28 · Applies to SkipSponsor AI 1.1.0 and later_
 
 These terms cover the SkipSponsor AI browser extension and the backend it
 calls (together, "SkipSponsor AI"). The [Privacy Policy](https://juanjaragavi.github.io/skip-sponsor-ai/privacy/)
-explains what data is processed and why.
+explains what data is processed and why. The English and Spanish versions of
+these terms have equal standing.
 
 ## 1. Who we are
 
 SkipSponsor AI is provided by **Devspeak S.A.S.** (DevSpeak Labs, "we", "us"), a
-Colombian company (Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia). Contact: **info@devspeak.dev**. By installing or using
+company incorporated in Colombia (Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia). Contact: **info@devspeak.dev**. By installing or using
 SkipSponsor AI you accept these terms. If you do not accept them, uninstall
 the extension.
 
@@ -56,17 +57,21 @@ unavailable, videos still play; they are just not skipped.
 SkipSponsor AI is provided free of charge, as it is and as available, without
 warranties of any kind, to the extent the law allows. To the extent the law
 allows, Devspeak S.A.S. is not liable for indirect or consequential damages arising
-from the use of SkipSponsor AI. Nothing in these terms limits liability that
-cannot be limited under Colombian law, including for fraud (_dolo_) or gross
-negligence, or the mandatory rights you have as a consumer under Colombian law
-(Ley 1480 de 2011) or the law of your country.
+from the use of SkipSponsor AI. Nothing in these terms excludes or limits
+liability for fraud or gross negligence, or any liability that the applicable
+law does not allow to be excluded or limited, and nothing limits the rights
+you have as a consumer under the mandatory consumer protection laws of your
+country.
 
-## 7. Governing law
+## 7. Governing law and disputes
 
-These terms are governed by the laws of the Republic of Colombia. Disputes go
-to the competent courts of Bogotá D.C., Colombia, without prejudice to any
-mandatory forum or law that protects you as a consumer; in Colombia you may
-also complain to the Superintendencia de Industria y Comercio (SIC).
+These terms are governed by the laws of Colombia, where Devspeak S.A.S. is
+established. Before any claim, please write to info@devspeak.dev so we can try to solve
+it together within 30 days. If we cannot, disputes will be heard by the
+competent courts of Medellín, Colombia. If you are a consumer, this choice does
+not take away the protection that the mandatory laws of your country of
+residence give you, including your right to bring a claim before the courts or
+authorities of that country where those laws allow it.
 
 ## 8. Changes and contact
 
@@ -77,6 +82,7 @@ take effect.
 
 | Version | Change |
 | --- | --- |
+| 2026-10-28 | Liability and governing-law wording for users anywhere (courts of Medellín, Colombia, with a consumer carve-out); Spanish version. |
 | 2026-10-15 | First published version. |
 
 Devspeak S.A.S. · Cll. 7D # 43A - 40, Piso 8, Medellín, Antioquia 050022, Colombia · **info@devspeak.dev**
