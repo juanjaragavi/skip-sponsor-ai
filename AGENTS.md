@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.10.1, 2026-10-27). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.11.0, 2026-11-15). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Global distribution (GLOBAL)**
@@ -90,7 +90,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 - **TRUTH-01** Never publish invented testimonials, clients, logos, ratings, metrics, versions, status, unbuilt features or legal entities.
 - **TRUTH-02** Re-read the source before quoting a price, version, model or metric; downloads are not users.
 - **TRUTH-03** Every figure has value, label, as-of date and linked source; industry figures are never our results.
-- **TRUTH-04** Never edit privacy, terms or legal text without escalating to Juan; agents draft only.
+- **TRUTH-04** Consult the CLO agent on legal questions, contracts, data flows, names and legal text; obey its written legal holds; legal text needs Juan's yes.
 - **TRUTH-05** Company facts come only from company.generated.ts (devspeak-labs-company); never hardcode entity, copyright or contact.
 
 **Ports (PORT)**
@@ -110,7 +110,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 
 - **PROD-01** An idea enters the pipeline only with Juan's yes on a rubric score of at least 80/100, 5+ sourced pain signals and a fresh-context review.
 - **PROD-02** Give every idea a codename at intake (notes/cto/codenames.md); public and developer-facing ids always use the brand, never the codename.
-- **PROD-03** Clear every name (product, trademark, domain NS, ES/EN sound) before a plan or design uses it; counsel's trademark search precedes public launch.
+- **PROD-03** Clear every name (product, trademark, domain NS, ES/EN sound) before a plan or design uses it; the CLO's trademark search precedes public launch.
 - **PROD-04** After Juan picks a brand, run no web, WHOIS, DNS or registrar lookups of it until he confirms the domain is registered.
 - **PROD-05** List a product on public surfaces only after its domain is secured and Juan says yes; internal and agentic docs may list it earlier.
 - **PROD-06** When an approved product reaches pre-production testing, update every internal and agentic catalog surface within one working day, using the pipeline checklist.
