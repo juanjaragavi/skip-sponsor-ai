@@ -1,0 +1,648 @@
+{
+  "extName": {
+    "message": "SkipSponsor AI"
+  },
+  "extShortName": {
+    "message": "SkipSponsor"
+  },
+  "extDescription": {
+    "message": "Omita las menciones patrocinadas en videos de YouTube. Lee los subtítulos, marca el segmento y lo salta, con Deshacer en un clic."
+  },
+  "actionTitle": {
+    "message": "SkipSponsor AI"
+  },
+  "actionTitleOff": {
+    "message": "SkipSponsor AI — omisión desactivada"
+  },
+  "localeCode": {
+    "message": "es"
+  },
+  "privacyPolicyUrl": {
+    "message": "https://juanjaragavi.github.io/skip-sponsor-ai/es/privacy/"
+  },
+  "termsUrl": {
+    "message": "https://juanjaragavi.github.io/skip-sponsor-ai/es/terms/"
+  },
+  "skipSponsorReads": {
+    "message": "Omitir menciones patrocinadas"
+  },
+  "modeLabel": {
+    "message": "Modo"
+  },
+  "modeAuto": {
+    "message": "Omitir automáticamente"
+  },
+  "modeAutoShort": {
+    "message": "Automático"
+  },
+  "modeNotify": {
+    "message": "Avisar"
+  },
+  "modeOff": {
+    "message": "Desactivado"
+  },
+  "modeHelpAuto": {
+    "message": "Omitir automáticamente: corta los tramos marcados en cuanto empiezan"
+  },
+  "modeHelpNotify": {
+    "message": "Avisar: marca el tramo y muestra un botón Omitir"
+  },
+  "modeHelpOff": {
+    "message": "Desactivado: las menciones patrocinadas se reproducen con normalidad"
+  },
+  "percentValueText": {
+    "message": "$PCT$ por ciento",
+    "placeholders": {
+      "pct": {
+        "content": "$1",
+        "example": "78"
+      }
+    }
+  },
+  "popupThisVideo": {
+    "message": "Este video"
+  },
+  "popupDetectedSegments": {
+    "message": "Segmentos detectados"
+  },
+  "popupCutThreshold": {
+    "message": "Umbral de corte"
+  },
+  "popupZoneKeep": {
+    "message": "← conservar · 50%"
+  },
+  "popupZoneCut": {
+    "message": "95% · cortar →"
+  },
+  "popupPrivacyNote": {
+    "message": "Solo subtítulos · se aplica al instante"
+  },
+  "popupSettings": {
+    "message": "Configuración"
+  },
+  "popupNotRunning": {
+    "message": "SkipSponsor AI aún no se está ejecutando en esta pestaña."
+  },
+  "popupReloadTab": {
+    "message": "Recargar pestaña"
+  },
+  "popupOpenVideo": {
+    "message": "Abra un video de YouTube para ver aquí sus menciones patrocinadas."
+  },
+  "popupReadingCaptions": {
+    "message": "Leyendo subtítulos…"
+  },
+  "popupAdPlaying": {
+    "message": "Anuncio de YouTube en curso"
+  },
+  "popupAnalyzeFailed": {
+    "message": "No se pudo analizar este video; se reproduce con normalidad."
+  },
+  "popupNotAnalyzed": {
+    "message": "No se pudo analizar este video: no tiene subtítulos que leer, así que se reproduce con normalidad."
+  },
+  "popupNothingToSkip": {
+    "message": "No hay subtítulos ni patrocinios marcados por la comunidad: no hay nada que omitir."
+  },
+  "popupNoSponsorReads": {
+    "message": "No se encontraron menciones patrocinadas en este video."
+  },
+  "popupChannelSkippingOff": {
+    "message": "$NAME$ · omisión desactivada",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alpha Channel"
+      }
+    }
+  },
+  "popupChannelSkipOn": {
+    "message": "Omitir en este canal"
+  },
+  "popupChannelDontSkip": {
+    "message": "No omitir en este canal"
+  },
+  "popupRowLabel": {
+    "message": "$INDEX$ $TAG$ $RANGE$, $STATUS$, $CONFIDENCE$ de confianza",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "01"
+      },
+      "tag": {
+        "content": "$2",
+        "example": "CUT"
+      },
+      "range": {
+        "content": "$3",
+        "example": "03:42 → 04:22"
+      },
+      "status": {
+        "content": "$4",
+        "example": "Will skip · 40s"
+      },
+      "confidence": {
+        "content": "$5",
+        "example": "91%"
+      }
+    }
+  },
+  "tagCut": {
+    "message": "CORTE"
+  },
+  "tagAsk": {
+    "message": "AVISO"
+  },
+  "tagKeep": {
+    "message": "QUEDA"
+  },
+  "tagLimit": {
+    "message": "LÍMITE"
+  },
+  "categorySponsor": {
+    "message": "Patrocinio"
+  },
+  "categoryIntro": {
+    "message": "Introducción"
+  },
+  "categoryOutro": {
+    "message": "Cierre"
+  },
+  "categorySelfpromo": {
+    "message": "Autopromoción"
+  },
+  "categoryInteractionReminder": {
+    "message": "Recordatorio de suscripción"
+  },
+  "statusPlayerBlocked": {
+    "message": "El reproductor de YouTube bloqueó la omisión"
+  },
+  "statusAutoSkipPaused": {
+    "message": "Omisión automática en pausa en este video"
+  },
+  "statusSkipped": {
+    "message": "Omitido · $SECONDS$ s",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "statusWillSkip": {
+    "message": "Se omitirá · $SECONDS$ s",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "statusSkipButtonAt": {
+    "message": "Botón Omitir en $TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "03:42"
+      }
+    }
+  },
+  "statusSkipButtonShown": {
+    "message": "Botón Omitir mostrado"
+  },
+  "statusBelowThreshold": {
+    "message": "Por debajo del umbral"
+  },
+  "statusCategoryNotSkipped": {
+    "message": "$CATEGORY$ · no se omite",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Intro"
+      }
+    }
+  },
+  "statusChannelAllowed": {
+    "message": "Canal permitido"
+  },
+  "statusKeptByYou": {
+    "message": "Conservado por usted"
+  },
+  "statusSkippingOff": {
+    "message": "Omisión desactivada"
+  },
+  "thresholdNone": {
+    "message": "Los puntos muestran los segmentos detectados en este video; por ahora, ninguno."
+  },
+  "thresholdCut": {
+    "message": "Los puntos son los segmentos detectados en este video. Todo lo que quede a la derecha de la línea se corta: $OVER$ de $TOTAL$ aquí.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "thresholdAsk": {
+    "message": "Los puntos son los segmentos detectados en este video. Todo lo que quede a la derecha de la línea recibe un botón Omitir: $OVER$ de $TOTAL$ aquí.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "thresholdWould": {
+    "message": "Los puntos son los segmentos detectados en este video. Todo lo que quede a la derecha de la línea se cortaría: $OVER$ de $TOTAL$ aquí.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "limitInstallQuotaTitle": {
+    "message": "Límite diario de análisis con IA alcanzado"
+  },
+  "limitInstallQuotaSub": {
+    "message": "Omite lo ya analizado · más a las $AT$",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitInstallQuotaPopup": {
+    "message": "Ya usó los análisis gratuitos con IA de hoy. En los videos ya analizados, la omisión sigue funcionando. Habrá más análisis a las $AT$.",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitGlobalBudgetTitle": {
+    "message": "El análisis con IA está saturado hoy"
+  },
+  "limitGlobalBudgetSub": {
+    "message": "Omite lo ya analizado · vuelve a las $AT$",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitGlobalBudgetPopup": {
+    "message": "SkipSponsor AI alcanzó la capacidad gratuita de análisis de hoy. En los videos ya analizados, la omisión sigue funcionando. Los análisis nuevos se reanudan a las $AT$.",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitLlmNotConfiguredTitle": {
+    "message": "El análisis con IA no está disponible"
+  },
+  "limitLlmNotConfiguredSub": {
+    "message": "Sigue omitiendo lo ya analizado"
+  },
+  "limitLlmNotConfiguredPopup": {
+    "message": "El servidor de SkipSponsor AI aún no está configurado para el análisis con IA. En los videos ya analizados, la omisión sigue funcionando."
+  },
+  "limitLlmDisabledTitle": {
+    "message": "El análisis con IA está en pausa"
+  },
+  "limitLlmDisabledSub": {
+    "message": "Sigue omitiendo lo ya analizado"
+  },
+  "limitLlmDisabledPopup": {
+    "message": "El análisis con IA está en pausa por ahora. En los videos ya analizados, la omisión sigue funcionando."
+  },
+  "limitSettingUpTitle": {
+    "message": "Configurando SkipSponsor AI"
+  },
+  "limitSettingUpSub": {
+    "message": "Sin omisiones · reintenta en su próximo video"
+  },
+  "limitSettingUpPopup": {
+    "message": "SkipSponsor AI aún está terminando de configurarse en este navegador y lo intentará de nuevo en su próximo video. En los videos ya analizados, la omisión sigue funcionando."
+  },
+  "limitUnreachableTitle": {
+    "message": "Sin conexión con SkipSponsor AI"
+  },
+  "limitUnreachableSub": {
+    "message": "Sigue omitiendo lo ya analizado"
+  },
+  "limitUnreachablePopup": {
+    "message": "SkipSponsor AI no pudo conectarse con su servidor para este video, así que se reproduce con normalidad. En los videos ya analizados, la omisión sigue funcionando."
+  },
+  "toastDismiss": {
+    "message": "Cerrar"
+  },
+  "toastUndo": {
+    "message": "Deshacer"
+  },
+  "toastSkip": {
+    "message": "Omitir"
+  },
+  "toastOk": {
+    "message": "Aceptar"
+  },
+  "toastSkippedSub": {
+    "message": "$CATEGORY$ · $SECONDS$ s omitidos",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Sponsor"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "37"
+      }
+    }
+  },
+  "toastEndsIn": {
+    "message": "$CATEGORY$ · termina en $SECONDS$ s",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Sponsor"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "32"
+      }
+    }
+  },
+  "optionsDocTitle": {
+    "message": "SkipSponsor AI — $SECTION$",
+    "placeholders": {
+      "section": {
+        "content": "$1",
+        "example": "General"
+      }
+    }
+  },
+  "optionsNavLabel": {
+    "message": "Secciones de configuración"
+  },
+  "navGeneral": {
+    "message": "General"
+  },
+  "navChannels": {
+    "message": "Canales"
+  },
+  "navPrivacy": {
+    "message": "Privacidad"
+  },
+  "navAbout": {
+    "message": "Acerca de"
+  },
+  "generalDesc": {
+    "message": "Los cambios se guardan automáticamente y se aplican al video que se está reproduciendo."
+  },
+  "generalEnableHint": {
+    "message": "Active o desactive SkipSponsor AI en todas partes."
+  },
+  "modeAutoDesc": {
+    "message": "Salta las menciones patrocinadas automáticamente."
+  },
+  "modeNotifyDesc": {
+    "message": "Muestra un botón Omitir; usted decide."
+  },
+  "modeOffDesc": {
+    "message": "Las menciones patrocinadas se reproducen con normalidad."
+  },
+  "confidenceThreshold": {
+    "message": "Umbral de confianza"
+  },
+  "thresholdScaleLow": {
+    "message": "50% · más omisiones, algún corte erróneo"
+  },
+  "thresholdScaleHigh": {
+    "message": "95% · menos omisiones, más seguras"
+  },
+  "optionsThresholdHint": {
+    "message": "Omitir solo cuando la IA tenga al menos un $PCT$% de certeza de que el segmento es una mención patrocinada.",
+    "placeholders": {
+      "pct": {
+        "content": "$1",
+        "example": "78"
+      }
+    }
+  },
+  "channelsDesc": {
+    "message": "La omisión está desactivada en estos canales: apoye a los creadores cuyas menciones quiere escuchar."
+  },
+  "channelsAdd": {
+    "message": "Agregar un canal"
+  },
+  "channelsPlaceholder": {
+    "message": "@creador o youtube.com/@creador"
+  },
+  "channelsAddButton": {
+    "message": "Agregar"
+  },
+  "optionsChannelHint": {
+    "message": "Pegue el enlace de un canal o escriba su @identificador."
+  },
+  "optionsInvalidChannel": {
+    "message": "Eso no parece un canal de YouTube. Pruebe con @creador o con un enlace como youtube.com/@creador."
+  },
+  "optionsChannelExists": {
+    "message": "$CHANNEL$ ya está en la lista.",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "@creator"
+      }
+    }
+  },
+  "optionsChannelAdded": {
+    "message": "Se agregó $CHANNEL$. Sus menciones patrocinadas se reproducirán con normalidad.",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "@creator"
+      }
+    }
+  },
+  "channelsListLabel": {
+    "message": "Canales con la omisión desactivada"
+  },
+  "channelsEmptyTitle": {
+    "message": "La omisión funciona en todos los canales"
+  },
+  "channelsEmptyHint": {
+    "message": "Agregue uno arriba o use “No omitir en este canal” en la ventana emergente mientras ve un video."
+  },
+  "optionsRemove": {
+    "message": "Quitar"
+  },
+  "optionsRemoveLabel": {
+    "message": "Quitar $NAME$: volver a omitir las menciones patrocinadas en este canal",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alpha Channel"
+      }
+    }
+  },
+  "privacyDesc": {
+    "message": "Resumen en lenguaje sencillo de lo que SkipSponsor AI lee y conserva."
+  },
+  "privacyCaptionsTitle": {
+    "message": "Solo se analiza el texto de los subtítulos, nunca el audio"
+  },
+  "privacyCaptionsHint": {
+    "message": "Se leen los subtítulos del video para encontrar dónde empieza y dónde termina una mención patrocinada."
+  },
+  "privacyAccountTitle": {
+    "message": "Sin cuenta ni datos personales"
+  },
+  "privacyAccountHint": {
+    "message": "Funciona sin iniciar sesión. Un token de instalación anónimo protege el servicio contra el abuso."
+  },
+  "privacyCacheTitle": {
+    "message": "Los resultados se guardan en caché durante 30 días y luego se eliminan"
+  },
+  "privacyCacheHint": {
+    "message": "Los resultados de los segmentos se comparten por video, así que las vistas repetidas son instantáneas."
+  },
+  "privacyNoCaptionsTitle": {
+    "message": "Los videos sin subtítulos no se analizan"
+  },
+  "privacyNoCaptionsHint": {
+    "message": "SkipSponsor AI solo lee los subtítulos del propio video. Si un video no tiene, lo indica y el video se reproduce con normalidad."
+  },
+  "privacyYourData": {
+    "message": "Sus datos"
+  },
+  "privacyShareUsage": {
+    "message": "Compartir estadísticas de uso"
+  },
+  "privacyShareUsageHint": {
+    "message": "Envía los eventos “omitido” y “deshecho” (ID del video y tiempos) para poder medir la precisión, y un conteo anónimo de instalaciones, desinstalaciones y días de uso (un ID aleatorio y la versión de la extensión; ningún video ni página). La omisión funciona igual en ambos casos."
+  },
+  "privacyResetTitle": {
+    "message": "Restablecer SkipSponsor AI"
+  },
+  "privacyResetHint": {
+    "message": "Borra su configuración, su lista de canales y su ID de instalación anónimo en este navegador."
+  },
+  "optionsReset": {
+    "message": "Restablecer"
+  },
+  "optionsResetConfirm": {
+    "message": "Haga clic otra vez para restablecer"
+  },
+  "optionsResetDone": {
+    "message": "Listo: restablecido"
+  },
+  "privacyWhoResponsible": {
+    "message": "Quién es responsable de sus datos"
+  },
+  "privacyController": {
+    "message": "$LEGAL$ ($BRAND$) ofrece SkipSponsor AI y es responsable de los datos que la extensión envía. Preguntas o solicitudes: ",
+    "placeholders": {
+      "legal": {
+        "content": "$1",
+        "example": "Devspeak S.A.S."
+      },
+      "brand": {
+        "content": "$2",
+        "example": "DevSpeak Labs"
+      }
+    }
+  },
+  "privacyFullPolicy": {
+    "message": "Política de privacidad completa"
+  },
+  "privacyFullPolicyHint": {
+    "message": "Qué se procesa, adónde va y durante cuánto tiempo se conserva."
+  },
+  "privacyReadPolicy": {
+    "message": "Leer la política"
+  },
+  "aboutDesc": {
+    "message": "SkipSponsor AI omite los segmentos patrocinados dentro de los videos. No bloquea los anuncios propios de YouTube."
+  },
+  "aboutVersion": {
+    "message": "Versión $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "1.1.0"
+      }
+    }
+  },
+  "aboutChromeRequirement": {
+    "message": "Chrome 116 o posterior"
+  },
+  "aboutSupport": {
+    "message": "Soporte"
+  },
+  "aboutPrivacyPolicy": {
+    "message": "Política de privacidad"
+  },
+  "aboutTerms": {
+    "message": "Términos de uso"
+  },
+  "aboutSourceCode": {
+    "message": "Código fuente"
+  },
+  "aboutDetectionService": {
+    "message": "Servicio de detección"
+  },
+  "optionsStatusChecking": {
+    "message": "Comprobando…"
+  },
+  "optionsStatusOnline": {
+    "message": "En línea"
+  },
+  "optionsStatusUnreachable": {
+    "message": "Sin respuesta"
+  },
+  "optionsStatusUnavailable": {
+    "message": "Estado no disponible"
+  },
+  "optionsConnectedTo": {
+    "message": "Conectado a $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "api.example.com"
+      }
+    }
+  },
+  "optionsCantReach": {
+    "message": "No se puede conectar con $HOST$. Los videos se reproducirán con normalidad hasta que vuelva a estar disponible.",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "api.example.com"
+      }
+    }
+  },
+  "aboutCheckAgain": {
+    "message": "Comprobar de nuevo"
+  },
+  "aboutReportSkip": {
+    "message": "Informar sobre una omisión incorrecta o faltante"
+  }
+}

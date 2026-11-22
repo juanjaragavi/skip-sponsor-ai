@@ -7,6 +7,7 @@ import {
   GENERAL_EMAIL,
   LEGAL_NAME,
 } from "../shared/company.generated";
+import { t } from "./i18n";
 
 /**
  * Fills the About card's copyright slot: notice, separator, then the brand
@@ -43,9 +44,7 @@ export function renderPrivacyController(
   link.className = "link-inline";
   link.textContent = GENERAL_EMAIL;
   el.replaceChildren(
-    doc.createTextNode(
-      `${LEGAL_NAME} (${BRAND_NAME}) provides SkipSponsor AI and is responsible for the data it sends. Questions or requests: `,
-    ),
+    doc.createTextNode(t("privacyController", LEGAL_NAME, BRAND_NAME)),
     link,
   );
 }

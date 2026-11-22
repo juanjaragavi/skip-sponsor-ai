@@ -2,6 +2,7 @@ import type { SponsorSegment } from "../shared/types";
 import { UNDO_TOAST_MS } from "../shared/constants";
 import { categoryLabel, formatRange } from "./view-model";
 import { icon, type IconName } from "./ui/icons";
+import { t } from "./i18n";
 
 export interface ToastCallbacks {
   onUndo: () => void;
@@ -35,7 +36,7 @@ const STYLE = `
 .ask .tag{background:rgba(255,181,71,.16);color:#FFB547}
 .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .tc{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
-.sub{font-size:11.5px;color:#AEB6C2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:11.5px;line-height:1.3;color:#AEB6C2;overflow-wrap:anywhere}
 button{font-family:inherit;border:0;margin:0;cursor:pointer}
 .action{height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:7px;flex:none;
   font-size:13px;font-weight:600;color:#F5F7FA}
@@ -52,7 +53,7 @@ button:focus-visible{outline:2px solid #9B87FF;outline-offset:2px}
 .cut .head{animation:drain-head var(--ms) linear forwards}
 .ask .range{background:#FFB547}
 .note .tag{background:rgba(155,135,255,.16);color:#9B87FF}
-.note .tc{font-size:13px}
+.note .tc{font-size:13px;line-height:1.3;white-space:normal}
 .note .strip{display:none}
 .ok{background:rgba(255,255,255,.12)}.ok:hover{background:rgba(255,255,255,.2)}
 @keyframes drain{from{width:100%}to{width:0}}
@@ -105,7 +106,7 @@ function render(spec: Spec): {
   action.type = "button";
   const close = el("button", "close", icon("x", 15));
   close.type = "button";
-  close.setAttribute("aria-label", "Dismiss");
+  close.setAttribute("aria-label", t("toastDismiss"));
 
   const strip = el(
     "div",
@@ -169,11 +170,20 @@ export function showSkipToast(
   return render({
     hostId: "skipsponsor-toast-host",
     kind: "cut",
-    tag: "CUT",
+    tag: t("tagCut"),
     glyph: "scissors",
     range: formatRange(segment.startTime, segment.endTime),
-    sub: `${categoryLabel(segment.category)} · ${seconds(segment)}s skipped`,
-    action: { className: "undo", text: "Undo", icon: "undo-2", run: cb.onUndo },
+    sub: t(
+      "toastSkippedSub",
+      categoryLabel(segment.category),
+      seconds(segment),
+    ),
+    action: {
+      className: "undo",
+      text: t("toastUndo"),
+      icon: "undo-2",
+      run: cb.onUndo,
+    },
     durationMs: UNDO_TOAST_MS,
   }).dismiss;
 }
@@ -183,13 +193,13 @@ export function showNoticeToast(title: string, sub: string): () => void {
   return render({
     hostId: "skipsponsor-notice-host",
     kind: "note",
-    tag: "LIMIT",
+    tag: t("tagLimit"),
     glyph: "info",
     range: title,
     sub,
     action: {
       className: "ok",
-      text: "OK",
+      text: t("toastOk"),
       icon: "check",
       run: () => undefined,
     },
@@ -203,28 +213,34 @@ export function showNotifyBanner(
   onSkip: () => void,
   durationMs = UNDO_TOAST_MS,
 ): NotifyHandle {
-  const endsIn = (t: number): string =>
-    `${categoryLabel(segment.category)} · ends in ${Math.max(0, Math.ceil(segment.endTime - t))}s`;
+  const endsIn = (time: number): string =>
+    t(
+      "toastEndsIn",
+      categoryLabel(segment.category),
+      Math.max(0, Math.ceil(segment.endTime - time)),
+    );
   const { dismiss, sub, strip } = render({
     hostId: "skipsponsor-notify-host",
     kind: "ask",
-    tag: "ASK",
+    tag: t("tagAsk"),
     glyph: "hand",
     range: formatRange(segment.startTime, segment.endTime),
     sub: endsIn(segment.startTime),
     action: {
       className: "skip",
-      text: "Skip",
+      text: t("toastSkip"),
       icon: "chevrons-right",
       run: onSkip,
     },
     durationMs,
   });
-  const update = (t: number): void => {
-    sub.textContent = endsIn(t);
+  const update = (time: number): void => {
+    sub.textContent = endsIn(time);
     const span = segment.endTime - segment.startTime;
     const p =
-      span > 0 ? Math.min(1, Math.max(0, (t - segment.startTime) / span)) : 0;
+      span > 0
+        ? Math.min(1, Math.max(0, (time - segment.startTime) / span))
+        : 0;
     strip.style.setProperty("--p", `${(p * 100).toFixed(1)}%`);
   };
   update(segment.startTime);

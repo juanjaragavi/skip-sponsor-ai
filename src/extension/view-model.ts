@@ -5,9 +5,19 @@ import type {
 } from "../shared/types";
 import type { AnalysisLimit } from "../shared/messages";
 import { decideSkip } from "./policy";
+import { t, type MessageKey } from "./i18n";
 import { USER_MESSAGES } from "./user-messages";
 
 export type Tag = "CUT" | "ASK" | "KEEP";
+
+const TAG_KEY: Record<Tag, MessageKey> = {
+  CUT: "tagCut",
+  ASK: "tagAsk",
+  KEEP: "tagKeep",
+};
+
+/** Display text of a row tag ("CUT" stays the data value; Spanish shows "CORTE"). */
+export const tagLabel = (tag: Tag): string => t(TAG_KEY[tag]);
 
 /** One row of the popup's edit decision list. */
 export interface SegmentRow {
@@ -54,15 +64,15 @@ export const formatRange = (start: number, end: number): string =>
 const seconds = (s: SponsorSegment): number =>
   Math.round(s.endTime - s.startTime);
 
-const CATEGORY_LABEL: Record<SegmentCategory, string> = {
-  sponsor: "Sponsor",
-  intro: "Intro",
-  outro: "Outro",
-  selfpromo: "Self-promo",
-  interaction_reminder: "Subscribe reminder",
+const CATEGORY_KEY: Record<SegmentCategory, MessageKey> = {
+  sponsor: "categorySponsor",
+  intro: "categoryIntro",
+  outro: "categoryOutro",
+  selfpromo: "categorySelfpromo",
+  interaction_reminder: "categoryInteractionReminder",
 };
 
-export const categoryLabel = (c: SegmentCategory): string => CATEGORY_LABEL[c];
+export const categoryLabel = (c: SegmentCategory): string => t(CATEGORY_KEY[c]);
 
 /** Decision + wording for one segment, mirroring the skip loop's policy. */
 export function describeSegment(
@@ -76,39 +86,39 @@ export function describeSegment(
   });
   const upcoming = seg.startTime > ctx.currentTime;
   if (ctx.blocked?.has(seg.id))
-    return { tag: "KEEP", status: "YouTube’s player blocked the skip" };
+    return { tag: "KEEP", status: t("statusPlayerBlocked") };
   switch (d.reason) {
     case "auto-skip":
       if (ctx.paused && !ctx.skipped.has(seg.id))
-        return { tag: "KEEP", status: "Auto-skip paused for this video" };
+        return { tag: "KEEP", status: t("statusAutoSkipPaused") };
       return {
         tag: "CUT",
         status: ctx.skipped.has(seg.id)
-          ? `Skipped · ${seconds(seg)}s`
-          : `Will skip · ${seconds(seg)}s`,
+          ? t("statusSkipped", seconds(seg))
+          : t("statusWillSkip", seconds(seg)),
       };
     case "notify-only":
       return {
         tag: "ASK",
         status: ctx.skipped.has(seg.id)
-          ? `Skipped · ${seconds(seg)}s`
+          ? t("statusSkipped", seconds(seg))
           : upcoming
-            ? `Skip button at ${formatTimecode(seg.startTime)}`
-            : "Skip button shown",
+            ? t("statusSkipButtonAt", formatTimecode(seg.startTime))
+            : t("statusSkipButtonShown"),
       };
     case "low-confidence":
-      return { tag: "KEEP", status: "Below threshold" };
+      return { tag: "KEEP", status: t("statusBelowThreshold") };
     case "category-not-skippable":
       return {
         tag: "KEEP",
-        status: `${categoryLabel(seg.category)} · not skipped`,
+        status: t("statusCategoryNotSkipped", categoryLabel(seg.category)),
       };
     case "channel-blocked":
-      return { tag: "KEEP", status: "Channel allowed" };
+      return { tag: "KEEP", status: t("statusChannelAllowed") };
     case "user-override":
-      return { tag: "KEEP", status: "Kept by you" };
+      return { tag: "KEEP", status: t("statusKeptByYou") };
     default:
-      return { tag: "KEEP", status: "Skipping is off" };
+      return { tag: "KEEP", status: t("statusSkippingOff") };
   }
 }
 
@@ -152,18 +162,18 @@ export function thresholdSummary(
   policy: UserPolicy,
 ): string {
   const sponsors = segments.filter((s) => s.category === "sponsor");
-  if (sponsors.length === 0)
-    return "Dots show this video’s detected segments — none so far.";
+  if (sponsors.length === 0) return t("thresholdNone");
   const over = sponsors.filter(
     (s) => s.confidence >= policy.confidenceThreshold,
   ).length;
-  const outcome =
+  // One whole sentence per outcome: word order differs between languages.
+  const key: MessageKey =
     !policy.globalEnabled || policy.mode === "off"
-      ? "would be cut"
+      ? "thresholdWould"
       : policy.mode === "notify"
-        ? "gets a Skip button"
-        : "gets cut";
-  return `Dots are this video’s detected segments. Anything right of the line ${outcome} — ${over} of ${sponsors.length} here.`;
+        ? "thresholdAsk"
+        : "thresholdCut";
+  return t(key, over, sponsors.length);
 }
 
 /** Local wall-clock time of a reset, e.g. "7:00 PM". */
@@ -211,11 +221,15 @@ export function limitCopy(limit: AnalysisLimit): {
   }
 }
 
-export const MODE_HELP: Record<UserPolicy["mode"], string> = {
-  auto: "Auto-skip — cuts marked ranges as they start",
-  notify: "Notify — marks the range and shows a Skip button",
-  off: "Off — sponsor reads play normally",
+const MODE_HELP_KEY: Record<UserPolicy["mode"], MessageKey> = {
+  auto: "modeHelpAuto",
+  notify: "modeHelpNotify",
+  off: "modeHelpOff",
 };
+
+/** One-line help under the mode picker, in the user's language. */
+export const modeHelp = (mode: UserPolicy["mode"]): string =>
+  t(MODE_HELP_KEY[mode]);
 
 export const THRESHOLD_MIN = 0.5;
 export const THRESHOLD_MAX = 0.95;

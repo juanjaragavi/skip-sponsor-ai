@@ -1,70 +1,112 @@
 /**
  * The extension's message catalog (portfolio platform standard): every
- * user-facing error, success and notification string lives here. Copy names
+ * user-facing error, success and notification string is read from
+ * `_locales/<lang>/messages.json` through `t()` (src/extension/i18n.ts), so it
+ * follows the user's Chrome language. Getters resolve at use time. Copy names
  * only the product ("SkipSponsor AI"); hosting vendors are never named
- * (guarded by src/tests/unit/user-messages-guard.test.ts).
+ * (guarded by src/tests/unit/platform-guards.test.ts).
  */
+import { t } from "./i18n";
+
+export interface LimitMessages {
+  title: string;
+  sub: string;
+  popup: string;
+}
+
 export const USER_MESSAGES = {
   popup: {
-    notRunning: "SkipSponsor AI isn’t running in this tab yet.",
-    openVideo: "Open a YouTube video to see its sponsor reads here.",
-    readingCaptions: "Reading captions…",
-    adPlaying: "YouTube ad playing",
-    analyzeFailed: "Couldn’t analyze this video — it plays normally.",
-    notAnalyzed:
-      "Couldn’t analyze this video — there are no captions to read, so it plays normally.",
-    nothingToSkip:
-      "No captions, and no community-labelled sponsors — nothing to skip.",
-    noSponsorReads: "No sponsor reads found in this video.",
+    get notRunning(): string {
+      return t("popupNotRunning");
+    },
+    get openVideo(): string {
+      return t("popupOpenVideo");
+    },
+    get readingCaptions(): string {
+      return t("popupReadingCaptions");
+    },
+    get adPlaying(): string {
+      return t("popupAdPlaying");
+    },
+    get analyzeFailed(): string {
+      return t("popupAnalyzeFailed");
+    },
+    get notAnalyzed(): string {
+      return t("popupNotAnalyzed");
+    },
+    get nothingToSkip(): string {
+      return t("popupNothingToSkip");
+    },
+    get noSponsorReads(): string {
+      return t("popupNoSponsorReads");
+    },
   },
   options: {
-    channelHint: "Paste a channel link, or type its @handle.",
-    invalidChannel:
-      "That doesn’t look like a YouTube channel. Try @creator or a link like youtube.com/@creator.",
-    resetConfirm: "Click again to reset",
-    resetDone: "Done — reset",
-    statusChecking: "Checking…",
-    statusOnline: "Online",
-    statusUnreachable: "Unreachable",
-    statusUnavailable: "Status unavailable",
-    connectedTo: (host: string): string => `Connected to ${host}`,
-    cantReach: (host: string): string =>
-      `Can’t reach ${host}. Videos will play normally until it’s back.`,
+    get channelHint(): string {
+      return t("optionsChannelHint");
+    },
+    get invalidChannel(): string {
+      return t("optionsInvalidChannel");
+    },
+    get resetConfirm(): string {
+      return t("optionsResetConfirm");
+    },
+    get resetDone(): string {
+      return t("optionsResetDone");
+    },
+    get statusChecking(): string {
+      return t("optionsStatusChecking");
+    },
+    get statusOnline(): string {
+      return t("optionsStatusOnline");
+    },
+    get statusUnreachable(): string {
+      return t("optionsStatusUnreachable");
+    },
+    get statusUnavailable(): string {
+      return t("optionsStatusUnavailable");
+    },
+    connectedTo: (host: string): string => t("optionsConnectedTo", host),
+    cantReach: (host: string): string => t("optionsCantReach", host),
   },
   limits: {
-    installQuota: (at: string) => ({
-      title: "Daily AI analysis limit reached",
-      sub: `Analyzed videos still skip · more at ${at}`,
-      popup: `You’ve used today’s free AI analyses. Videos already analyzed still skip. More analyses at ${at}.`,
+    installQuota: (at: string): LimitMessages => ({
+      title: t("limitInstallQuotaTitle"),
+      sub: t("limitInstallQuotaSub", at),
+      popup: t("limitInstallQuotaPopup", at),
     }),
-    globalBudget: (at: string) => ({
-      title: "AI analysis is busy today",
-      sub: `Analyzed videos still skip · resumes ${at}`,
-      popup: `SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed still skip. New analyses resume at ${at}.`,
+    globalBudget: (at: string): LimitMessages => ({
+      title: t("limitGlobalBudgetTitle"),
+      sub: t("limitGlobalBudgetSub", at),
+      popup: t("limitGlobalBudgetPopup", at),
     }),
-    llmNotConfigured: {
-      title: "AI analysis is unavailable",
-      sub: "Analyzed videos still skip",
-      popup:
-        "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed still skip.",
+    get llmNotConfigured(): LimitMessages {
+      return {
+        title: t("limitLlmNotConfiguredTitle"),
+        sub: t("limitLlmNotConfiguredSub"),
+        popup: t("limitLlmNotConfiguredPopup"),
+      };
     },
-    llmDisabled: {
-      title: "AI analysis is paused",
-      sub: "Analyzed videos still skip",
-      popup:
-        "AI analysis is paused for now. Videos already analyzed still skip.",
+    get llmDisabled(): LimitMessages {
+      return {
+        title: t("limitLlmDisabledTitle"),
+        sub: t("limitLlmDisabledSub"),
+        popup: t("limitLlmDisabledPopup"),
+      };
     },
-    settingUp: {
-      title: "Setting up SkipSponsor AI",
-      sub: "Plays normally · retries on your next video",
-      popup:
-        "SkipSponsor AI is still finishing setup in this browser and tries again on your next video. Videos already analyzed still skip.",
+    get settingUp(): LimitMessages {
+      return {
+        title: t("limitSettingUpTitle"),
+        sub: t("limitSettingUpSub"),
+        popup: t("limitSettingUpPopup"),
+      };
     },
-    unreachable: {
-      title: "Couldn’t reach SkipSponsor AI",
-      sub: "Analyzed videos still skip",
-      popup:
-        "SkipSponsor AI couldn’t connect to its server for this video, so it plays normally. Videos already analyzed still skip.",
+    get unreachable(): LimitMessages {
+      return {
+        title: t("limitUnreachableTitle"),
+        sub: t("limitUnreachableSub"),
+        popup: t("limitUnreachablePopup"),
+      };
     },
   },
-} as const;
+};

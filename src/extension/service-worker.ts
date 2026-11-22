@@ -1,6 +1,7 @@
 import type { LlmChunk, UserPolicy } from "../shared/types";
 import type { AnalysisLimit, AnalyzeReply } from "../shared/messages";
 import { DEFAULT_POLICY } from "./policy";
+import { t } from "./i18n";
 import {
   USAGE_ID_KEY,
   onInstalledUsage,
@@ -199,7 +200,7 @@ async function syncActionIcon(p?: UserPolicy): Promise<void> {
     },
   });
   await chrome.action.setTitle({
-    title: off ? "SkipSponsor AI — skipping is off" : "SkipSponsor AI",
+    title: off ? t("actionTitleOff") : t("actionTitle"),
   });
 }
 

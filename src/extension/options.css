@@ -185,8 +185,14 @@ body {
 }
 .service {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 12px;
+}
+/* Status pill and its button keep one line in every language. */
+.service .status,
+.service .button {
+  white-space: nowrap;
 }
 .status {
   display: inline-flex;

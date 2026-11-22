@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SkipSponsor AI — Settings</title>
+    <title>SkipSponsor AI</title>
   </head>
   <body>
     <div class="options">
@@ -13,27 +13,35 @@
             <span id="mark" class="mark"></span
             ><span class="app">SkipSponsor AI</span>
           </div>
-          <nav class="nav" aria-label="Settings sections">
+          <nav class="nav" data-i18n-aria-label="optionsNavLabel">
             <a
               class="nav__item"
               href="#general"
               data-icon="sliders-horizontal"
               data-size="18"
-              >General</a
-            >
-            <a class="nav__item" href="#channels" data-icon="tv" data-size="18"
-              >Channels</a
-            >
+              data-i18n="navGeneral"
+            ></a>
+            <a
+              class="nav__item"
+              href="#channels"
+              data-icon="tv"
+              data-size="18"
+              data-i18n="navChannels"
+            ></a>
             <a
               class="nav__item"
               href="#privacy"
               data-icon="shield-check"
               data-size="18"
-              >Privacy</a
-            >
-            <a class="nav__item" href="#about" data-icon="info" data-size="18"
-              >About</a
-            >
+              data-i18n="navPrivacy"
+            ></a>
+            <a
+              class="nav__item"
+              href="#about"
+              data-icon="info"
+              data-size="18"
+              data-i18n="navAbout"
+            ></a>
           </nav>
         </div>
       </aside>
@@ -41,20 +49,18 @@
       <main class="content">
         <section id="general" class="section" aria-labelledby="general-title">
           <header class="head">
-            <h1 id="general-title" class="title">General</h1>
-            <p class="desc">
-              Changes save automatically and apply to the video that’s playing.
-            </p>
+            <h1 id="general-title" class="title" data-i18n="navGeneral"></h1>
+            <p class="desc" data-i18n="generalDesc"></p>
           </header>
           <div class="card">
             <div class="card__row card__row--split">
               <div class="stack">
-                <span id="enable-label" class="row-label"
-                  >Skip sponsor reads</span
-                >
-                <span class="hint"
-                  >Turn SkipSponsor AI on or off everywhere.</span
-                >
+                <span
+                  id="enable-label"
+                  class="row-label"
+                  data-i18n="skipSponsorReads"
+                ></span>
+                <span class="hint" data-i18n="generalEnableHint"></span>
               </div>
               <button
                 id="enabled"
@@ -70,7 +76,11 @@
               </button>
             </div>
             <div class="card__row">
-              <span id="mode-label" class="row-label">Mode</span>
+              <span
+                id="mode-label"
+                class="row-label"
+                data-i18n="modeLabel"
+              ></span>
               <div class="modes" role="radiogroup" aria-labelledby="mode-label">
                 <button
                   class="mode-card"
@@ -82,11 +92,9 @@
                     class="mode-card__top"
                     data-icon="fast-forward"
                     data-size="18"
-                    ><span class="mode-card__title">Auto-skip</span></span
-                  >
-                  <span class="mode-card__desc"
-                    >Jumps past sponsor reads automatically.</span
-                  >
+                    ><span class="mode-card__title" data-i18n="modeAuto"></span
+                  ></span>
+                  <span class="mode-card__desc" data-i18n="modeAutoDesc"></span>
                 </button>
                 <button
                   class="mode-card"
@@ -95,11 +103,15 @@
                   data-mode="notify"
                 >
                   <span class="mode-card__top" data-icon="bell" data-size="18"
-                    ><span class="mode-card__title">Notify</span></span
-                  >
-                  <span class="mode-card__desc"
-                    >Shows a Skip button — you decide.</span
-                  >
+                    ><span
+                      class="mode-card__title"
+                      data-i18n="modeNotify"
+                    ></span
+                  ></span>
+                  <span
+                    class="mode-card__desc"
+                    data-i18n="modeNotifyDesc"
+                  ></span>
                 </button>
                 <button
                   class="mode-card"
@@ -111,19 +123,19 @@
                     class="mode-card__top"
                     data-icon="circle-off"
                     data-size="18"
-                    ><span class="mode-card__title">Off</span></span
-                  >
-                  <span class="mode-card__desc"
-                    >Sponsor reads play normally.</span
-                  >
+                    ><span class="mode-card__title" data-i18n="modeOff"></span
+                  ></span>
+                  <span class="mode-card__desc" data-i18n="modeOffDesc"></span>
                 </button>
               </div>
             </div>
             <div class="card__row card__row--last">
               <div class="row-between">
-                <label for="threshold" class="row-label"
-                  >Confidence threshold</label
-                >
+                <label
+                  for="threshold"
+                  class="row-label"
+                  data-i18n="confidenceThreshold"
+                ></label>
                 <span id="thr-value" class="badge tabular">78%</span>
               </div>
               <input
@@ -135,8 +147,8 @@
                 step="1"
               />
               <div class="row-between scale">
-                <span>50% · more skips, occasional false cuts</span
-                ><span>95% · fewest, safest skips</span>
+                <span data-i18n="thresholdScaleLow"></span
+                ><span data-i18n="thresholdScaleHigh"></span>
               </div>
               <p id="thr-hint" class="hint"></p>
             </div>
@@ -150,20 +162,21 @@
           hidden
         >
           <header class="head">
-            <h1 id="channels-title" class="title">Channels</h1>
-            <p class="desc">
-              Skipping is turned off on these channels — support creators whose
-              reads you want to hear.
-            </p>
+            <h1 id="channels-title" class="title" data-i18n="navChannels"></h1>
+            <p class="desc" data-i18n="channelsDesc"></p>
           </header>
           <form id="channel-form" class="card card__row add-channel" novalidate>
-            <label for="channel-input" class="row-label">Add a channel</label>
+            <label
+              for="channel-input"
+              class="row-label"
+              data-i18n="channelsAdd"
+            ></label>
             <div class="add-channel__row">
               <input
                 id="channel-input"
                 class="input"
                 type="text"
-                placeholder="@creator or youtube.com/@creator"
+                data-i18n-placeholder="channelsPlaceholder"
                 autocomplete="off"
                 spellcheck="false"
                 aria-describedby="channel-hint"
@@ -173,28 +186,27 @@
                 type="submit"
                 data-icon="plus"
                 data-size="15"
-              >
-                Add
-              </button>
+                data-i18n="channelsAddButton"
+              ></button>
             </div>
-            <p id="channel-hint" class="hint" aria-live="polite">
-              Paste a channel link, or type its @handle.
-            </p>
+            <p
+              id="channel-hint"
+              class="hint"
+              aria-live="polite"
+              data-i18n="optionsChannelHint"
+            ></p>
           </form>
           <div
             id="channel-list"
             class="card"
             role="list"
-            aria-label="Channels where skipping is off"
+            data-i18n-aria-label="channelsListLabel"
             hidden
           ></div>
           <div id="channel-empty" class="empty">
             <span class="empty__icon" data-icon="check" data-size="20"></span>
-            <span class="empty__title">Skipping works on every channel</span>
-            <span class="hint"
-              >Add one above, or use “Don’t skip this channel” in the popup
-              while watching.</span
-            >
+            <span class="empty__title" data-i18n="channelsEmptyTitle"></span>
+            <span class="hint" data-i18n="channelsEmptyHint"></span>
           </div>
         </section>
 
@@ -205,10 +217,8 @@
           hidden
         >
           <header class="head">
-            <h1 id="privacy-title" class="title">Privacy</h1>
-            <p class="desc">
-              Plain-language summary of what SkipSponsor AI reads and keeps.
-            </p>
+            <h1 id="privacy-title" class="title" data-i18n="navPrivacy"></h1>
+            <p class="desc" data-i18n="privacyDesc"></p>
           </header>
           <div class="grid">
             <article class="info-card">
@@ -217,13 +227,11 @@
                 data-icon="captions"
                 data-size="18"
               ></span>
-              <h2 class="info-card__title">
-                Only caption text is analyzed, never audio
-              </h2>
-              <p class="hint">
-                The video’s captions are read to find where a sponsor read
-                begins and ends.
-              </p>
+              <h2
+                class="info-card__title"
+                data-i18n="privacyCaptionsTitle"
+              ></h2>
+              <p class="hint" data-i18n="privacyCaptionsHint"></p>
             </article>
             <article class="info-card">
               <span
@@ -231,11 +239,8 @@
                 data-icon="user-x"
                 data-size="18"
               ></span>
-              <h2 class="info-card__title">No account, no personal data</h2>
-              <p class="hint">
-                Works without sign-in. An anonymous install token protects the
-                service from abuse.
-              </p>
+              <h2 class="info-card__title" data-i18n="privacyAccountTitle"></h2>
+              <p class="hint" data-i18n="privacyAccountHint"></p>
             </article>
             <article class="info-card">
               <span
@@ -243,13 +248,8 @@
                 data-icon="timer-reset"
                 data-size="18"
               ></span>
-              <h2 class="info-card__title">
-                Results are cached for 30 days, then deleted
-              </h2>
-              <p class="hint">
-                Segment results are shared per video so repeat views are
-                instant.
-              </p>
+              <h2 class="info-card__title" data-i18n="privacyCacheTitle"></h2>
+              <p class="hint" data-i18n="privacyCacheHint"></p>
             </article>
             <article class="info-card">
               <span
@@ -257,29 +257,23 @@
                 data-icon="users"
                 data-size="18"
               ></span>
-              <h2 class="info-card__title">
-                Videos without captions aren’t analyzed
-              </h2>
-              <p class="hint">
-                SkipSponsor AI reads only the video’s own captions. When a video
-                has none, it says so and the video plays normally.
-              </p>
+              <h2
+                class="info-card__title"
+                data-i18n="privacyNoCaptionsTitle"
+              ></h2>
+              <p class="hint" data-i18n="privacyNoCaptionsHint"></p>
             </article>
           </div>
-          <h2 class="subtitle">Your data</h2>
+          <h2 class="subtitle" data-i18n="privacyYourData"></h2>
           <div class="card">
             <div class="card__row card__row--split">
               <div class="stack">
-                <span id="telemetry-label" class="row-label"
-                  >Share usage statistics</span
-                >
-                <span class="hint"
-                  >Sends “skipped” and “undone” events (video ID and timing) so
-                  accuracy can be measured, and an anonymous count of installs,
-                  uninstalls and days used (a random ID and the extension
-                  version; no video or page). Skipping works the same either
-                  way.</span
-                >
+                <span
+                  id="telemetry-label"
+                  class="row-label"
+                  data-i18n="privacyShareUsage"
+                ></span>
+                <span class="hint" data-i18n="privacyShareUsageHint"></span>
               </div>
               <button
                 id="telemetry"
@@ -296,11 +290,8 @@
             </div>
             <div class="card__row card__row--split">
               <div class="stack">
-                <span class="row-label">Reset SkipSponsor AI</span>
-                <span class="hint"
-                  >Clears your settings, channel list and anonymous install ID
-                  in this browser.</span
-                >
+                <span class="row-label" data-i18n="privacyResetTitle"></span>
+                <span class="hint" data-i18n="privacyResetHint"></span>
               </div>
               <button
                 id="reset"
@@ -308,23 +299,22 @@
                 type="button"
                 data-icon="timer-reset"
                 data-size="15"
-              >
-                Reset
-              </button>
+                data-i18n="optionsReset"
+              ></button>
             </div>
             <div class="card__row">
               <div class="stack">
-                <span class="row-label">Who is responsible for your data</span>
+                <span
+                  class="row-label"
+                  data-i18n="privacyWhoResponsible"
+                ></span>
                 <span id="privacy-controller" class="hint"></span>
               </div>
             </div>
             <div class="card__row card__row--split card__row--last">
               <div class="stack">
-                <span class="row-label">Full privacy policy</span>
-                <span class="hint"
-                  >What is processed, where it goes, and how long it is
-                  kept.</span
-                >
+                <span class="row-label" data-i18n="privacyFullPolicy"></span>
+                <span class="hint" data-i18n="privacyFullPolicyHint"></span>
               </div>
               <a
                 class="link"
@@ -333,8 +323,9 @@
                 rel="noopener"
                 data-icon="file-text"
                 data-size="15"
-                >Read policy</a
-              >
+                data-i18n="privacyReadPolicy"
+                data-i18n-href="privacyPolicyUrl"
+              ></a>
             </div>
           </div>
         </section>
@@ -346,19 +337,16 @@
           hidden
         >
           <header class="head">
-            <h1 id="about-title" class="title">About</h1>
-            <p class="desc">
-              SkipSponsor AI skips sponsor segments inside videos. It doesn’t
-              block YouTube’s own ads.
-            </p>
+            <h1 id="about-title" class="title" data-i18n="navAbout"></h1>
+            <p class="desc" data-i18n="aboutDesc"></p>
           </header>
           <div class="card">
             <div class="card__row card__row--split">
               <div class="about__version">
                 <span id="about-mark"></span>
                 <div class="stack">
-                  <span id="version" class="row-label">Version 1.1.0</span>
-                  <span class="hint">Chrome 116 or later</span>
+                  <span id="version" class="row-label"></span>
+                  <span class="hint" data-i18n="aboutChromeRequirement"></span>
                   <span id="about-copyright" class="hint"></span>
                 </div>
               </div>
@@ -370,8 +358,8 @@
                   rel="noopener"
                   data-icon="life-buoy"
                   data-size="15"
-                  >Support</a
-                >
+                  data-i18n="aboutSupport"
+                ></a>
                 <a
                   class="link"
                   href="https://juanjaragavi.github.io/skip-sponsor-ai/privacy/"
@@ -379,8 +367,9 @@
                   rel="noopener"
                   data-icon="file-text"
                   data-size="15"
-                  >Privacy policy</a
-                >
+                  data-i18n="aboutPrivacyPolicy"
+                  data-i18n-href="privacyPolicyUrl"
+                ></a>
                 <a
                   class="link"
                   href="https://juanjaragavi.github.io/skip-sponsor-ai/terms/"
@@ -388,8 +377,9 @@
                   rel="noopener"
                   data-icon="file-text"
                   data-size="15"
-                  >Terms of use</a
-                >
+                  data-i18n="aboutTerms"
+                  data-i18n-href="termsUrl"
+                ></a>
                 <a
                   class="link"
                   href="https://github.com/juanjaragavi/skip-sponsor-ai"
@@ -397,26 +387,35 @@
                   rel="noopener"
                   data-icon="code-xml"
                   data-size="15"
-                  >Source code</a
-                >
+                  data-i18n="aboutSourceCode"
+                ></a>
               </div>
             </div>
             <div class="card__row card__row--split card__row--last">
               <div class="stack">
-                <span class="row-label">Detection service</span>
-                <span id="service-host" class="hint">Checking…</span>
+                <span
+                  class="row-label"
+                  data-i18n="aboutDetectionService"
+                ></span>
+                <span
+                  id="service-host"
+                  class="hint"
+                  data-i18n="optionsStatusChecking"
+                ></span>
               </div>
               <div class="service">
-                <span id="service-status" class="status" data-state="checking"
-                  >Checking…</span
-                >
+                <span
+                  id="service-status"
+                  class="status"
+                  data-state="checking"
+                  data-i18n="optionsStatusChecking"
+                ></span>
                 <button
                   id="service-retry"
                   class="button button--ghost"
                   type="button"
-                >
-                  Check again
-                </button>
+                  data-i18n="aboutCheckAgain"
+                ></button>
               </div>
             </div>
           </div>
@@ -427,8 +426,8 @@
             rel="noopener"
             data-icon="life-buoy"
             data-size="15"
-            >Report a wrong or missed skip</a
-          >
+            data-i18n="aboutReportSkip"
+          ></a>
         </section>
       </main>
     </div>

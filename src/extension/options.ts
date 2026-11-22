@@ -26,6 +26,7 @@ import {
   type ChannelLabels,
 } from "./settings";
 import { USER_MESSAGES } from "./user-messages";
+import { localizeDocument, t, type MessageKey } from "./i18n";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T =>
   document.querySelector<T>(sel)!;
@@ -51,7 +52,13 @@ const els = {
 
 const TABS = ["general", "channels", "privacy", "about"] as const;
 type Tab = (typeof TABS)[number];
-const CHANNEL_HINT = USER_MESSAGES.options.channelHint;
+const TAB_TITLE: Record<Tab, MessageKey> = {
+  general: "navGeneral",
+  channels: "navChannels",
+  privacy: "navPrivacy",
+  about: "navAbout",
+};
+const channelHintText = (): string => USER_MESSAGES.options.channelHint;
 
 let policy: UserPolicy;
 let labels: ChannelLabels = {};
@@ -66,6 +73,7 @@ const TINTS = [
 ] as const;
 
 function hydrateIcons(): void {
+  localizeDocument(); // text first: icons are prepended to localized links
   $("#mark").append(brandMark(28));
   $("#about-mark").append(brandMark(36));
   document.querySelectorAll<HTMLElement>("[data-icon]").forEach((node) => {
@@ -76,7 +84,10 @@ function hydrateIcons(): void {
       ),
     );
   });
-  $("#version").textContent = `Version ${chrome.runtime.getManifest().version}`;
+  $("#version").textContent = t(
+    "aboutVersion",
+    chrome.runtime.getManifest().version,
+  );
 }
 
 /* ---------- Tabs: one section at a time, deep-linkable (#channels) ---------- */
@@ -92,7 +103,7 @@ function showTab(tab: Tab): void {
     if (a.hash === `#${tab}`) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
-  document.title = `SkipSponsor AI — ${tab[0]!.toUpperCase()}${tab.slice(1)}`;
+  document.title = t("optionsDocTitle", t(TAB_TITLE[tab]));
   window.scrollTo(0, 0);
   if (tab === "about") void checkService();
 }
@@ -151,11 +162,8 @@ function renderChannels(): void {
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "remove";
-      remove.append(icon("x", 14), "Remove");
-      remove.setAttribute(
-        "aria-label",
-        `Remove ${name} — skip sponsor reads on this channel again`,
-      );
+      remove.append(icon("x", 14), t("optionsRemove"));
+      remove.setAttribute("aria-label", t("optionsRemoveLabel", name));
       remove.addEventListener("click", () => void setChannelAllowed(id, false));
       row.append(avatar, text, remove);
       return row;
@@ -171,20 +179,17 @@ function channelHint(text: string, kind: "error" | "ok" | "" = ""): void {
 
 async function addChannel(): Promise<void> {
   const raw = els.channelInput.value;
-  if (!raw.trim()) return channelHint(CHANNEL_HINT);
+  if (!raw.trim()) return channelHint(channelHintText());
   const id = parseChannelInput(raw);
   if (!id) return channelHint(USER_MESSAGES.options.invalidChannel, "error");
   if (policy.blockedChannels.some((c) => sameChannel(c, id)))
     return channelHint(
-      `${displayChannelId(id)} is already in the list.`,
+      t("optionsChannelExists", displayChannelId(id)),
       "error",
     );
   await setChannelAllowed(id, true);
   els.channelInput.value = "";
-  channelHint(
-    `Added ${displayChannelId(id)}. Its sponsor reads will play normally.`,
-    "ok",
-  );
+  channelHint(t("optionsChannelAdded", displayChannelId(id)), "ok");
 }
 
 /* ---------- General ---------- */
@@ -193,9 +198,9 @@ function renderThreshold(value: number): void {
   const pct = Math.round(value * 100);
   els.threshold.value = String(pct);
   els.threshold.style.setProperty("--fill", `${gatePosition(value) * 100}%`);
-  els.threshold.setAttribute("aria-valuetext", `${pct} percent`);
+  els.threshold.setAttribute("aria-valuetext", t("percentValueText", pct));
   els.thrValue.textContent = `${pct}%`;
-  els.thrHint.textContent = `Skip only when the AI is at least ${pct}% sure the segment is a sponsor read.`;
+  els.thrHint.textContent = t("optionsThresholdHint", pct);
 }
 
 /* ---------- Privacy ---------- */
@@ -218,13 +223,16 @@ async function onReset(): Promise<void> {
   ]);
   render();
   els.reset.lastChild!.textContent = USER_MESSAGES.options.resetDone;
-  window.setTimeout(() => (els.reset.lastChild!.textContent = "Reset"), 2500);
+  window.setTimeout(
+    () => (els.reset.lastChild!.textContent = t("optionsReset")),
+    2500,
+  );
 }
 
 function disarmReset(): void {
   window.clearTimeout(resetTimer);
   els.reset.classList.remove("is-armed");
-  els.reset.lastChild!.textContent = "Reset";
+  els.reset.lastChild!.textContent = t("optionsReset");
 }
 
 /* ---------- About ---------- */
@@ -300,7 +308,7 @@ function bind(): void {
   });
   els.channelInput.addEventListener("input", () => {
     if (els.channelInput.getAttribute("aria-invalid") === "true")
-      channelHint(CHANNEL_HINT);
+      channelHint(channelHintText());
   });
   els.telemetry.addEventListener("click", () => {
     telemetryOn = !telemetryOn;

@@ -1,0 +1,679 @@
+{
+  "extName": {
+    "message": "SkipSponsor AI",
+    "description": "Extension name (brand, never translated). Max 75 characters."
+  },
+  "extShortName": {
+    "message": "SkipSponsor",
+    "description": "Short name (brand, never translated)."
+  },
+  "extDescription": {
+    "message": "Skip sponsor reads inside YouTube videos. Reads the captions, marks the sponsor segment, and jumps past it, with one-click Undo.",
+    "description": "Chrome Web Store summary and manifest description. Max 132 characters."
+  },
+  "actionTitle": {
+    "message": "SkipSponsor AI",
+    "description": "Toolbar button tooltip while skipping is on (brand only)."
+  },
+  "actionTitleOff": {
+    "message": "SkipSponsor AI — skipping is off",
+    "description": "Toolbar button tooltip while skipping is off."
+  },
+  "localeCode": {
+    "message": "en",
+    "description": "BCP 47 code of this catalog's language; set as <html lang> on extension pages."
+  },
+  "privacyPolicyUrl": {
+    "message": "https://juanjaragavi.github.io/skip-sponsor-ai/privacy/",
+    "description": "Privacy policy page in this language."
+  },
+  "termsUrl": {
+    "message": "https://juanjaragavi.github.io/skip-sponsor-ai/terms/",
+    "description": "Terms of use page in this language."
+  },
+  "skipSponsorReads": {
+    "message": "Skip sponsor reads",
+    "description": "Master switch label (popup and settings)."
+  },
+  "modeLabel": {
+    "message": "Mode"
+  },
+  "modeAuto": {
+    "message": "Auto-skip",
+    "description": "Mode name."
+  },
+  "modeAutoShort": {
+    "message": "Auto-skip",
+    "description": "Auto-skip mode on the popup's compact mode button (max ~12 characters)."
+  },
+  "modeNotify": {
+    "message": "Notify",
+    "description": "Mode name."
+  },
+  "modeOff": {
+    "message": "Off",
+    "description": "Mode name."
+  },
+  "modeHelpAuto": {
+    "message": "Auto-skip — cuts marked ranges as they start"
+  },
+  "modeHelpNotify": {
+    "message": "Notify — marks the range and shows a Skip button"
+  },
+  "modeHelpOff": {
+    "message": "Off — sponsor reads play normally"
+  },
+  "percentValueText": {
+    "message": "$PCT$ percent",
+    "description": "Screen-reader value of the threshold slider.",
+    "placeholders": {
+      "pct": {
+        "content": "$1",
+        "example": "78"
+      }
+    }
+  },
+  "popupThisVideo": {
+    "message": "This video"
+  },
+  "popupDetectedSegments": {
+    "message": "Detected segments",
+    "description": "Accessible name of the segment list."
+  },
+  "popupCutThreshold": {
+    "message": "Cut threshold"
+  },
+  "popupZoneKeep": {
+    "message": "← keep · 50%"
+  },
+  "popupZoneCut": {
+    "message": "95% · cut →"
+  },
+  "popupPrivacyNote": {
+    "message": "Captions only · applies instantly"
+  },
+  "popupSettings": {
+    "message": "Settings"
+  },
+  "popupNotRunning": {
+    "message": "SkipSponsor AI isn’t running in this tab yet."
+  },
+  "popupReloadTab": {
+    "message": "Reload tab"
+  },
+  "popupOpenVideo": {
+    "message": "Open a YouTube video to see its sponsor reads here."
+  },
+  "popupReadingCaptions": {
+    "message": "Reading captions…"
+  },
+  "popupAdPlaying": {
+    "message": "YouTube ad playing"
+  },
+  "popupAnalyzeFailed": {
+    "message": "Couldn’t analyze this video — it plays normally."
+  },
+  "popupNotAnalyzed": {
+    "message": "Couldn’t analyze this video — there are no captions to read, so it plays normally."
+  },
+  "popupNothingToSkip": {
+    "message": "No captions, and no community-labelled sponsors — nothing to skip."
+  },
+  "popupNoSponsorReads": {
+    "message": "No sponsor reads found in this video."
+  },
+  "popupChannelSkippingOff": {
+    "message": "$NAME$ · skipping off",
+    "description": "Channel line when the channel is in the don't-skip list.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alpha Channel"
+      }
+    }
+  },
+  "popupChannelSkipOn": {
+    "message": "Skip on this channel"
+  },
+  "popupChannelDontSkip": {
+    "message": "Don’t skip this channel"
+  },
+  "popupRowLabel": {
+    "message": "$INDEX$ $TAG$ $RANGE$, $STATUS$, $CONFIDENCE$ confidence",
+    "description": "Screen-reader label of one segment row.",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "01"
+      },
+      "tag": {
+        "content": "$2",
+        "example": "CUT"
+      },
+      "range": {
+        "content": "$3",
+        "example": "03:42 → 04:22"
+      },
+      "status": {
+        "content": "$4",
+        "example": "Will skip · 40s"
+      },
+      "confidence": {
+        "content": "$5",
+        "example": "91%"
+      }
+    }
+  },
+  "tagCut": {
+    "message": "CUT",
+    "description": "Short tag (max ~6 letters): the segment is skipped automatically."
+  },
+  "tagAsk": {
+    "message": "ASK",
+    "description": "Short tag (max ~6 letters): a Skip button is offered."
+  },
+  "tagKeep": {
+    "message": "KEEP",
+    "description": "Short tag (max ~6 letters): the segment plays."
+  },
+  "tagLimit": {
+    "message": "LIMIT",
+    "description": "Short tag on the limit notice."
+  },
+  "categorySponsor": {
+    "message": "Sponsor"
+  },
+  "categoryIntro": {
+    "message": "Intro"
+  },
+  "categoryOutro": {
+    "message": "Outro"
+  },
+  "categorySelfpromo": {
+    "message": "Self-promo"
+  },
+  "categoryInteractionReminder": {
+    "message": "Subscribe reminder"
+  },
+  "statusPlayerBlocked": {
+    "message": "YouTube’s player blocked the skip"
+  },
+  "statusAutoSkipPaused": {
+    "message": "Auto-skip paused for this video"
+  },
+  "statusSkipped": {
+    "message": "Skipped · $SECONDS$s",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "statusWillSkip": {
+    "message": "Will skip · $SECONDS$s",
+    "placeholders": {
+      "seconds": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "statusSkipButtonAt": {
+    "message": "Skip button at $TIME$",
+    "description": "TIME is a position in the video, not a clock time.",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "03:42"
+      }
+    }
+  },
+  "statusSkipButtonShown": {
+    "message": "Skip button shown"
+  },
+  "statusBelowThreshold": {
+    "message": "Below threshold"
+  },
+  "statusCategoryNotSkipped": {
+    "message": "$CATEGORY$ · not skipped",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Intro"
+      }
+    }
+  },
+  "statusChannelAllowed": {
+    "message": "Channel allowed"
+  },
+  "statusKeptByYou": {
+    "message": "Kept by you"
+  },
+  "statusSkippingOff": {
+    "message": "Skipping is off"
+  },
+  "thresholdNone": {
+    "message": "Dots show this video’s detected segments — none so far."
+  },
+  "thresholdCut": {
+    "message": "Dots are this video’s detected segments. Anything right of the line gets cut — $OVER$ of $TOTAL$ here.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "thresholdAsk": {
+    "message": "Dots are this video’s detected segments. Anything right of the line gets a Skip button — $OVER$ of $TOTAL$ here.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "thresholdWould": {
+    "message": "Dots are this video’s detected segments. Anything right of the line would be cut — $OVER$ of $TOTAL$ here.",
+    "placeholders": {
+      "over": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "limitInstallQuotaTitle": {
+    "message": "Daily AI analysis limit reached"
+  },
+  "limitInstallQuotaSub": {
+    "message": "Analyzed videos still skip · more at $AT$",
+    "description": "Max 48 characters with AT filled in (a local clock time).",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitInstallQuotaPopup": {
+    "message": "You’ve used today’s free AI analyses. Videos already analyzed still skip. More analyses at $AT$.",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitGlobalBudgetTitle": {
+    "message": "AI analysis is busy today"
+  },
+  "limitGlobalBudgetSub": {
+    "message": "Analyzed videos still skip · resumes $AT$",
+    "description": "Max 48 characters with AT filled in (a local clock time).",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitGlobalBudgetPopup": {
+    "message": "SkipSponsor AI reached today’s free analysis capacity. Videos already analyzed still skip. New analyses resume at $AT$.",
+    "placeholders": {
+      "at": {
+        "content": "$1",
+        "example": "7:00 PM"
+      }
+    }
+  },
+  "limitLlmNotConfiguredTitle": {
+    "message": "AI analysis is unavailable"
+  },
+  "limitLlmNotConfiguredSub": {
+    "message": "Analyzed videos still skip",
+    "description": "Max 48 characters."
+  },
+  "limitLlmNotConfiguredPopup": {
+    "message": "The SkipSponsor AI server isn’t set up for AI analysis yet. Videos already analyzed still skip."
+  },
+  "limitLlmDisabledTitle": {
+    "message": "AI analysis is paused"
+  },
+  "limitLlmDisabledSub": {
+    "message": "Analyzed videos still skip",
+    "description": "Max 48 characters."
+  },
+  "limitLlmDisabledPopup": {
+    "message": "AI analysis is paused for now. Videos already analyzed still skip."
+  },
+  "limitSettingUpTitle": {
+    "message": "Setting up SkipSponsor AI"
+  },
+  "limitSettingUpSub": {
+    "message": "Plays normally · retries on your next video",
+    "description": "Max 48 characters."
+  },
+  "limitSettingUpPopup": {
+    "message": "SkipSponsor AI is still finishing setup in this browser and tries again on your next video. Videos already analyzed still skip."
+  },
+  "limitUnreachableTitle": {
+    "message": "Couldn’t reach SkipSponsor AI"
+  },
+  "limitUnreachableSub": {
+    "message": "Analyzed videos still skip",
+    "description": "Max 48 characters."
+  },
+  "limitUnreachablePopup": {
+    "message": "SkipSponsor AI couldn’t connect to its server for this video, so it plays normally. Videos already analyzed still skip."
+  },
+  "toastDismiss": {
+    "message": "Dismiss",
+    "description": "Accessible name of the toast's close button."
+  },
+  "toastUndo": {
+    "message": "Undo"
+  },
+  "toastSkip": {
+    "message": "Skip"
+  },
+  "toastOk": {
+    "message": "OK"
+  },
+  "toastSkippedSub": {
+    "message": "$CATEGORY$ · $SECONDS$s skipped",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Sponsor"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "37"
+      }
+    }
+  },
+  "toastEndsIn": {
+    "message": "$CATEGORY$ · ends in $SECONDS$s",
+    "placeholders": {
+      "category": {
+        "content": "$1",
+        "example": "Sponsor"
+      },
+      "seconds": {
+        "content": "$2",
+        "example": "32"
+      }
+    }
+  },
+  "optionsDocTitle": {
+    "message": "SkipSponsor AI — $SECTION$",
+    "description": "Settings tab title: brand, then the section name.",
+    "placeholders": {
+      "section": {
+        "content": "$1",
+        "example": "General"
+      }
+    }
+  },
+  "optionsNavLabel": {
+    "message": "Settings sections"
+  },
+  "navGeneral": {
+    "message": "General"
+  },
+  "navChannels": {
+    "message": "Channels"
+  },
+  "navPrivacy": {
+    "message": "Privacy"
+  },
+  "navAbout": {
+    "message": "About"
+  },
+  "generalDesc": {
+    "message": "Changes save automatically and apply to the video that’s playing."
+  },
+  "generalEnableHint": {
+    "message": "Turn SkipSponsor AI on or off everywhere."
+  },
+  "modeAutoDesc": {
+    "message": "Jumps past sponsor reads automatically."
+  },
+  "modeNotifyDesc": {
+    "message": "Shows a Skip button — you decide."
+  },
+  "modeOffDesc": {
+    "message": "Sponsor reads play normally."
+  },
+  "confidenceThreshold": {
+    "message": "Confidence threshold"
+  },
+  "thresholdScaleLow": {
+    "message": "50% · more skips, occasional false cuts"
+  },
+  "thresholdScaleHigh": {
+    "message": "95% · fewest, safest skips"
+  },
+  "optionsThresholdHint": {
+    "message": "Skip only when the AI is at least $PCT$% sure the segment is a sponsor read.",
+    "placeholders": {
+      "pct": {
+        "content": "$1",
+        "example": "78"
+      }
+    }
+  },
+  "channelsDesc": {
+    "message": "Skipping is turned off on these channels — support creators whose reads you want to hear."
+  },
+  "channelsAdd": {
+    "message": "Add a channel"
+  },
+  "channelsPlaceholder": {
+    "message": "@creator or youtube.com/@creator"
+  },
+  "channelsAddButton": {
+    "message": "Add"
+  },
+  "optionsChannelHint": {
+    "message": "Paste a channel link, or type its @handle."
+  },
+  "optionsInvalidChannel": {
+    "message": "That doesn’t look like a YouTube channel. Try @creator or a link like youtube.com/@creator."
+  },
+  "optionsChannelExists": {
+    "message": "$CHANNEL$ is already in the list.",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "@creator"
+      }
+    }
+  },
+  "optionsChannelAdded": {
+    "message": "Added $CHANNEL$. Its sponsor reads will play normally.",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "@creator"
+      }
+    }
+  },
+  "channelsListLabel": {
+    "message": "Channels where skipping is off"
+  },
+  "channelsEmptyTitle": {
+    "message": "Skipping works on every channel"
+  },
+  "channelsEmptyHint": {
+    "message": "Add one above, or use “Don’t skip this channel” in the popup while watching."
+  },
+  "optionsRemove": {
+    "message": "Remove"
+  },
+  "optionsRemoveLabel": {
+    "message": "Remove $NAME$ — skip sponsor reads on this channel again",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alpha Channel"
+      }
+    }
+  },
+  "privacyDesc": {
+    "message": "Plain-language summary of what SkipSponsor AI reads and keeps."
+  },
+  "privacyCaptionsTitle": {
+    "message": "Only caption text is analyzed, never audio"
+  },
+  "privacyCaptionsHint": {
+    "message": "The video’s captions are read to find where a sponsor read begins and ends."
+  },
+  "privacyAccountTitle": {
+    "message": "No account, no personal data"
+  },
+  "privacyAccountHint": {
+    "message": "Works without sign-in. An anonymous install token protects the service from abuse."
+  },
+  "privacyCacheTitle": {
+    "message": "Results are cached for 30 days, then deleted"
+  },
+  "privacyCacheHint": {
+    "message": "Segment results are shared per video so repeat views are instant."
+  },
+  "privacyNoCaptionsTitle": {
+    "message": "Videos without captions aren’t analyzed"
+  },
+  "privacyNoCaptionsHint": {
+    "message": "SkipSponsor AI reads only the video’s own captions. When a video has none, it says so and the video plays normally."
+  },
+  "privacyYourData": {
+    "message": "Your data"
+  },
+  "privacyShareUsage": {
+    "message": "Share usage statistics"
+  },
+  "privacyShareUsageHint": {
+    "message": "Sends “skipped” and “undone” events (video ID and timing) so accuracy can be measured, and an anonymous count of installs, uninstalls and days used (a random ID and the extension version; no video or page). Skipping works the same either way."
+  },
+  "privacyResetTitle": {
+    "message": "Reset SkipSponsor AI"
+  },
+  "privacyResetHint": {
+    "message": "Clears your settings, channel list and anonymous install ID in this browser."
+  },
+  "optionsReset": {
+    "message": "Reset"
+  },
+  "optionsResetConfirm": {
+    "message": "Click again to reset"
+  },
+  "optionsResetDone": {
+    "message": "Done — reset"
+  },
+  "privacyWhoResponsible": {
+    "message": "Who is responsible for your data"
+  },
+  "privacyController": {
+    "message": "$LEGAL$ ($BRAND$) provides SkipSponsor AI and is responsible for the data it sends. Questions or requests: ",
+    "description": "Followed by the contact email as a link; keep the trailing space.",
+    "placeholders": {
+      "legal": {
+        "content": "$1",
+        "example": "Devspeak S.A.S."
+      },
+      "brand": {
+        "content": "$2",
+        "example": "DevSpeak Labs"
+      }
+    }
+  },
+  "privacyFullPolicy": {
+    "message": "Full privacy policy"
+  },
+  "privacyFullPolicyHint": {
+    "message": "What is processed, where it goes, and how long it is kept."
+  },
+  "privacyReadPolicy": {
+    "message": "Read policy"
+  },
+  "aboutDesc": {
+    "message": "SkipSponsor AI skips sponsor segments inside videos. It doesn’t block YouTube’s own ads."
+  },
+  "aboutVersion": {
+    "message": "Version $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "1.1.0"
+      }
+    }
+  },
+  "aboutChromeRequirement": {
+    "message": "Chrome 116 or later"
+  },
+  "aboutSupport": {
+    "message": "Support"
+  },
+  "aboutPrivacyPolicy": {
+    "message": "Privacy policy"
+  },
+  "aboutTerms": {
+    "message": "Terms of use"
+  },
+  "aboutSourceCode": {
+    "message": "Source code"
+  },
+  "aboutDetectionService": {
+    "message": "Detection service"
+  },
+  "optionsStatusChecking": {
+    "message": "Checking…"
+  },
+  "optionsStatusOnline": {
+    "message": "Online"
+  },
+  "optionsStatusUnreachable": {
+    "message": "Unreachable"
+  },
+  "optionsStatusUnavailable": {
+    "message": "Status unavailable"
+  },
+  "optionsConnectedTo": {
+    "message": "Connected to $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "api.example.com"
+      }
+    }
+  },
+  "optionsCantReach": {
+    "message": "Can’t reach $HOST$. Videos will play normally until it’s back.",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "api.example.com"
+      }
+    }
+  },
+  "aboutCheckAgain": {
+    "message": "Check again"
+  },
+  "aboutReportSkip": {
+    "message": "Report a wrong or missed skip"
+  }
+}

@@ -10,8 +10,9 @@ import {
   activeRowId,
   formatTimecode,
   gatePosition,
-  MODE_HELP,
+  modeHelp,
   segmentRows,
+  tagLabel,
   thresholdSummary,
   type SegmentRow,
   limitCopy,
@@ -24,6 +25,7 @@ import {
   updatePolicy,
 } from "./settings";
 import { USER_MESSAGES } from "./user-messages";
+import { localizeDocument, t } from "./i18n";
 import { SPONSORBLOCK_ENABLED } from "./sponsorblock-gate";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T =>
@@ -61,6 +63,7 @@ function div(className: string, text?: string): HTMLDivElement {
 }
 
 function hydrateIcons(): void {
+  localizeDocument(); // text first: icons are prepended to localized buttons
   $("#mark").append(brandMark(24));
   document.querySelectorAll<HTMLElement>("[data-icon]").forEach((node) => {
     const svg = icon(
@@ -130,7 +133,7 @@ function renderControls(): void {
     tool.setAttribute("aria-checked", String(on));
     tool.tabIndex = on ? 0 : -1;
   }
-  els.modeHelp.textContent = MODE_HELP[policy.mode];
+  els.modeHelp.textContent = modeHelp(policy.mode);
   renderThreshold(policy.confidenceThreshold);
 }
 
@@ -139,7 +142,7 @@ function renderThreshold(value: number): void {
   const x = gatePosition(value) * 100;
   els.thrValue.textContent = `${pct}%`;
   els.threshold.value = String(pct);
-  els.threshold.setAttribute("aria-valuetext", `${pct} percent`);
+  els.threshold.setAttribute("aria-valuetext", t("percentValueText", pct));
   els.gate.style.setProperty("--x", `${x}%`);
   $(".zone--keep").style.width = `${x}%`;
   $(".zone--cut").style.width = `${100 - x}%`;
@@ -216,7 +219,7 @@ function reloadRow(): HTMLDivElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "link link--small";
-  button.textContent = "Reload tab";
+  button.textContent = t("popupReloadTab");
   button.addEventListener("click", () => {
     if (tabId !== null) void chrome.tabs.reload(tabId);
   });
@@ -274,13 +277,20 @@ function renderMonitor(): void {
         main.append(div("edit__range", r.range), div("edit__status", r.status));
         row.append(
           div("edit__no", r.index),
-          div("edit__tag", r.tag),
+          div("edit__tag", tagLabel(r.tag)),
           main,
           div("edit__conf", r.confidence),
         );
         row.setAttribute(
           "aria-label",
-          `${r.index} ${r.tag} ${r.range}, ${r.status}, ${r.confidence} confidence`,
+          t(
+            "popupRowLabel",
+            r.index,
+            tagLabel(r.tag),
+            r.range,
+            r.status,
+            r.confidence,
+          ),
         );
         return row;
       }),
@@ -298,10 +308,12 @@ function renderMonitor(): void {
       sameChannel(c, s.channelId!),
     );
     const name = s.channelName ?? s.channelId;
-    els.channelName.textContent = allowed ? `${name} · skipping off` : name;
+    els.channelName.textContent = allowed
+      ? t("popupChannelSkippingOff", name)
+      : name;
     els.channelToggle.textContent = allowed
-      ? "Skip on this channel"
-      : "Don’t skip this channel";
+      ? t("popupChannelSkipOn")
+      : t("popupChannelDontSkip");
   }
 }
 
