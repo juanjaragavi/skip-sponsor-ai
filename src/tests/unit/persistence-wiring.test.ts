@@ -160,7 +160,7 @@ describe("health endpoints", () => {
       (await app.inject({ method: "GET", url: "/healthz" })).json(),
     ).toEqual({
       ok: true,
-      version: "1.0.0",
+      version: config.version,
       commit: config.commit,
     });
     expect(

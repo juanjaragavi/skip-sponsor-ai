@@ -1,3 +1,5 @@
+import pkg from "../../package.json";
+
 // Listen port: PORT (shell or .env) wins. `npm run dev:api` falls back to the
 // local-only default in package.json "config.port" (3040, so several DevSpeak
 // projects can run side by side); the container (`node dist/...`, no npm)
@@ -100,7 +102,8 @@ export const config = {
    * public address refuses to start with it (checkProductionConfig).
    */
   llmStub: flag("LLM_STUB"),
-  version: "1.0.0",
+  /** The release version (package.json, shared with the extension; S-P2-3). */
+  version: pkg.version,
   /** Deployed commit for `/healthz` (see COMMIT_ENV_VARS). */
   commit: resolveCommit(env),
 };

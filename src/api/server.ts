@@ -37,6 +37,7 @@ import {
   createLogger,
   loggerOptions,
 } from "./observability/logger";
+import { problemType } from "./problem-type";
 
 /** Cues around each failing transcript index (dev diagnostics). */
 function badCues(body: unknown, err: ZodError): unknown[] {
@@ -152,7 +153,7 @@ export function buildServer(
       );
     else if (status >= 500) req.log.error({ err }, "request failed");
     void reply.code(status).send({
-      type: `https://api.skipsponsor.example.com/problems/${status}`,
+      type: problemType(status),
       title: message,
       status,
       detail: message,

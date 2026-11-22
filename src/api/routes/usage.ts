@@ -5,6 +5,7 @@ import { SUPPORT_EMAIL } from "../../shared/company.generated";
 import type { InstallTokens } from "../services/install-token";
 import type { UsageEvent, UsageStatsStore } from "../repositories/usage-stats";
 import { ADMIN_TOKEN_HEADER, adminTokenMatches } from "../services/admin-token";
+import { problemType } from "../problem-type";
 
 /**
  * Anonymous install and usage counts (privacy draft 2026-10-17):
@@ -110,7 +111,7 @@ export function registerUsageRoutes(
 
   app.get("/v1/usage/summary", async (req, reply) => {
     const problem = (status: number, title: string) => ({
-      type: `https://api.skipsponsor.example.com/problems/${status}`,
+      type: problemType(status),
       title,
       status,
       detail: title,

@@ -6,6 +6,7 @@ import { Writable } from "node:stream";
 import pino from "pino";
 import { describe, expect, it } from "vitest";
 import { buildHealth } from "../../api/health";
+import { config } from "../../api/config";
 import {
   acceptCorrelationId,
   currentCorrelationId,
@@ -29,7 +30,7 @@ describe("GET /api/health", () => {
     expect(body).toMatchObject({
       status: "ok",
       service: "skip-sponsor-ai/api",
-      version: "1.0.0",
+      version: config.version,
       checks: { database: "ok", llm: "ok" },
     });
     expect(new Date(body.time).toISOString()).toBe(body.time);

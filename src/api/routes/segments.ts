@@ -36,6 +36,7 @@ import {
 } from "../../shared/constants";
 import type { Allowance, LimitReason } from "../services/cost-guard";
 import { ADMIN_TOKEN_HEADER, adminTokenMatches } from "../services/admin-token";
+import { problemType } from "../problem-type";
 
 /** Meters fresh LLM analyses (cost-guard.ts). Cache hits never reach it. */
 export interface AnalysisGate {
@@ -76,7 +77,7 @@ function sendLimited(
       ? "This server has no AI provider key configured, so it cannot analyze new videos. Cached results keep working."
       : `${LIMIT_TITLES[a.reason]}. Cached results keep working; new analyses resume at ${a.resetAt}.`;
   return reply.code(status).send({
-    type: `https://api.skipsponsor.example.com/problems/${a.reason}`,
+    type: problemType(a.reason),
     title: LIMIT_TITLES[a.reason],
     status,
     detail,
@@ -257,7 +258,7 @@ function toResponse(a: VideoAnalysis, sponsorBlock: boolean): unknown {
 
 function problem(status: number, title: string, instance: string): unknown {
   return {
-    type: `https://api.skipsponsor.example.com/problems/${status}`,
+    type: problemType(status),
     title,
     status,
     detail: title,
