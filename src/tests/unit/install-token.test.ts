@@ -6,7 +6,9 @@ import {
   isSignedToken,
   MINT_BACKOFF_MAX_MS,
   MINT_BACKOFF_START_MS,
+  retryAfterMs,
   type InstallTokenDeps,
+  type MintRetryState,
 } from "../../extension/install-token";
 
 vi.mock("../../api/services/llm-client", () => ({
@@ -48,15 +50,26 @@ async function mintVia(app: App): Promise<Response> {
 /** One browser: its own chrome.storage.local and clock. */
 function browser(mint: () => Promise<Response>, clock = { t: 0 }) {
   let stored: string | null = null;
+  let session: MintRetryState | null = null;
   const deps: InstallTokenDeps = {
     load: async () => stored,
     save: async (t) => {
       stored = t;
     },
+    loadState: async () => session,
+    saveState: async (st) => {
+      session = st;
+    },
     mint: vi.fn(mint),
     now: () => clock.t,
   };
-  return { client: createInstallTokenClient(deps), deps, clock };
+  return {
+    client: createInstallTokenClient(deps),
+    deps,
+    clock,
+    /** The service worker was stopped while idle: same storage, fresh module memory. */
+    restart: () => createInstallTokenClient(deps),
+  };
 }
 
 async function analyze(app: App, token: string, videoId: string) {
@@ -176,6 +189,44 @@ describe("install-token client backoff", () => {
     capped.clock.t += MINT_BACKOFF_MAX_MS;
     await capped.client.get();
     expect(capped.deps.mint).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the backoff across a service-worker restart", async () => {
+    const b = browser(async () => limited("120"));
+    await b.client.get();
+    const after = b.restart();
+    expect(await after.settingUp()).toBe(true);
+    await after.get();
+    await after.get(true);
+    expect(b.deps.mint).toHaveBeenCalledTimes(1);
+    b.clock.t += 120_000;
+    await after.get();
+    expect(b.deps.mint).toHaveBeenCalledTimes(2);
+  });
+
+  it("waits at least 30 s even on Retry-After: 0, and reads HTTP dates on the injected clock", async () => {
+    const zero = browser(async () => limited("0"));
+    await zero.client.get();
+    await zero.client.get(true);
+    expect(zero.deps.mint).toHaveBeenCalledTimes(1);
+    const t = Date.parse("2026-11-21T12:00:00Z");
+    const res = limited(new Date(t + 120_000).toUTCString());
+    expect(retryAfterMs(res, t)).toBe(120_000);
+    expect(retryAfterMs(limited(" "), t)).toBeNull();
+    expect(retryAfterMs(limited("soon"), t)).toBeNull();
+  });
+
+  it("uses a minted token even when storage refuses to save it", async () => {
+    const deps: InstallTokenDeps = {
+      load: async () => null,
+      save: async () => {
+        throw new Error("QUOTA_BYTES");
+      },
+      mint: async () => ok(),
+    };
+    expect(isSignedToken(await createInstallTokenClient(deps).get())).toBe(
+      true,
+    );
   });
 
   it("a renewal after a network error retries at once", async () => {

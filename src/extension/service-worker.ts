@@ -9,7 +9,7 @@ import {
   syncUninstallUrl,
   type UsageDeps,
 } from "./usage-ping";
-import { createInstallTokenClient } from "./install-token";
+import { createInstallTokenClient, type MintRetryState } from "./install-token";
 
 // Set at build time from VITE_API_BASE_URL (vite.config.ts); production
 // builds fail without it, so no placeholder host can ship.
@@ -57,6 +57,12 @@ const installToken = createInstallTokenClient({
     return typeof s["installToken"] === "string" ? s["installToken"] : null;
   },
   save: (token) => chrome.storage.local.set({ installToken: token }),
+  // Survives the service worker being stopped while idle; cleared with the browser session.
+  loadState: async () => {
+    const s = await chrome.storage.session.get(["mintRetry"]);
+    return (s["mintRetry"] as MintRetryState | undefined) ?? null;
+  },
+  saveState: (state) => chrome.storage.session.set({ mintRetry: state }),
   mint: () =>
     fetch(`${API_BASE}/installs`, {
       method: "POST",
