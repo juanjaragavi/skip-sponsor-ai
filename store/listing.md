@@ -111,12 +111,14 @@ the docs.
 
 ### Language
 
-English (United States). The extension UI is English only.
+English (United States), default locale `en`. From 1.2.0 the extension ships
+`_locales/en` and `_locales/es` (`public/_locales/`), and its UI follows the
+browser language.
 
-A Spanish listing is **not possible yet**: the dashboard offers a description
-per locale only for locales the extension ships in `_locales/` (it has none).
-A natively written Spanish description is drafted in §6 for when the UI is
-localized; until then do not paste it anywhere in the dashboard.
+1.1.0 (live until 1.2.0 is published) is English only and ships no
+`_locales/`, so the dashboard offers no Spanish listing for it. After the 1.2.0
+upload, paste the Spanish listing from `store/listing.es.md` into the `es`
+locale (Juan approves the Spanish copy first).
 
 ### Graphic assets
 
