@@ -131,7 +131,11 @@ export function createInstallTokenClient(
       });
       if (current) return current;
       const local = randomToken();
-      await deps.save(local);
+      try {
+        await deps.save(local);
+      } catch {
+        // used for this request; a later call makes a new one
+      }
       return local;
     })().finally(() => (minting = null));
     return minting;
