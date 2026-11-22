@@ -6,6 +6,28 @@ version lives in `package.json` and `src/extension/manifest.json`;
 
 ## [Unreleased]
 
+## 1.2.0 — Spanish UI and first-run fixes (package built 2026-11-21, not yet submitted)
+
+From the 2026-11-21 first-run audit (card t_35b75222):
+
+- Extension in English and Spanish (`chrome.i18n`, `src/extension/_locales/`):
+  popup, Settings, toasts and limit notices follow the browser language; a
+  guard test fails on any user string outside the catalog
+  (`src/tests/unit/i18n-catalog.test.ts`). Spanish store listing draft:
+  `store/listing.es.md`.
+- Shared networks: when the per-IP install limit refuses a new browser, it no
+  longer shows "This browser couldn't be verified". It says SkipSponsor AI is
+  still finishing setup and retries on the next video (after the server's
+  Retry-After, at most 10 minutes; `src/extension/install-token.ts`).
+- API: `GET /v1/usage/budget` (operator only) reports today's AI spend against
+  `LLM_DAILY_BUDGET_USD`; the API logs `llm_budget_warning` at 80 % and
+  `llm_budget_exhausted` at 100 %. The ops-alerts Worker polls the route
+  hourly and emails at 80 % and 100 %.
+- API: problem `type` URIs no longer point at a placeholder host; `/healthz`
+  and `/api/health` report the package version.
+- Local stack: the LLM stub is metered like a Haiku call, so budget limits can
+  be tested locally.
+
 ## 1.1.0 — first Chrome Web Store submission (package rebuilt 2026-10-16)
 
 - Detection (API): fewer false skips. Disclosure lines in fully sponsored

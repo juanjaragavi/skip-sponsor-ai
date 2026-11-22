@@ -74,4 +74,5 @@ After the first upload, set `CORS_ORIGIN=chrome-extension://<item id>` on `compu
 
 ## Cost guard rails
 
+- Budget alert (from 1.2.0): `GET /v1/usage/budget` with `x-admin-token` returns `{day, spentUsd, budgetUsd, usedRatio, warnRatio, state}` (`ok`, `warning` at 80 %, `exhausted`, `disabled`). The ops-alerts Worker (`~/GitHub/ops-alerts`, `probeLlmBudget`) polls it hourly and emails at 80 % and 100 %; it stays off until its secret `SKIPSPONSOR_ADMIN_TOKEN` (= this API's `ADMIN_API_TOKEN`) is set. The API also logs `alert: llm_budget_warning` / `llm_budget_exhausted` once per UTC day.
 - `LLM_DAILY_BUDGET_USD=0` turns every Claude call off at once; `insta --agent compute stop api` takes the API offline (the extension keeps playing videos; already-loaded segments still skip).
