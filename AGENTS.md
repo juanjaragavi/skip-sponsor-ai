@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Codex, OpenCode, Hermes, and others)
 
 ## DevSpeak Labs core rules (generated)
 
-Generated from devspeak-labs-company/rules (version 1.11.0, 2026-11-15). Do not edit here; edit rules.json and run sync-rules.
+Generated from devspeak-labs-company/rules (version 1.12.0, 2026-11-21). Do not edit here; edit rules.json and run sync-rules.
 Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each rule are in the registry.
 
 **Global distribution (GLOBAL)**
@@ -16,7 +16,7 @@ Scope: all, web, llm, api. MUST rules only; SHOULD rules and the reason for each
 **Authority (AUTH)**
 
 - **AUTH-02** T1, act then report: doc-drift fixes (not AGENTS.md, CLAUDE.md or legal), branches, worktrees, drafts, explicit-path local commits.
-- **AUTH-03** T2, ask Juan first: push (Vercel deploys main on push), PRs, merges, deploys, releases, publishing, emailing others.
+- **AUTH-03** T2, ask Juan first: push (Vercel deploys main on push), PRs, merges, deploys, releases, publishing, emailing others; CMO posts Juan-approved texts on accounts he names.
 - **AUTH-04** T2, ask Juan first: AGENTS.md or CLAUDE.md edits, mutating cloud or SaaS actions, any spend, price or plan change.
 - **AUTH-05** T3, never: move money, accept terms, or change passwords, 2FA, key scopes or IAM permissions.
 - **AUTH-06** T3, never delete cloud projects, resources, databases, buckets, repos, domains or user data; report strays to Juan.
