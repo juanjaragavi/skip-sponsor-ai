@@ -254,6 +254,11 @@ The extension analyzes caption text only. Videos without captions are not analyz
 
 ## 6. Spanish description (draft; not for the dashboard yet)
 
+**Superseded (2026-11-21):** use `store/listing.es.md`, written with *usted*
+and the Spanish UI terms of the localized extension (`_locales/es`, branch
+`feat/i18n-es-2026-11-21`); review sheet `store/i18n-es-review.md`. The draft
+below is kept as history.
+
 Written in Spanish, not translated (Colombian-neutral, *tú*). Usable only once
 the extension ships `_locales/es` (see "Language" above). Keep it in step with
 the English description: same features, same limits, same accuracy figure.
