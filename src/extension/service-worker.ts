@@ -8,19 +8,13 @@ import {
   syncUninstallUrl,
   type UsageDeps,
 } from "./usage-ping";
+import { createInstallTokenClient } from "./install-token";
 
 // Set at build time from VITE_API_BASE_URL (vite.config.ts); production
 // builds fail without it, so no placeholder host can ship.
 const API_ORIGIN = __API_ORIGIN__;
 const API_BASE = `${API_ORIGIN}/v1`;
 const inflight = new Map<string, Promise<unknown>>();
-
-/** Server-issued, signed install token (POST /v1/installs). */
-const SIGNED_TOKEN = /^v1\.[A-Za-z0-9_-]{32}\.[A-Za-z0-9_-]+$/;
-/** After a failed mint, wait this long before asking the API again. */
-const MINT_RETRY_MS = 10 * 60 * 1000;
-let minting: Promise<string> | null = null;
-let mintFailedAt = 0;
 
 const version = (): string => chrome.runtime.getManifest().version;
 
@@ -50,49 +44,29 @@ function noteActive(): void {
 const CORRELATION_HEADER = "x-correlation-id";
 const newCorrelationId = (): string => crypto.randomUUID();
 
-async function storedToken(): Promise<string | null> {
-  const s = await chrome.storage.local.get(["installToken"]);
-  return typeof s["installToken"] === "string" ? s["installToken"] : null;
-}
-
 /**
- * Anonymous install token for the daily analysis allowance. Prefers a signed
- * token from the API; when the API is unreachable (or an older API has no
- * /v1/installs) it keeps a random local token so requests still work.
+ * Anonymous install token for the daily analysis allowance (install-token.ts):
+ * a signed token from the API; when the mint fails (offline, or the per-IP
+ * mint limit on a shared network) a random local token, and a new mint on a
+ * later video after the server's Retry-After or a short backoff.
  */
-async function getInstallToken(renew = false): Promise<string> {
-  const current = await storedToken();
-  if (!renew && current && SIGNED_TOKEN.test(current)) return current;
-  if (!renew && Date.now() - mintFailedAt < MINT_RETRY_MS && current)
-    return current;
-  minting ??= (async () => {
-    try {
-      const res = await fetch(`${API_BASE}/installs`, {
-        method: "POST",
-        headers: {
-          "x-extension-version": version(),
-          [CORRELATION_HEADER]: newCorrelationId(),
-        },
-      });
-      const body = res.ok
-        ? ((await res.json()) as { installToken?: unknown })
-        : {};
-      if (typeof body.installToken === "string") {
-        await chrome.storage.local.set({ installToken: body.installToken });
-        mintFailedAt = 0;
-        return body.installToken;
-      }
-    } catch {
-      // offline or API down: fall through to a local token
-    }
-    mintFailedAt = Date.now();
-    if (current) return current;
-    const local = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-    await chrome.storage.local.set({ installToken: local });
-    return local;
-  })().finally(() => (minting = null));
-  return minting;
-}
+const installToken = createInstallTokenClient({
+  load: async () => {
+    const s = await chrome.storage.local.get(["installToken"]);
+    return typeof s["installToken"] === "string" ? s["installToken"] : null;
+  },
+  save: (token) => chrome.storage.local.set({ installToken: token }),
+  mint: () =>
+    fetch(`${API_BASE}/installs`, {
+      method: "POST",
+      headers: {
+        "x-extension-version": version(),
+        [CORRELATION_HEADER]: newCorrelationId(),
+      },
+    }),
+});
+const getInstallToken = (renew = false): Promise<string> =>
+  installToken.get(renew);
 
 /** fetch with the install token; a rejected token (401) is renewed once. */
 async function authedFetch(
@@ -176,6 +150,10 @@ async function apiAnalyze(
   });
   if (!res.ok) {
     const limit = await limitFrom(res);
+    // An unsigned token because the mint has not succeeded yet: this browser
+    // is still being set up, not refused (a later video mints again).
+    if (limit?.reason === "unauthenticated" && (await installToken.settingUp()))
+      throw new AnalysisLimitedError({ ...limit, reason: "setting_up" });
     if (limit) throw new AnalysisLimitedError(limit);
     throw new Error(`analyze ${res.status}`);
   }

@@ -54,11 +54,17 @@ export const USER_MESSAGES = {
       popup:
         "AI analysis is paused for now. Videos already analyzed still skip.",
     },
+    settingUp: {
+      title: "Setting up SkipSponsor AI",
+      sub: "Plays normally · retries on your next video",
+      popup:
+        "SkipSponsor AI is still finishing setup in this browser and tries again on your next video. Videos already analyzed still skip.",
+    },
     unreachable: {
       title: "Couldn’t reach SkipSponsor AI",
       sub: "Analyzed videos still skip",
       popup:
-        "This browser couldn’t be verified with the SkipSponsor AI server. Videos already analyzed still skip.",
+        "SkipSponsor AI couldn’t connect to its server for this video, so it plays normally. Videos already analyzed still skip.",
     },
   },
 } as const;

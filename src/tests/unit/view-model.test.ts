@@ -271,12 +271,15 @@ describe("limitCopy", () => {
     ["global_budget", /free analysis capacity/],
     ["llm_disabled", /paused/],
     ["llm_not_configured", /isn’t set up for AI analysis/],
-    ["unauthenticated", /couldn’t be verified/],
+    ["unauthenticated", /couldn’t connect/],
+    ["setting_up", /finishing setup .* tries again on your next video/],
   ] as const)("explains %s and keeps skipping", (reason, re) => {
     const copy = limitCopy({ reason, resetAt });
     expect(copy.popup).toMatch(re);
     expect(copy.popup).toMatch(/still skip/);
     expect(copy.title.length).toBeGreaterThan(0);
     expect(copy.sub.length).toBeLessThanOrEqual(48);
+    // S-P1-3: a shared network's mint limit is not the user's fault.
+    expect(`${copy.title} ${copy.sub} ${copy.popup}`).not.toMatch(/verif/i);
   });
 });

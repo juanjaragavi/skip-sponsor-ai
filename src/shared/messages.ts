@@ -10,7 +10,9 @@ export interface AnalysisLimit {
     | "install_quota"
     | "global_budget"
     | "llm_disabled"
-    | "unauthenticated";
+    | "unauthenticated"
+    /** Client-side: the install token is not signed yet (mint failed); retried on a later video. */
+    | "setting_up";
   /** ISO time new analyses are accepted again (next 00:00 UTC). */
   resetAt: string;
 }

@@ -204,6 +204,8 @@ export function limitCopy(limit: AnalysisLimit): {
       return { ...USER_MESSAGES.limits.llmNotConfigured };
     case "llm_disabled":
       return { ...USER_MESSAGES.limits.llmDisabled };
+    case "setting_up":
+      return { ...USER_MESSAGES.limits.settingUp };
     default:
       return { ...USER_MESSAGES.limits.unreachable };
   }
