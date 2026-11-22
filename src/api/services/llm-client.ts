@@ -231,7 +231,19 @@ async function runBatches(
  * transcript before they can become skippable segments.
  */
 /** Local stack (LLM_STUB on a loopback API): the deterministic stub, no Claude call. */
-export const stubCall: CallFn = async (_model, cues) => stubClassify(cues);
+/** Typical answer size for the local stub's metering. */
+const STUB_OUTPUT_TOKENS = 150;
+export const stubCall: CallFn = async (model, cues) => {
+  // Meter the stub like a real call (about 4 characters per token, the
+  // primary model's price) so the daily budget, its 80 % warning and the
+  // "busy today" path can be exercised on the local stack.
+  usageListener?.(
+    model,
+    Math.ceil((SYSTEM_PROMPT.length + formatCues(cues).length) / 4),
+    STUB_OUTPUT_TOKENS,
+  );
+  return stubClassify(cues);
+};
 
 /** The call classifyChunks uses by default: the stub only when config allows it. */
 export function defaultCall(): CallFn {

@@ -11,6 +11,7 @@ import { LLM_STUB_RATIONALE, stubClassify } from "../../api/services/llm-stub";
 import {
   classifyChunks,
   liveCall,
+  setLlmUsageListener,
   stubCall,
 } from "../../api/services/llm-client";
 import { validateCandidates } from "../../api/services/candidate-validation";
@@ -127,5 +128,19 @@ describe("LLM stub", () => {
     const result = await classifyChunks([fixture.transcript], stubCall);
     expect(result.model).toBe("claude-haiku");
     expect(result.candidates).toHaveLength(1);
+  });
+
+  it("meters each stub call like a primary-model call, so local budgets work", async () => {
+    const seen: [string, number, number][] = [];
+    setLlmUsageListener((m, i, o) => seen.push([m, i, o]));
+    try {
+      await classifyChunks([fixture.transcript], stubCall);
+    } finally {
+      setLlmUsageListener(null);
+    }
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]![0]).toMatch(/^claude-haiku/);
+    expect(seen[0]![1]).toBeGreaterThan(500); // the system prompt alone
+    expect(seen[0]![2]).toBeGreaterThan(0);
   });
 });
