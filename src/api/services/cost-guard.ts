@@ -49,6 +49,21 @@ export interface CostGuardOptions {
   dailyBudgetUsd: number;
   now?: () => Date;
   onBudgetReached?: (spentUsd: number) => void;
+  /** Share of the daily budget that triggers onBudgetWarning once per UTC day. Default 0.8. */
+  warnRatio?: number;
+  onBudgetWarning?: (spentUsd: number, budgetUsd: number) => void;
+}
+
+/** Today's LLM spend against the budget (operator route GET /v1/usage/budget, ops-alerts probe). */
+export interface BudgetStatus {
+  day: string;
+  spentUsd: number;
+  budgetUsd: number;
+  /** spent / budget; 1 when the LLM is disabled (budget 0). */
+  usedRatio: number;
+  warnRatio: number;
+  state: "ok" | "warning" | "exhausted" | "disabled";
+  resetAt: string;
 }
 
 export const utcDay = (d: Date): string => d.toISOString().slice(0, 10);
@@ -68,6 +83,7 @@ export function nextUtcMidnight(d: Date): Date {
 export class CostGuard {
   private readonly now: () => Date;
   private budgetLoggedFor = "";
+  private warnLoggedFor = "";
 
   constructor(
     private readonly usage: UsageStore,
@@ -88,6 +104,7 @@ export class CostGuard {
     if (!installKey) return { ok: false, reason: "unauthenticated", resetAt };
     const day = utcDay(now);
     const spent = await this.usage.getSpend(day);
+    this.maybeWarn(day, spent);
     if (spent >= this.opts.dailyBudgetUsd) {
       if (this.budgetLoggedFor !== day) {
         this.budgetLoggedFor = day;
@@ -108,11 +125,52 @@ export class CostGuard {
     inputTokens: number,
     outputTokens: number,
   ): Promise<void> {
+    const day = utcDay(this.now());
     await this.usage.addSpend(
-      utcDay(this.now()),
+      day,
       estimateCostUsd(model, inputTokens, outputTokens),
       inputTokens,
       outputTokens,
     );
+    this.maybeWarn(day, await this.usage.getSpend(day));
+  }
+
+  private get warnRatio(): number {
+    const r = this.opts.warnRatio ?? 0.8;
+    return r > 0 && r < 1 ? r : 0.8;
+  }
+
+  /** onBudgetWarning once per UTC day, when spend first reaches warnRatio of the budget. */
+  private maybeWarn(day: string, spent: number): void {
+    const budget = this.opts.dailyBudgetUsd;
+    if (budget <= 0 || spent < budget * this.warnRatio) return;
+    if (this.warnLoggedFor === day) return;
+    this.warnLoggedFor = day;
+    this.opts.onBudgetWarning?.(spent, budget);
+  }
+
+  async status(): Promise<BudgetStatus> {
+    const now = this.now();
+    const day = utcDay(now);
+    const budgetUsd = this.opts.dailyBudgetUsd;
+    const spentUsd = await this.usage.getSpend(day);
+    const usedRatio = budgetUsd > 0 ? spentUsd / budgetUsd : 1;
+    const state: BudgetStatus["state"] =
+      budgetUsd <= 0
+        ? "disabled"
+        : spentUsd >= budgetUsd
+          ? "exhausted"
+          : usedRatio >= this.warnRatio
+            ? "warning"
+            : "ok";
+    return {
+      day,
+      spentUsd: Math.round(spentUsd * 1e6) / 1e6,
+      budgetUsd,
+      usedRatio: Math.round(usedRatio * 1e4) / 1e4,
+      warnRatio: this.warnRatio,
+      state,
+      resetAt: nextUtcMidnight(now).toISOString(),
+    };
   }
 }

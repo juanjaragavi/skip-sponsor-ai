@@ -38,6 +38,7 @@ import {
   loggerOptions,
 } from "./observability/logger";
 import { problemType } from "./problem-type";
+import { registerBudgetRoutes } from "./routes/budget";
 
 /** Cues around each failing transcript index (dev diagnostics). */
 function badCues(body: unknown, err: ZodError): unknown[] {
@@ -217,8 +218,13 @@ export function buildServer(
     dailyBudgetUsd: deps.llmDailyBudgetUsd ?? config.llmDailyBudgetUsd,
     onBudgetReached: (spentUsd) =>
       app.log.warn(
-        { spentUsd },
+        { alert: "llm_budget_exhausted", spentUsd },
         "LLM daily budget reached; serving cached results until 00:00 UTC",
+      ),
+    onBudgetWarning: (spentUsd, budgetUsd) =>
+      app.log.warn(
+        { alert: "llm_budget_warning", spentUsd, budgetUsd },
+        "LLM daily budget 80% used",
       ),
   });
   setLlmUsageListener((model, input, output) => {
@@ -248,6 +254,10 @@ export function buildServer(
       { sponsorBlockEnabled },
     );
     registerTelemetryRoutes(api, persistence.repo);
+    registerBudgetRoutes(api, {
+      status: () => guard.status(),
+      adminToken: deps.adminToken ?? config.adminToken,
+    });
     registerInstallRoutes(api, {
       tokens,
       dailyAnalysesPerInstall,
