@@ -1,4 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect } from "vitest";
+import en from "../../extension/_locales/en/messages.json";
+import es from "../../extension/_locales/es/messages.json";
+import { installFallbackCatalog } from "../../extension/i18n";
+import { USER_MESSAGES } from "../../extension/user-messages";
 import type { SponsorSegment, UserPolicy } from "../../shared/types";
 import { DEFAULT_POLICY, sameChannel } from "../../extension/policy";
 import {
@@ -281,5 +285,37 @@ describe("limitCopy", () => {
     expect(copy.sub.length).toBeLessThanOrEqual(48);
     // S-P1-3: a shared network's mint limit is not the user's fault.
     expect(`${copy.title} ${copy.sub} ${copy.popup}`).not.toMatch(/verif/i);
+  });
+});
+
+describe("limit notice fits the toast in every language", () => {
+  afterEach(() => installFallbackCatalog(en));
+  // Longest local clock times a reset can show (en-US, es-ES, es-419 / es-CO).
+  const TIMES = ["12:00 PM", "19:00", "12:00 p. m."];
+  it.each([
+    ["en", en],
+    ["es", es],
+  ] as const)("%s: every sub is at most 48 characters", (_lang, catalog) => {
+    installFallbackCatalog(catalog);
+    const subs = [
+      ...TIMES.flatMap((at) => [
+        USER_MESSAGES.limits.installQuota(at).sub,
+        USER_MESSAGES.limits.globalBudget(at).sub,
+      ]),
+      USER_MESSAGES.limits.llmNotConfigured.sub,
+      USER_MESSAGES.limits.llmDisabled.sub,
+      USER_MESSAGES.limits.settingUp.sub,
+      USER_MESSAGES.limits.unreachable.sub,
+    ];
+    for (const sub of subs) {
+      expect(sub.length, sub).toBeLessThanOrEqual(48);
+      expect(sub).not.toMatch(/\$/); // every placeholder filled
+    }
+    const copy = limitCopy({
+      reason: "install_quota",
+      resetAt: "2026-10-12T00:00:00.000Z",
+    });
+    expect(copy.sub.length).toBeLessThanOrEqual(48);
+    expect(copy.title.length).toBeGreaterThan(0);
   });
 });
