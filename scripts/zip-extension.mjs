@@ -46,12 +46,35 @@ if (manifest.version !== pkg.version)
   errors.push(
     `manifest version ${manifest.version} != package.json ${pkg.version}`,
   );
-if ((manifest.name ?? "").length > 75)
-  errors.push("name exceeds 75 characters");
-if ((manifest.description ?? "").length > 132)
-  errors.push("description exceeds 132 characters");
-if (/youtube/i.test(manifest.name ?? ""))
-  errors.push("name must not contain the YouTube trademark");
+// Localized fields (__MSG_key__) are checked in every shipped locale.
+const localesDir = join(dist, "_locales");
+const locales = existsSync(localesDir) ? readdirSync(localesDir) : [];
+if (manifest.default_locale && !locales.includes(manifest.default_locale))
+  errors.push(
+    `default_locale "${manifest.default_locale}" has no _locales/${manifest.default_locale}/messages.json`,
+  );
+const catalogs = locales.map((lang) => [
+  lang,
+  JSON.parse(readFileSync(join(localesDir, lang, "messages.json"), "utf8")),
+]);
+const variants = (value) => {
+  const m = /^__MSG_(\w+)__$/.exec(value ?? "");
+  if (!m) return [["-", value ?? ""]];
+  return catalogs.map(([lang, cat]) => {
+    const text = cat[m[1]]?.message;
+    if (typeof text !== "string")
+      errors.push(`_locales/${lang} has no message "${m[1]}"`);
+    return [lang, text ?? ""];
+  });
+};
+for (const [lang, name] of variants(manifest.name)) {
+  if (name.length > 75) errors.push(`name exceeds 75 characters (${lang})`);
+  if (/youtube/i.test(name))
+    errors.push(`name must not contain the YouTube trademark (${lang})`);
+}
+for (const [lang, desc] of variants(manifest.description))
+  if (desc.length > 132)
+    errors.push(`description exceeds 132 characters (${lang})`);
 for (const size of ["16", "32", "48", "128"]) {
   const icon = manifest.icons?.[size];
   if (!icon || !existsSync(join(dist, icon)))

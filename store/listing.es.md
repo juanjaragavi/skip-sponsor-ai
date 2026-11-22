@@ -4,7 +4,7 @@ Spanish store listing for SkipSponsor AI (draft for the CEO's copy approval,
 2026-11-21). Same facts and structure as the English listing
 (`store/listing.md` §2); written natively in neutral international Spanish
 with _usted_. The UI terms match the extension's Spanish catalog
-(`src/extension/_locales/es/messages.json`). Side-by-side review:
+(`public/_locales/es/messages.json`). Side-by-side review:
 `store/i18n-es-review.md`.
 
 **When it can be used:** only after a build that ships `_locales/es` (this

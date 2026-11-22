@@ -9,8 +9,8 @@
  * `$PLACEHOLDER$` → `$1` substitution rules as Chrome.
  */
 /** Every key in the English catalog; a typo is a type error. */
-export type MessageKey = keyof typeof import("./_locales/en/messages.json") &
-  string;
+export type MessageKey =
+  keyof typeof import("../../public/_locales/en/messages.json") & string;
 
 export interface CatalogEntry {
   message: string;

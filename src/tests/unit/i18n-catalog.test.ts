@@ -1,6 +1,6 @@
 /**
  * S-P1-4 guard: every user-visible string of the extension comes from the
- * chrome.i18n catalog (src/extension/_locales/<lang>/messages.json).
+ * chrome.i18n catalog (public/_locales/<lang>/messages.json).
  *
  * (a) en and es have the same keys, no empty messages, the same placeholders,
  *     and keep the brand and product names; store fields stay within limits.
@@ -21,8 +21,8 @@ import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import en from "../../extension/_locales/en/messages.json";
-import es from "../../extension/_locales/es/messages.json";
+import en from "../../../public/_locales/en/messages.json";
+import es from "../../../public/_locales/es/messages.json";
 import {
   formatEntry,
   installFallbackCatalog,

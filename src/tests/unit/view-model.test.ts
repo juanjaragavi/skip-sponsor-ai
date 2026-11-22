@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect } from "vitest";
-import en from "../../extension/_locales/en/messages.json";
-import es from "../../extension/_locales/es/messages.json";
+import en from "../../../public/_locales/en/messages.json";
+import es from "../../../public/_locales/es/messages.json";
 import { installFallbackCatalog } from "../../extension/i18n";
 import { USER_MESSAGES } from "../../extension/user-messages";
 import type { SponsorSegment, UserPolicy } from "../../shared/types";
