@@ -19,6 +19,7 @@ import {
   type Harness,
 } from "./harness";
 import { VIDEO_A, VIDEO_B } from "./fixtures/youtube-fixture";
+import manifest from "../../extension/manifest.json";
 
 const SHOTS = process.env["DESIGN_SHOTS"] ?? "artifacts/design-review";
 mkdirSync(SHOTS, { recursive: true });
@@ -480,7 +481,9 @@ test("options › About: version, links and live service status", async ({
   await h.openPath("/");
   const options = await openOptions(h);
   await options.locator(".nav__item", { hasText: "About" }).click();
-  await expect(options.locator("#version")).toHaveText("Version 1.1.0");
+  await expect(options.locator("#version")).toHaveText(
+    `Version ${manifest.version}`,
+  );
   await expect(options.locator("#service-status")).toHaveText("Online");
   await expect(options.locator("#service-host")).toHaveText(
     "Connected to 127.0.0.1:39517",

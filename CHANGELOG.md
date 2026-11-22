@@ -10,15 +10,16 @@ version lives in `package.json` and `src/extension/manifest.json`;
 
 From the 2026-11-21 first-run audit (card t_35b75222):
 
-- Extension in English and Spanish (`chrome.i18n`, `src/extension/_locales/`):
+- Extension in English and Spanish (`chrome.i18n`, `public/_locales/`):
   popup, Settings, toasts and limit notices follow the browser language; a
   guard test fails on any user string outside the catalog
   (`src/tests/unit/i18n-catalog.test.ts`). Spanish store listing draft:
   `store/listing.es.md`.
 - Shared networks: when the per-IP install limit refuses a new browser, it no
   longer shows "This browser couldn't be verified". It says SkipSponsor AI is
-  still finishing setup and retries on the next video (after the server's
-  Retry-After, at most 10 minutes; `src/extension/install-token.ts`).
+  still finishing setup and retries automatically on a later video (after the
+  server's Retry-After, at least 30 s and at most 10 minutes, kept across
+  service-worker restarts; `src/extension/install-token.ts`).
 - API: `GET /v1/usage/budget` (operator only) reports today's AI spend against
   `LLM_DAILY_BUDGET_USD`; the API logs `llm_budget_warning` at 80 % and
   `llm_budget_exhausted` at 100 %. The ops-alerts Worker polls the route
