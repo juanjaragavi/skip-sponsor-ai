@@ -132,7 +132,12 @@ export class CostGuard {
       inputTokens,
       outputTokens,
     );
-    this.maybeWarn(day, await this.usage.getSpend(day));
+    // The spend is saved; a failed read for the warning must not report it as lost.
+    try {
+      this.maybeWarn(day, await this.usage.getSpend(day));
+    } catch {
+      // the next reserve() checks again
+    }
   }
 
   private get warnRatio(): number {
