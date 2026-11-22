@@ -363,21 +363,21 @@
     "message": "Setting up SkipSponsor AI"
   },
   "limitSettingUpSub": {
-    "message": "Plays normally · retries on your next video",
+    "message": "Plays normally · retries automatically",
     "description": "Max 48 characters."
   },
   "limitSettingUpPopup": {
-    "message": "SkipSponsor AI is still finishing setup in this browser and tries again on your next video. Videos already analyzed still skip."
+    "message": "SkipSponsor AI is still finishing setup in this browser and tries again automatically on a later video. Videos already analyzed still skip."
   },
   "limitUnreachableTitle": {
-    "message": "Couldn’t reach SkipSponsor AI"
+    "message": "SkipSponsor AI couldn’t analyze this video"
   },
   "limitUnreachableSub": {
     "message": "Analyzed videos still skip",
     "description": "Max 48 characters."
   },
   "limitUnreachablePopup": {
-    "message": "SkipSponsor AI couldn’t connect to its server for this video, so it plays normally. Videos already analyzed still skip."
+    "message": "SkipSponsor AI couldn’t analyze this video right now, so it plays normally. Videos already analyzed still skip."
   },
   "toastDismiss": {
     "message": "Dismiss",

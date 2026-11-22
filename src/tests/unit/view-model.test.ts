@@ -275,8 +275,8 @@ describe("limitCopy", () => {
     ["global_budget", /free analysis capacity/],
     ["llm_disabled", /paused/],
     ["llm_not_configured", /isn’t set up for AI analysis/],
-    ["unauthenticated", /couldn’t connect/],
-    ["setting_up", /finishing setup .* tries again on your next video/],
+    ["unauthenticated", /couldn’t analyze this video right now/],
+    ["setting_up", /finishing setup .* tries again automatically/],
   ] as const)("explains %s and keeps skipping", (reason, re) => {
     const copy = limitCopy({ reason, resetAt });
     expect(copy.popup).toMatch(re);

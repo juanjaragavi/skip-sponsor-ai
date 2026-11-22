@@ -337,19 +337,19 @@
     "message": "Configurando SkipSponsor AI"
   },
   "limitSettingUpSub": {
-    "message": "Sin omisiones · reintenta en su próximo video"
+    "message": "Sin omisiones · se reintenta automáticamente"
   },
   "limitSettingUpPopup": {
-    "message": "SkipSponsor AI aún está terminando de configurarse en este navegador y lo intentará de nuevo en su próximo video. En los videos ya analizados, la omisión sigue funcionando."
+    "message": "SkipSponsor AI aún está terminando de configurarse en este navegador y lo intentará de nuevo automáticamente en un próximo video. En los videos ya analizados, la omisión sigue funcionando."
   },
   "limitUnreachableTitle": {
-    "message": "Sin conexión con SkipSponsor AI"
+    "message": "SkipSponsor AI no pudo analizar este video"
   },
   "limitUnreachableSub": {
     "message": "Sigue omitiendo lo ya analizado"
   },
   "limitUnreachablePopup": {
-    "message": "SkipSponsor AI no pudo conectarse con su servidor para este video, así que se reproduce con normalidad. En los videos ya analizados, la omisión sigue funcionando."
+    "message": "SkipSponsor AI no pudo analizar este video en este momento, así que se reproduce con normalidad. En los videos ya analizados, la omisión sigue funcionando."
   },
   "toastDismiss": {
     "message": "Cerrar"
